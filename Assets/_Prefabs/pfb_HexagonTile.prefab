@@ -93,7 +93,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7230058915692009563}
   m_Layer: 0
-  m_Name: HexagonTile
+  m_Name: pfb_HexagonTile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

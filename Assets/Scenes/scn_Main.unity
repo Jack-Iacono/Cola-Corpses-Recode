@@ -337,7 +337,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f04d5452201d324092555e10a2c2b96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hexPart: {fileID: 4686199875529075276, guid: b21183efd62e86b4b98acf262210aa46, type: 3}
+  floorObject: {fileID: 4686199875529075276, guid: b21183efd62e86b4b98acf262210aa46, type: 3}
+  wallObject: {fileID: 2278421077726955728, guid: 735eef81471f57b4e8d84c0a41b3f555, type: 3}
 --- !u!4 &1680608673
 Transform:
   m_ObjectHideFlags: 0
