@@ -3,155 +3,77 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
+using MapUtil;
+using System.Drawing;
+
 public class MapGenerator : MonoBehaviour
 {
     public GameObject floorObject;
     public GameObject wallObject;
 
-    private Vector2 mapDim = new Vector2(50, 50);
-    private int tileCount = 250;
+    private Vector3 mapDim = new Vector3(50, 1, 50);
+    private Vector2 roomTileRange = new Vector2(50, 100);
 
     // These offsets are used to set the positions of the floors
-    private const float HEX_RADIUS = 1f;
-    // Need this function to get a specific value for the length on a hexagon
-    private float hexShortLength = Mathf.Sqrt((HEX_RADIUS * HEX_RADIUS) - (HEX_RADIUS / 2) * (HEX_RADIUS / 2));
-    private readonly Vector2 NULL_VECTOR = new Vector2(-1, -1);
+    private float tileRadius = 1f;
 
-    // These two lists contain which cells will be neighbors for a cell depending on their x position
-    // This is needed since the rows are not linear and offset between eachother
-    private readonly Vector2[] evenNeighbors = new Vector2[]
-    {
-        new Vector2(0,1),
-        new Vector2(0,-1),
-        new Vector2(1, 0),
-        new Vector2(-1,0),
-        new Vector2(1,-1),
-        new Vector2(-1,-1)
-    };
-    private readonly Vector2[] oddNeighbors = new Vector2[]
-    {
-        new Vector2(0,1),
-        new Vector2(0,-1),
-        new Vector2(1, 0),
-        new Vector2(-1,0),
-        new Vector2(1,1),
-        new Vector2(-1,1)
-    };
-
-    // Initialized later due to initializationg of hexShortLength
-    // Contains the points for the middle of each side as well as for each vertex
-    private Vector2[] hexagonVertexes = new Vector2[] { };
-    private Vector2[] hexagonExteriorSidePositions = new Vector2[] { };
-    private Vector2[] hexagonInteriorSidePositions = new Vector2[] { };
+    public Map currentMap;
 
     // Start is called before the first frame update
     void Start()
     {
-        // Vertexes labelled clockwise starting at the 2 o'clock position
-        hexagonVertexes = new Vector2[]
-        {
-            new Vector2(HEX_RADIUS / 2, hexShortLength),
-            new Vector2(HEX_RADIUS, 0),
-            new Vector2(HEX_RADIUS / 2, -hexShortLength),
-            new Vector2(-HEX_RADIUS / 2,-hexShortLength),
-            new Vector2(-HEX_RADIUS, 0),
-            new Vector2(-HEX_RADIUS / 2,hexShortLength),
-        };
-        // Sides are labelled clockwise starting at the top side (12 o'clock)
-        hexagonExteriorSidePositions = new Vector2[]
-        {
-            new Vector2(0,hexShortLength),
-            new Vector2((hexagonVertexes[0].x + hexagonVertexes[1].x) / 2, (hexagonVertexes[0].y + hexagonVertexes[1].y) / 2),
-            new Vector2((hexagonVertexes[1].x + hexagonVertexes[2].x) / 2, (hexagonVertexes[1].y + hexagonVertexes[2].y) / 2),
-            new Vector2(0,-hexShortLength),
-            new Vector2((hexagonVertexes[3].x + hexagonVertexes[4].x) / 2, (hexagonVertexes[3].y + hexagonVertexes[4].y) / 2),
-            new Vector2((hexagonVertexes[4].x + hexagonVertexes[5].x) / 2, (hexagonVertexes[4].y + hexagonVertexes[5].y) / 2)
-        };
-        // Sides labelled clockwise starting at the 2 o'clock position
-        hexagonInteriorSidePositions = new Vector2[]
-        {
-            new Vector2(hexagonVertexes[0].x/ 2, hexagonVertexes[0].y / 2),
-            new Vector2(HEX_RADIUS / 2, 0),
-            new Vector2(hexagonVertexes[2].x/ 2, hexagonVertexes[2].y / 2),
-            new Vector2(hexagonVertexes[3].x/ 2, hexagonVertexes[3].y / 2),
-            new Vector2(-HEX_RADIUS / 2, 0),
-            new Vector2(hexagonVertexes[5].x/ 2, hexagonVertexes[5].y / 2)
-        };
-
-        GenerateRoom();
+        currentMap = new Map(mapDim, tileRadius, 3, roomTileRange);
+        currentMap.GenerateMap();
+        BuildMap(currentMap);
     }
 
-    private void GenerateRoom()
+    private void BuildMap(Map map)
     {
-        Vector2 currentPosition = new Vector2(25,25);
-        List<Vector2> visitedNodes = new List<Vector2>() { currentPosition };
+        float tileRadius = map.tileRadius;
+        float tileSideDistance = map.tileSideDistance;
 
-        PlaceTile(currentPosition);
-
-        for(int i = 0; i < tileCount; i++)
+        List<Room> rooms = map.GetRooms();
+        for( int i = 0; i < rooms.Count; i++)
         {
-            Vector2 n = GetNextNode(currentPosition, visitedNodes);
-            if (n != NULL_VECTOR)
+            UnityEngine.Color roomColor = Random.ColorHSV();
+
+            List<Tile> tiles = rooms[i].GetTiles();
+            for(int j = 0; j < tiles.Count; j++)
             {
-                currentPosition = n;
-                visitedNodes.Add(n);
+                Tile tile = tiles[j];
+                GameObject tileObject = Instantiate(floorObject);
+                Vector3 tileGridPosition = tile.gridPosition;
 
-                PlaceTile(n);
-            }
-            else
-            {
-                Debug.Log("Stuck");
-                break;
-            }
-        }
-    }
-    
-    private Vector2 GetNextNode(Vector2 pos, List<Vector2> visited)
-    {
-        Vector2 next  = GetRandomValidNeighbor(pos, visited);
-        if (next ==  NULL_VECTOR)
-            next = GetBacktrackNeighbor(visited);
-        return next;
-    }
-    private Vector2 GetRandomValidNeighbor(Vector2 pos, List<Vector2> visited)
-    {
-        List<Vector2> validPositions = new List<Vector2>();
+                Vector3 tilePosition = new Vector3
+                (
+                    tileGridPosition.x * (tileRadius * 1.5f),
+                    0,
+                    tileGridPosition.z * (tileSideDistance * 2) + (tileGridPosition.x % 2 * tileSideDistance * Mathf.Sign(tileGridPosition.z))
+                );
+                tileObject.transform.position = tilePosition;
+                tileObject.transform.rotation = Quaternion.identity;
+                tileObject.name = tileGridPosition.ToString();
 
-        Vector2[] nList = pos.x % 2 == 0 ? evenNeighbors : oddNeighbors;
+                tileObject.GetComponentInChildren<MeshRenderer>().material.color = roomColor;
 
-        foreach(Vector2 offset in nList)
-        {
-            Vector2 neighbor = offset + pos;
-            if(VectorInMap(neighbor) && !visited.Contains(neighbor)) 
-                validPositions.Add(neighbor);
-        }
-
-        if(validPositions.Count > 0)
-            return validPositions[Random.Range(0,validPositions.Count)];
-
-        return NULL_VECTOR;
-    }
-    private Vector2 GetBacktrackNeighbor(List<Vector2> visited)
-    {
-        // Backtrack through the list to find the first node that has a valid neighbor
-        for(int i = visited.Count - 1; i > 0; i--)
-        {
-            Vector2 checkNode = GetRandomValidNeighbor(visited[i], visited);
-            if (checkNode != NULL_VECTOR) 
-            {
-                return checkNode;
+                foreach (Vector2 midPoint in map.hexagonExteriorSidePositions)
+                {
+                    GameObject wall = Instantiate(wallObject);
+                    wall.transform.parent = tileObject.transform;
+                    wall.transform.localScale = new Vector3(tileRadius, 1, 0.1f);
+                    wall.transform.localPosition = new Vector3
+                    (
+                        midPoint.x,
+                        0,
+                        midPoint.y
+                    );
+                    wall.transform.LookAt(tilePosition);
+                }
             }
         }
 
-        return NULL_VECTOR;
-    }
-    private bool VectorInMap(Vector2 pos)
-    {
-        return (pos.x >= 0 && pos.x < mapDim.x && pos.y >= 0 && pos.y < mapDim.y);
-    }
+        /*
 
-    private void PlaceTile(Vector2 graphPoint)
-    {
         GameObject floor = Instantiate(floorObject);
         Vector3 tilePosition = new Vector3
         (
@@ -178,5 +100,7 @@ public class MapGenerator : MonoBehaviour
             );
             wall.transform.LookAt(tilePosition);
         }
+
+        */
     }
 }
