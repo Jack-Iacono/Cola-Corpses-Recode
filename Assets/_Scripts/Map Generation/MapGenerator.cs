@@ -5,14 +5,15 @@ using UnityEngine;
 
 using MapUtil;
 using System.Drawing;
+using System.Net;
 
 public class MapGenerator : MonoBehaviour
 {
-    public GameObject floorObject;
-    public GameObject wallObject;
+    public GameObject floorPrefabNormal;
+    public GameObject wallPrefabNormal;
 
-    private Vector3 mapDim = new Vector3(100, 1, 100);
-    private Vector2 roomTileRange = new Vector2(50, 100);
+    private Vector3 mapDim = new Vector3(100, 3, 100);
+    private Vector2 roomTileRange = new Vector2(500, 1000);
 
     private float tileRadius = 1f;
     private float floorHeight = 2;
@@ -22,7 +23,7 @@ public class MapGenerator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = new Map(mapDim, tileRadius, floorHeight, 10, roomTileRange);
+        currentMap = new Map(mapDim, tileRadius, floorHeight, 3, roomTileRange);
         currentMap.GenerateMap();
         BuildMap(currentMap);
     }
@@ -46,7 +47,7 @@ public class MapGenerator : MonoBehaviour
             for(int j = 0; j < tiles.Count; j++)
             {
                 Tile tile = tiles[j];
-                GameObject tileObject = Instantiate(floorObject);
+                GameObject tileObject = Instantiate(floorPrefabNormal);
                 tileObject.transform.parent = roomParent.transform;
                 Vector3 tileGridPosition = tile.gridPosition;
 
@@ -63,18 +64,22 @@ public class MapGenerator : MonoBehaviour
 
                 tileObject.GetComponentInChildren<MeshRenderer>().material.color = roomColor;
 
-                foreach (Vector2 midPoint in map.hexagonExteriorSidePositions)
+                for(int k = 0; k < tile.walls.Length; k++)
                 {
-                    GameObject wall = Instantiate(wallObject);
-                    wall.transform.parent = tileObject.transform;
-                    wall.transform.localScale = new Vector3(tileRadius, 1, 0.1f);
-                    wall.transform.localPosition = new Vector3
-                    (
-                        midPoint.x,
-                        0,
-                        midPoint.y
-                    );
-                    wall.transform.LookAt(tilePosition);
+                    Wall wall = tile.walls[k];
+                    if(wall != null)
+                    {
+                        GameObject wallObject = Instantiate(wallPrefabNormal);
+                        wallObject.transform.parent = tileObject.transform;
+                        wallObject.transform.localScale = new Vector3(tileRadius, 1, 0.1f);
+                        wallObject.transform.localPosition = new Vector3
+                        (
+                            map.hexagonExteriorSidePositions[k].x,
+                            0,
+                            map.hexagonExteriorSidePositions[k].y
+                        );
+                        wallObject.transform.LookAt(tilePosition);
+                    }
                 }
             }
         }

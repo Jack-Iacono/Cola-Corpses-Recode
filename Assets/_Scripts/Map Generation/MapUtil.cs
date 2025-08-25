@@ -21,6 +21,8 @@ namespace MapUtil
         private int roomCount = 1;
         private Vector2 roomTileRange = new Vector2(50, 100);
 
+        private readonly float floorChangeChance = 0.01f;
+
         // The length from the center of the hexagon to the mid point of any side
         public float tileSideDistance { get; private set; } = 0.8666f;
 
@@ -49,8 +51,7 @@ namespace MapUtil
             new Vector3(0,-1,0)
         };
 
-        private readonly float floorChangeChance = 0.05f;
-
+        // While this is not technically null, the graph that generates the points will never have to use this position
         private readonly Vector3 NULL_VECTOR = new Vector3(-1,-1,-1);
 
         // Initialized later due to initializationg of hexShortLength
@@ -127,8 +128,10 @@ namespace MapUtil
 
                 // Add the starting tile to the generation path and to the room
                 genPath.Add(currentLocation);
-                Tile startingTile = new Tile(currentLocation);
+                Tile startingTile = new Tile(currentLocation, newRoom);
                 newRoom.AddTile(startingTile);
+
+                SetTileWalls(startingTile, newRoom);
 
                 // The amount of tiles that should be generated for this room
                 int roomTileGoal = UnityEngine.Random.Range((int)roomTileRange.x, (int)roomTileRange.y);
@@ -140,33 +143,24 @@ namespace MapUtil
                 // Generate the tiles in the given room
                 for (int j = 0; j < roomTileGoal; j++)
                 {
-                    // The list of tiles that will be generated this time
-                    List<Vector3> nextNodes = new List<Vector3>();
-
-                    // Get the next tile(s) that need to be placed
-                    Vector3 n = GetRandomValidNeighbor(genPath.Last(), deadZones, newRoom);
-                    if (n == NULL_VECTOR)
+                    // Get next tile in the map
+                    Vector3 tileGenPosition = GetRandomValidNeighbor(genPath.Last(), deadZones, newRoom);
+                    if (tileGenPosition == NULL_VECTOR)
                     {
                         genPath.RemoveAt(genPath.Count - 1);
-                        n = GetBacktrackNeighbor(ref genPath, deadZones, newRoom);
-                        if (n == NULL_VECTOR)
-                        {
-                            Debug.Log("Backtrack Failed for room " + i);
+                        tileGenPosition = GetBacktrackNeighbor(ref genPath, deadZones, newRoom);
+                        if (tileGenPosition == NULL_VECTOR)
                             break;
-                        }
                     }
 
-                    nextNodes.Add(n);
+                    // Add this vector to the path as well as to the map of placed tiles
+                    genPath.Add(tileGenPosition);
 
-                    for (int k = 0; k < nextNodes.Count; k++)
-                    {
-                        // Add this vector to the path as well as to the map of placed tiles
-                        genPath.Add(nextNodes[k]);
+                    // Create the tile and add it to the room
+                    Tile newTile = new Tile(tileGenPosition, newRoom);
+                    newRoom.AddTile(newTile);
 
-                        // Create the tile and add it to the room
-                        Tile newTile = new Tile(nextNodes[k]);
-                        newRoom.AddTile(newTile);
-                    }
+                    SetTileWalls(newTile, newRoom);
                 }
 
                 // Check to see if the room fully generated
@@ -204,28 +198,34 @@ namespace MapUtil
             }
         }
 
-        private Vector3 GetRandomFloorChange(Vector3 current,List<Vector3> deadZones, Room room = null)
-        {
-            List<Vector3> validPositions = new List<Vector3>();
-            return NULL_VECTOR;
-        }
         private Vector3 GetRandomValidNeighbor(Vector3 current, List<Vector3> deadZones, Room room = null)
         {
-            List<Vector3> validPositions = new List<Vector3>();
+            List<Vector3> validHorizontalPositions = new List<Vector3>();
+            List<Vector3> validVerticalPosition = new List<Vector3>();
+
+            // Get the positions of the neighbors for the specific row
             Vector3[] nList = current.x % 2 == 0 ? evenNeighbors : oddNeighbors;
 
+            // Go through all neighbors for the given cell
             for (int i = 0; i < nList.Length; i++)
             {
                 Vector3 neighbor = nList[i] + current;
                 if (PositionOpen(neighbor, room) && !deadZones.Contains(neighbor))
                 {
-                    validPositions.Add(neighbor);
+                    if (nList[i].y == 0)
+                        validHorizontalPositions.Add(neighbor);
+                    else
+                        validVerticalPosition.Add(neighbor);
                 }
             }
 
-            if (validPositions.Count > 0)
-                return validPositions[UnityEngine.Random.Range(0, validPositions.Count)];
+            // If there is a vertical neighbor and either the cahnce to change floors happens, or there are no horizontal neighbors
+            if (validVerticalPosition.Count > 0 && (UnityEngine.Random.Range(0, 1f) < floorChangeChance || validHorizontalPositions.Count == 0))
+                return validVerticalPosition[UnityEngine.Random.Range(0, validVerticalPosition.Count)];
+            else if(validHorizontalPositions.Count > 0)
+                return validHorizontalPositions[UnityEngine.Random.Range(0, validHorizontalPositions.Count)];
 
+            // If no valid neighbor was found, return a null
             return NULL_VECTOR;
         }
         private Vector3 GetBacktrackNeighbor(ref List<Vector3> roomGenPath, List<Vector3> deadZones, Room room = null)
@@ -242,6 +242,46 @@ namespace MapUtil
             }
 
             return NULL_VECTOR;
+        }
+
+        private void SetTileWalls(Tile tile, Room room)
+        {
+            Vector3 tilePosition = tile.gridPosition;
+            Vector3[] nList = tile.gridPosition.x % 2 == 0 ? evenNeighbors : oddNeighbors;
+
+            // Cuts out the last two neighbors (the vertical neighbors)
+            for(int i = 0; i < nList.Length - 2; i++) 
+            {
+                // Global neighbor shows tiles placed on the global map while local Neighbor
+                Tile globalNeighbor = GetTileAtLocation(tilePosition + nList[i]);
+                Tile localNeighbor = room.GetTileAtLocation(tilePosition + nList[i]);
+
+                if (globalNeighbor != null)
+                {
+                    // These walls should be stored as candidates for doors between rooms
+                    Wall neighborWall = globalNeighbor.walls[(i + 3) % 6];
+                    if (neighborWall == null)
+                    {
+                        // If there is currently no wall between this tile and the neighbor, create on
+                        Wall newWall = new Wall(Wall.WallType.NORMAL, tile);
+                        tile.AddWall(i, newWall);
+                        globalNeighbor.AddWall((i + 3) % 6, newWall);
+                    }
+                    else
+                    {
+                        // If the neighbor already has a wall in this position, add it to this tile as well and connected them
+                        tile.AddWall(i, neighborWall);
+                    }
+                }
+                else if(localNeighbor == null)
+                {
+                    tile.walls[i] = new Wall(Wall.WallType.NORMAL, tile);
+                }
+                else
+                {
+                    localNeighbor.RemoveWall((i + 3) % 6);
+                }
+            }
         }
 
         private bool PositionOpen(Vector3 pos, Room room = null)
@@ -273,14 +313,7 @@ namespace MapUtil
         }
         public Tile GetTileAtLocation(Vector3 pos)
         {
-            foreach (Room room in rooms)
-            {
-                Tile tile = room.GetTileAtLocation(pos);
-                if(tile != null) 
-                    return tile;
-            }
-
-            return null;
+            return VectorInMap(pos) ? tiles[(int)pos.x, (int)pos.y, (int)pos.z] : null;
         }
         public float GetTileRadius()
         {
@@ -324,16 +357,18 @@ namespace MapUtil
     public class Tile
     {
         public Vector3 gridPosition = Vector3.zero;
-        private Wall[] walls = new Wall[6];
+        public Room room;
+        public Wall[] walls = new Wall[6];
         
         public enum TileType { NORMAL, STAIR, HOLE }
         public TileType type { get; private set; } = TileType.NORMAL;
 
         public int stairDirection = 0;
 
-        public Tile(Vector3 gridPosition)
+        public Tile(Vector3 gridPosition, Room room)
         {
             this.gridPosition = gridPosition;
+            this.room = room;
         }
 
         public Wall[] GetWalls()
@@ -341,10 +376,18 @@ namespace MapUtil
             return walls;
         }
 
-        public void SetWall(int index, Wall wall)
+        public void AddWall(int index, Wall wall)
         {
             walls[index] = wall;
+            if (!walls[index].GetConnectedTiles().Contains(this))
+                walls[index].AddConnectedTile(this);
         }
+        public void RemoveWall(int index)
+        {
+            if (walls[index] != null)
+                walls[index] = null;
+        }
+
         public void SetType(TileType type)
         {
             this.type = type;
@@ -353,7 +396,29 @@ namespace MapUtil
     public class Wall
     {
         public enum WallType { NORMAL, DOOR, HALF }
-        private WallType type;
+        public WallType type {  get; private set; }
+
+        public List<Tile> connectedTiles { get; private set; } = new List<Tile>();
+
+        public Wall(WallType type, Tile connectedTile)
+        {
+            this.type = type;
+        }
+
+        public void AddConnectedTile(Tile tile)
+        {
+            connectedTiles.Add(tile);
+        }
+        public void RemoveConnectedTile(Tile tile)
+        {
+            if(connectedTiles.Count > 1 && connectedTiles.Contains(tile))
+                connectedTiles.RemoveAt(0);
+        }
+
+        public List<Tile> GetConnectedTiles()
+        {
+            return connectedTiles;
+        }
     }
 }
 
