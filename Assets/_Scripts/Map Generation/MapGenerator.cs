@@ -11,18 +11,18 @@ public class MapGenerator : MonoBehaviour
     public GameObject floorObject;
     public GameObject wallObject;
 
-    private Vector3 mapDim = new Vector3(50, 1, 50);
+    private Vector3 mapDim = new Vector3(100, 1, 100);
     private Vector2 roomTileRange = new Vector2(50, 100);
 
-    // These offsets are used to set the positions of the floors
     private float tileRadius = 1f;
+    private float floorHeight = 2;
 
     public Map currentMap;
 
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = new Map(mapDim, tileRadius, 3, roomTileRange);
+        currentMap = new Map(mapDim, tileRadius, floorHeight, 10, roomTileRange);
         currentMap.GenerateMap();
         BuildMap(currentMap);
     }
@@ -32,9 +32,14 @@ public class MapGenerator : MonoBehaviour
         float tileRadius = map.tileRadius;
         float tileSideDistance = map.tileSideDistance;
 
+        GameObject mapParent = new GameObject("Map");
+
         List<Room> rooms = map.GetRooms();
         for( int i = 0; i < rooms.Count; i++)
         {
+            GameObject roomParent = new GameObject("Room " + i);
+            roomParent.transform.parent = mapParent.transform;
+
             UnityEngine.Color roomColor = Random.ColorHSV();
 
             List<Tile> tiles = rooms[i].GetTiles();
@@ -42,17 +47,19 @@ public class MapGenerator : MonoBehaviour
             {
                 Tile tile = tiles[j];
                 GameObject tileObject = Instantiate(floorObject);
+                tileObject.transform.parent = roomParent.transform;
                 Vector3 tileGridPosition = tile.gridPosition;
 
                 Vector3 tilePosition = new Vector3
                 (
                     tileGridPosition.x * (tileRadius * 1.5f),
-                    0,
+                    tileGridPosition.y * map.floorHeight,
                     tileGridPosition.z * (tileSideDistance * 2) + (tileGridPosition.x % 2 * tileSideDistance * Mathf.Sign(tileGridPosition.z))
                 );
                 tileObject.transform.position = tilePosition;
                 tileObject.transform.rotation = Quaternion.identity;
-                tileObject.name = tileGridPosition.ToString();
+                tileObject.name = (j).ToString() + ": " + tileGridPosition.ToString();
+                tileObject.transform.localScale = Vector3.one * (map.tileRadius * (tile.type == Tile.TileType.STAIR ? 0.5f : 1));
 
                 tileObject.GetComponentInChildren<MeshRenderer>().material.color = roomColor;
 
@@ -71,36 +78,5 @@ public class MapGenerator : MonoBehaviour
                 }
             }
         }
-
-        /*
-
-        GameObject floor = Instantiate(floorObject);
-        Vector3 tilePosition = new Vector3
-        (
-            graphPoint.x * (HEX_RADIUS * 1.5f),
-            0,
-            graphPoint.y * (hexShortLength * 2) + (graphPoint.x % 2 * hexShortLength * Mathf.Sign(graphPoint.y))
-        );
-        floor.transform.position = tilePosition;
-        floor.transform.rotation = Quaternion.identity;
-        floor.name = graphPoint.ToString();
-
-        floor.GetComponentInChildren<MeshRenderer>().material.color = Random.ColorHSV();
-
-        foreach(Vector2 midPoint in hexagonExteriorSidePositions)
-        {
-            GameObject wall = Instantiate(wallObject);
-            wall.transform.parent = floor.transform;
-            wall.transform.localScale = new Vector3(HEX_RADIUS, 1, 0.1f);
-            wall.transform.localPosition = new Vector3
-            (
-                midPoint.x,
-                0,
-                midPoint.y
-            );
-            wall.transform.LookAt(tilePosition);
-        }
-
-        */
     }
 }
