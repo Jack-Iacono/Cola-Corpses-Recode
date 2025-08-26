@@ -13,7 +13,7 @@ public class MapGenerator : MonoBehaviour
     public GameObject wallPrefabNormal;
 
     private Vector3 mapDim = new Vector3(100, 3, 100);
-    private Vector2 roomTileRange = new Vector2(500, 1000);
+    private Vector2 roomTileRange = new Vector2(1, 2);
 
     private float tileRadius = 1f;
     private float floorHeight = 2;
@@ -23,7 +23,7 @@ public class MapGenerator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = new Map(mapDim, tileRadius, floorHeight, 3, roomTileRange);
+        currentMap = new Map(mapDim, tileRadius, floorHeight, 1, roomTileRange);
         currentMap.GenerateMap();
         BuildMap(currentMap);
     }
@@ -60,7 +60,7 @@ public class MapGenerator : MonoBehaviour
                 tileObject.transform.position = tilePosition;
                 tileObject.transform.rotation = Quaternion.identity;
                 tileObject.name = (j).ToString() + ": " + tileGridPosition.ToString();
-                tileObject.transform.localScale = Vector3.one * (map.tileRadius * (tile.type == Tile.TileType.STAIR ? 0.5f : 1));
+                tileObject.transform.localScale = Vector3.one * (map.tileRadius * (tile.type == TileType.STAIR ? 0.5f : 1));
 
                 tileObject.GetComponentInChildren<MeshRenderer>().material.color = roomColor;
 
@@ -78,7 +78,7 @@ public class MapGenerator : MonoBehaviour
                             0,
                             map.hexagonExteriorSidePositions[k].y
                         );
-                        wallObject.transform.LookAt(tilePosition);
+                        wallObject.transform.rotation = Quaternion.Euler(new Vector3(0,k*60,0));
                     }
                 }
             }

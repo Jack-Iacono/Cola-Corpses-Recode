@@ -10,6 +10,9 @@ using UnityEngine.UIElements;
 
 namespace MapUtil
 {
+    public enum TileType { NORMAL, STAIR, HOLE, PRESET }
+    public enum WallType { NORMAL, DOOR, HALF, PRESET }
+
     public class Map
     {
         private List<Room> rooms = new List<Room>();
@@ -263,7 +266,7 @@ namespace MapUtil
                     if (neighborWall == null)
                     {
                         // If there is currently no wall between this tile and the neighbor, create on
-                        Wall newWall = new Wall(Wall.WallType.NORMAL, tile);
+                        Wall newWall = new Wall(WallType.NORMAL, tile);
                         tile.AddWall(i, newWall);
                         globalNeighbor.AddWall((i + 3) % 6, newWall);
                     }
@@ -275,7 +278,7 @@ namespace MapUtil
                 }
                 else if(localNeighbor == null)
                 {
-                    tile.walls[i] = new Wall(Wall.WallType.NORMAL, tile);
+                    tile.walls[i] = new Wall(WallType.NORMAL, tile);
                 }
                 else
                 {
@@ -354,16 +357,16 @@ namespace MapUtil
             tiles.Add(tile.gridPosition, tile);
         }
     }
+
     public class Tile
     {
         public Vector3 gridPosition = Vector3.zero;
         public Room room;
         public Wall[] walls = new Wall[6];
         
-        public enum TileType { NORMAL, STAIR, HOLE }
         public TileType type { get; private set; } = TileType.NORMAL;
 
-        public int stairDirection = 0;
+        private MapPreset spawnablePreset = null;
 
         public Tile(Vector3 gridPosition, Room room)
         {
@@ -388,14 +391,20 @@ namespace MapUtil
                 walls[index] = null;
         }
 
+        public void AssignPreset(MapPreset preset)
+        {
+            type = TileType.PRESET;
+            spawnablePreset = preset;
+        }
+
         public void SetType(TileType type)
         {
             this.type = type;
         }
     }
+
     public class Wall
     {
-        public enum WallType { NORMAL, DOOR, HALF }
         public WallType type {  get; private set; }
 
         public List<Tile> connectedTiles { get; private set; } = new List<Tile>();
@@ -419,6 +428,6 @@ namespace MapUtil
         {
             return connectedTiles;
         }
-    }
+    }   
 }
 
