@@ -20,25 +20,18 @@ public class MapPreset: MonoBehaviour
     [SerializeField]
     private bool canRotate = false;
 
-    public MapPreset(List<Preset_Tile> footprint, bool canRotate)
+    [NonSerialized]
+    public GameObject obj;
+
+    private void Awake()
     {
-        this.footprint = footprint;
-        this.canRotate = canRotate;
+        obj = GetComponent<GameObject>();
     }
 }
 [Serializable]
 public class Preset_Tile
 {
-    public GameObject prefab;
+    public GameObject tileObject;
     public Vector3 gridPosition;
     public TileType type;
-    public Preset_Wall[] walls = new Preset_Wall[6];
-}
-[Serializable]
-public class Preset_Wall
-{
-    public GameObject prefab;
-    public WallType type;
-    public int index;
-    public bool otherTilePresent;
 }

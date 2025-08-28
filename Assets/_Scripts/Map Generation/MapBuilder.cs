@@ -7,13 +7,16 @@ using MapUtil;
 using System.Drawing;
 using System.Net;
 
-public class MapGenerator : MonoBehaviour
+public class MapBuilder : MonoBehaviour
 {
     public GameObject floorPrefabNormal;
     public GameObject wallPrefabNormal;
 
-    private Vector3 mapDim = new Vector3(100, 3, 100);
-    private Vector2 roomTileRange = new Vector2(1, 2);
+    [SerializeField]
+    private List<MapPreset> roomPresets = new List<MapPreset>();
+
+    private Vector3 mapDim = new Vector3(50, 1, 50);
+    private Vector2 roomTileRange = new Vector2(100, 200);
 
     private float tileRadius = 1f;
     private float floorHeight = 2;
@@ -23,8 +26,7 @@ public class MapGenerator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = new Map(mapDim, tileRadius, floorHeight, 1, roomTileRange);
-        currentMap.GenerateMap();
+        currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 5, roomTileRange, roomPresets);
         BuildMap(currentMap);
     }
 
