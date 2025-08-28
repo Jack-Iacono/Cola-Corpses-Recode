@@ -15,17 +15,15 @@ using System;
 [Serializable]
 public class MapPreset: MonoBehaviour
 {
+    [Tooltip("Make sure that the primary tile is at index 0 in the list or else spawning will not work as intended")]
     [SerializeField]
     private List<Preset_Tile> footprint = new List<Preset_Tile>();
-    [SerializeField]
-    private bool canRotate = false;
 
-    [NonSerialized]
     public GameObject obj;
 
-    private void Awake()
+    public List<Preset_Tile> GetFootprint()
     {
-        obj = GetComponent<GameObject>();
+        return footprint;
     }
 }
 [Serializable]
@@ -33,5 +31,4 @@ public class Preset_Tile
 {
     public GameObject tileObject;
     public Vector3 gridPosition;
-    public TileType type;
 }

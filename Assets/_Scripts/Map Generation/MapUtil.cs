@@ -1,14 +1,9 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml;
-using Unity.VisualScripting;
-using UnityEditor;
-using UnityEditor.Build.Reporting;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.UIElements;
+
+using static MapPreset;
+using static UnityEditor.PlayerSettings;
 
 namespace MapUtil
 {
@@ -18,6 +13,7 @@ namespace MapUtil
     public class Map
     {
         public List<Room> rooms { get; private set; } = new List<Room>();
+        public List<Room> bonusRooms { get; private set; } = new List<Room>();
         public Tile[,,] tiles;
 
         public Vector3 mapBounds { get; private set; } = new Vector3(50, 1, 50);
@@ -106,6 +102,11 @@ namespace MapUtil
         {
             return rooms;
         }
+        public List<Room> GetBonusRooms() 
+        {
+            return bonusRooms; 
+        }
+
         public Tile GetTileAtLocation(Vector3 pos)
         {
             return VectorInBounds(pos) ? tiles[(int)pos.x, (int)pos.y, (int)pos.z] : null;
@@ -124,6 +125,8 @@ namespace MapUtil
     {
         private Dictionary<Vector3, Tile> tiles = new Dictionary<Vector3, Tile>();
         private List<Tile> doorTiles = new List<Tile>();
+
+        public GameObject obj;
 
         public Room()
         {
@@ -153,10 +156,12 @@ namespace MapUtil
         public Vector3 gridPosition = Vector3.zero;
         public Room room;
         public Wall[] walls = new Wall[6];
-        
+
+        public GameObject obj = null;
+
         public TileType type { get; private set; } = TileType.NORMAL;
 
-        private MapPreset spawnablePreset = null;
+        private GameObject spawnPrefab = null;
 
         public Tile(Vector3 gridPosition, Room room)
         {
@@ -181,10 +186,10 @@ namespace MapUtil
                 walls[index] = null;
         }
 
-        public void AssignPreset(MapPreset preset)
+        public void AssignPreset(GameObject prefab)
         {
             type = TileType.PRESET;
-            spawnablePreset = preset;
+            spawnPrefab = prefab;
         }
 
         public void SetType(TileType type)
@@ -195,6 +200,7 @@ namespace MapUtil
     public class Wall
     {
         public WallType type {  get; private set; }
+        public GameObject obj = null;
 
         public List<Tile> connectedTiles { get; private set; } = new List<Tile>();
 
@@ -242,12 +248,24 @@ namespace MapUtil
             {
                 // Create a new room to hold the tiles, but don't add it to the map yet in case it doesn't generate fully
                 Room newRoom = GenerateNormalRoom(i);
-
-                // Add each tile to the tile map for later access and comparison
-                foreach (Tile t in newRoom.GetTiles())
+                if(newRoom != null)
                 {
-                    Vector3 pos = t.gridPosition;
-                    genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
+                    // Add each tile to the tile map for later access and comparison
+                    foreach (Tile t in newRoom.GetTiles())
+                    {
+                        Vector3 pos = t.gridPosition;
+                        genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
+                    }
+                }
+
+                Room bonusRoom = GeneratePresetRoom(roomPresets, i);
+                if(bonusRoom != null)
+                {
+                    foreach (Tile t in bonusRoom.GetTiles())
+                    {
+                        Vector3 pos = t.gridPosition;
+                        genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
+                    }
                 }
             }
 
@@ -256,8 +274,43 @@ namespace MapUtil
 
             // The below functions are used purely for organizational purposes
 
+            Room GeneratePresetRoom(List<MapPreset> presetList, int partnerRoomIndex)
+            {
+                Room newRoom = new Room();
+                MapPreset preset = presetList[Random.Range(0, presetList.Count)];
+
+                // Run through all tiles listed in the preset
+                List<Preset_Tile> tiles = preset.GetFootprint();
+                for (int i = 0; i < tiles.Count; i++)
+                {
+                    if (PositionOpen(tiles[i].gridPosition + currentLocation))
+                    {
+                        // Set the presets after the instantiation
+                        Tile newTile = new Tile(tiles[i].gridPosition + currentLocation, newRoom);
+                        newTile.SetType(TileType.PRESET);
+                        if (i == 0)
+                            newTile.AssignPreset(preset.obj);
+                        newTile.obj = tiles[i].tileObject;
+                        newRoom.AddTile(newTile);
+                        SetTileWalls(newTile, newRoom);
+                    }
+                    else
+                    {
+                        Debug.Log("Failed for bonus room at " + partnerRoomIndex);
+                        // Temporary for now, will add backtracking later
+                        return null;
+                    }
+                }
+                
+                genMap.bonusRooms.Add(newRoom);
+                List<Vector3> roomPath = roomGenPaths[partnerRoomIndex];
+                currentLocation = GetBacktrackNeighbor(ref roomPath, newRoom);
+
+                return newRoom;
+            }
             Room GenerateNormalRoom(int roomIndex)
             {
+                // Create the new Room to hold the data needed
                 Room newRoom = new Room();
 
                 // Get a temporary clone of the map tiles for modification here
@@ -266,38 +319,24 @@ namespace MapUtil
                 // The amount of tiles that should be generated for this room
                 int roomTileGoal = UnityEngine.Random.Range((int)roomTileRange.x, (int)roomTileRange.y);
 
-                // Add the starting tile to the generation path and to the room
-                genPath.Add(currentLocation);
-                Tile startingTile = new Tile(currentLocation, newRoom);
-                newRoom.AddTile(startingTile);
-
-                SetTileWalls(startingTile, newRoom);
-
-                // If the current location is null, then stop generating as something is really wrong
-                if (currentLocation == NULL_VECTOR)
-                    return null;
-
                 // Generate the tiles in the given room
                 for (int j = 0; j < roomTileGoal; j++)
                 {
+                    genPath.Add(currentLocation);
+                    Tile newTile = new Tile(currentLocation, newRoom);
+                    newRoom.AddTile(newTile);
+                    SetTileWalls(newTile, newRoom);
+
                     // Get next tile in the map
-                    Vector3 tileGenPosition = GetRandomValidNeighbor(genPath.Last(), deadZones, newRoom);
-                    if (tileGenPosition == NULL_VECTOR)
+                    Vector3 nextTilePosition = GetRandomValidNeighbor(genPath.Last(), newRoom);
+                    if (nextTilePosition == NULL_VECTOR)
                     {
                         genPath.RemoveAt(genPath.Count - 1);
-                        tileGenPosition = GetBacktrackNeighbor(ref genPath, deadZones, newRoom);
-                        if (tileGenPosition == NULL_VECTOR)
+                        nextTilePosition = GetBacktrackNeighbor(ref genPath, newRoom);
+                        if (nextTilePosition == NULL_VECTOR)
                             break;
                     }
-
-                    // Add this vector to the path as well as to the map of placed tiles
-                    genPath.Add(tileGenPosition);
-
-                    // Create the tile and add it to the room
-                    Tile newTile = new Tile(tileGenPosition, newRoom);
-                    newRoom.AddTile(newTile);
-
-                    SetTileWalls(newTile, newRoom);
+                    currentLocation = nextTilePosition;
                 }
 
                 // Check to see if the room fully generated
@@ -315,25 +354,42 @@ namespace MapUtil
 
                     // Set the loop to redo the current room at a new point not within the deadzones
                     // Make this a loop that will go until it finds a neighbor
-                    List<Vector3> previousPath = roomGenPaths[roomIndex - 1];
-                    currentLocation = GetBacktrackNeighbor(ref previousPath, deadZones);
 
-                    // Failsafe for when the prior room also has no valid neighbors
-                    if (currentLocation == NULL_VECTOR)
+                    Vector3 nextLocation = NULL_VECTOR;
+                    int nextRoomIndex = roomIndex;
+
+                    // Start at the previous room and run through all previous rooms to find
+                    for(int k = roomIndex - 1; k >= 0; k--)
+                    {
+                        List<Vector3> previousPath = roomGenPaths[k];
+                        nextLocation = GetBacktrackNeighbor(ref previousPath);
+
+                        // If the next location has been found, break the loop
+                        if (nextLocation != NULL_VECTOR)
+                        {
+                            nextRoomIndex = k;
+                            break;
+                        }
+                    }
+                    
+                    // This will run if no previous rooms have any open tiles at all, in which case the map is dead and done
+                    if (nextLocation == NULL_VECTOR)
                         return null;
 
-                    return GenerateNormalRoom(roomIndex - 1);
+                    // Set the current location and generate a room at the new location
+                    currentLocation = nextLocation;
+                    return GenerateNormalRoom(roomIndex);
                 }
 
                 // Add the current room to the map since it generated correctly
                 genMap.rooms.Add(newRoom);
-                currentLocation = GetBacktrackNeighbor(ref genPath, deadZones, newRoom);
+                currentLocation = GetBacktrackNeighbor(ref genPath, newRoom);
                 roomGenPaths.Add(genPath);
 
                 return newRoom;
             }
 
-            Vector3 GetRandomValidNeighbor(Vector3 current, List<Vector3> deadZones, Room room = null)
+            Vector3 GetRandomValidNeighbor(Vector3 current, Room room = null)
             {
                 List<Vector3> validHorizontalPositions = new List<Vector3>();
                 List<Vector3> validVerticalPosition = new List<Vector3>();
@@ -363,13 +419,13 @@ namespace MapUtil
                 // If no valid neighbor was found, return a null
                 return NULL_VECTOR;
             }
-            Vector3 GetBacktrackNeighbor(ref List<Vector3> roomGenPath, List<Vector3> deadZones, Room room = null)
+            Vector3 GetBacktrackNeighbor(ref List<Vector3> roomGenPath, Room room = null)
             {
                 // Run through the list, removing items as you go to find one that has an open tile
                 for (int i = roomGenPath.Count - 1; i > 0; i--)
                 {
                     // Evaluate the position for neighbors and return if a neighbor with open spaces is found
-                    Vector3 neighborCheck = GetRandomValidNeighbor(roomGenPath[i], deadZones, room);
+                    Vector3 neighborCheck = GetRandomValidNeighbor(roomGenPath[i], room);
                     if (neighborCheck != NULL_VECTOR)
                         return neighborCheck;
                     else
@@ -442,10 +498,6 @@ namespace MapUtil
                 );
             }
         }
-
-        
-
-        
     }
 }
 
