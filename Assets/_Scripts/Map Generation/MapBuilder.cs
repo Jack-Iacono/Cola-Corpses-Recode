@@ -15,7 +15,7 @@ public class MapBuilder : MonoBehaviour
     [SerializeField]
     private List<MapPreset> roomPresets = new List<MapPreset>();
 
-    private Vector3 mapDim = new Vector3(100, 4, 100);
+    private Vector3 mapDim = new Vector3(100, 1, 100);
     private Vector2 roomTileRange = new Vector2(100, 200);
 
     private float tileRadius = 1f;
@@ -26,7 +26,7 @@ public class MapBuilder : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 3, roomTileRange, roomPresets);
+        currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 20, roomTileRange, roomPresets);
         BuildMap(currentMap);
     }
 
@@ -36,6 +36,8 @@ public class MapBuilder : MonoBehaviour
         float tileSideDistance = map.tileSideDistance;
 
         GameObject mapParent = new GameObject("Map");
+        
+        List<Wall> placedWalls = new List<Wall>();
 
         List<Room> normalRooms = map.GetRooms();
         for( int i = 0; i < normalRooms.Count; i++)
@@ -57,13 +59,26 @@ public class MapBuilder : MonoBehaviour
         List<Room> bonusRooms = map.GetBonusRooms();
         for (int i = 0; i < bonusRooms.Count; i++)
         {
-            GameObject roomParent = bonusRooms[i].obj;
-            roomParent.transform.parent = mapParent.transform;
+            // Generate the room from the prefab at the location of the first tile
+            Tile originTile = bonusRooms[i].GetTiles()[0];
+            GameObject roomParent = Instantiate(originTile.spawnPrefab, mapParent.transform);
+            MapPreset preset = roomParent.GetComponent<MapPreset>();
             roomParent.name = "Bonus Room " + i;
+
+            // Sets the room to the correct position on the map
+            roomParent.transform.position = new Vector3
+            (
+                originTile.gridPosition.x * (tileRadius * 1.5f),
+                originTile.gridPosition.y * map.floorHeight,
+                originTile.gridPosition.z * (tileSideDistance * 2) + (originTile.gridPosition.x % 2 * tileSideDistance * Mathf.Sign(originTile.gridPosition.z))
+            );
 
             List<Tile> tiles = bonusRooms[i].GetTiles();
             for (int j = 0; j < tiles.Count; j++)
             {
+                // Set the tile object from the linked objects dictionary in the preset
+                tiles[j].obj = preset.GetFootprint()[j].tileObject;
+                tiles[j].obj.name = "Tile " + tiles[j].gridPosition.ToString();
                 BuildWalls(tiles[j]);
             }
         }
@@ -94,22 +109,28 @@ public class MapBuilder : MonoBehaviour
             GameObject tileObject = tile.obj;
             for (int k = 0; k < tile.walls.Length; k++)
             {
-                Wall wall = tile.walls[k];
-                
-                if (wall != null)
+                // Check if this wall was already placed by another tile
+                if (!placedWalls.Contains(tile.walls[k]))
                 {
-                    GameObject wallObject = Instantiate(wallPrefabNormal, tileObject.transform);
-                    wallObject.name = "Wall " + k;
-                    wallObject.transform.localScale = new Vector3(tileRadius, 1, 0.1f);
-                    wallObject.transform.localPosition = new Vector3
-                    (
-                        map.hexagonExteriorSidePositions[k].x,
-                        0,
-                        map.hexagonExteriorSidePositions[k].y
-                    );
-                    wallObject.transform.rotation = Quaternion.Euler(new Vector3(0, k * 60, 0));
+                    Wall wall = tile.walls[k];
 
-                    tile.walls[k].obj = wallObject;
+                    if (wall != null)
+                    {
+                        GameObject wallObject = Instantiate(wallPrefabNormal, tileObject.transform);
+                        wallObject.name = "Wall " + k;
+                        wallObject.transform.localScale = new Vector3(tileRadius, 1, 0.1f);
+                        wallObject.transform.localPosition = new Vector3
+                        (
+                            map.hexagonExteriorSidePositions[k].x,
+                            0,
+                            map.hexagonExteriorSidePositions[k].y
+                        );
+                        wallObject.transform.rotation = Quaternion.Euler(new Vector3(0, k * 60, 0));
+
+                        tile.walls[k].obj = wallObject;
+
+                        placedWalls.Add(wall);
+                    }
                 }
             }
         }

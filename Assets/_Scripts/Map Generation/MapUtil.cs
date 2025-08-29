@@ -161,7 +161,7 @@ namespace MapUtil
 
         public TileType type { get; private set; } = TileType.NORMAL;
 
-        private GameObject spawnPrefab = null;
+        public GameObject spawnPrefab = null;
 
         public Tile(Vector3 gridPosition, Room room)
         {
@@ -276,6 +276,7 @@ namespace MapUtil
 
             Room GeneratePresetRoom(List<MapPreset> presetList, int partnerRoomIndex)
             {
+                // NEED TO ACCOUNT FOR ODD VERSUS EVEN COLUMN GENERATION
                 Room newRoom = new Room();
                 MapPreset preset = presetList[Random.Range(0, presetList.Count)];
 
@@ -286,7 +287,14 @@ namespace MapUtil
                     if (PositionOpen(tiles[i].gridPosition + currentLocation))
                     {
                         // Set the presets after the instantiation
-                        Tile newTile = new Tile(tiles[i].gridPosition + currentLocation, newRoom);
+                        Vector3 columnOffset = Vector3.zero;
+
+                        if (preset.evenStartingColumn && currentLocation.x % 2 == 1 && tiles[i].gridPosition.x % 2 == 1)
+                            columnOffset = Vector3.forward;
+                        else if(!preset.evenStartingColumn && currentLocation.x % 2 == 2 && tiles[i].gridPosition.x % 2 == 2)
+                            columnOffset = -Vector3.forward;
+
+                        Tile newTile = new Tile(tiles[i].gridPosition + currentLocation + columnOffset, newRoom);
                         newTile.SetType(TileType.PRESET);
                         if (i == 0)
                             newTile.AssignPreset(preset.obj);
@@ -296,12 +304,11 @@ namespace MapUtil
                     }
                     else
                     {
-                        Debug.Log("Failed for bonus room at " + partnerRoomIndex);
                         // Temporary for now, will add backtracking later
                         return null;
                     }
                 }
-                
+
                 genMap.bonusRooms.Add(newRoom);
                 List<Vector3> roomPath = roomGenPaths[partnerRoomIndex];
                 currentLocation = GetBacktrackNeighbor(ref roomPath, newRoom);
