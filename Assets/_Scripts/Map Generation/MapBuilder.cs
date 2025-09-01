@@ -15,8 +15,8 @@ public class MapBuilder : MonoBehaviour
     [SerializeField]
     private List<MapPreset> roomPresets = new List<MapPreset>();
 
-    private Vector3 mapDim = new Vector3(100, 1, 100);
-    private Vector2 roomTileRange = new Vector2(100, 200);
+    private Vector3 mapDim = new Vector3(50, 1, 50);
+    private Vector2 roomTileRange = new Vector2(10, 20);
 
     private float tileRadius = 1f;
     private float floorHeight = 2;
@@ -26,7 +26,7 @@ public class MapBuilder : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 20, roomTileRange, roomPresets);
+        currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 1, roomTileRange, roomPresets);
         BuildMap(currentMap);
     }
 
@@ -70,7 +70,7 @@ public class MapBuilder : MonoBehaviour
             (
                 originTile.gridPosition.x * (tileRadius * 1.5f),
                 originTile.gridPosition.y * map.floorHeight,
-                originTile.gridPosition.z * (tileSideDistance * 2) + (originTile.gridPosition.x % 2 * tileSideDistance * Mathf.Sign(originTile.gridPosition.z))
+                originTile.gridPosition.z * tileSideDistance
             );
 
             List<Tile> tiles = bonusRooms[i].GetTiles();
@@ -93,7 +93,7 @@ public class MapBuilder : MonoBehaviour
             (
                 tileGridPosition.x * (tileRadius * 1.5f),
                 tileGridPosition.y * map.floorHeight,
-                tileGridPosition.z * (tileSideDistance * 2) + (tileGridPosition.x % 2 * tileSideDistance * Mathf.Sign(tileGridPosition.z))
+                tileGridPosition.z * tileSideDistance
             );
             tileObject.transform.position = tilePosition;
             tileObject.transform.rotation = Quaternion.identity;

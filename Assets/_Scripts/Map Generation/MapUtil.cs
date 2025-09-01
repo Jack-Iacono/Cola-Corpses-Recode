@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 using static MapPreset;
@@ -25,24 +26,13 @@ namespace MapUtil
 
         // These two lists contain which cells will be neighbors for a cell depending on their x position
         // This is needed since the rows are not linear and offset between eachother
-        public readonly Vector3[] evenNeighbors = new Vector3[]
+        public readonly Vector3[] neighbors = new Vector3[]
         {
-            new Vector3(0,0,1),
-            new Vector3(1,0, 0),
+            new Vector3(0,0,2),
+            new Vector3(1,0, 1),
             new Vector3(1,0,-1),
-            new Vector3(0,0,-1),
+            new Vector3(0,0,-2),
             new Vector3(-1,0,-1),
-            new Vector3(-1,0,0),
-            new Vector3(0,1,0),
-            new Vector3(0,-1,0)
-        };
-        public readonly Vector3[] oddNeighbors = new Vector3[]
-        {
-            new Vector3(0,0,1),
-            new Vector3(1,0,1),
-            new Vector3(1,0, 0),
-            new Vector3(0,0,-1),
-            new Vector3(-1,0,0),
             new Vector3(-1,0,1),
             new Vector3(0,1,0),
             new Vector3(0,-1,0)
@@ -343,6 +333,7 @@ namespace MapUtil
                         if (nextTilePosition == NULL_VECTOR)
                             break;
                     }
+                    Debug.Log(nextTilePosition + ": " + GetRotatedPosition(nextTilePosition, new Vector3(25,0,25), 60));
                     currentLocation = nextTilePosition;
                 }
 
@@ -400,17 +391,15 @@ namespace MapUtil
             {
                 List<Vector3> validHorizontalPositions = new List<Vector3>();
                 List<Vector3> validVerticalPosition = new List<Vector3>();
-
-                // Get the positions of the neighbors for the specific row
-                Vector3[] nList = current.x % 2 == 0 ? genMap.evenNeighbors : genMap.oddNeighbors;
+                Vector3[] neighbors = genMap.neighbors;
 
                 // Go through all neighbors for the given cell
-                for (int i = 0; i < nList.Length; i++)
+                for (int i = 0; i < neighbors.Length; i++)
                 {
-                    Vector3 neighbor = nList[i] + current;
+                    Vector3 neighbor = neighbors[i] + current;
                     if (PositionOpen(neighbor, room) && !deadZones.Contains(neighbor))
                     {
-                        if (nList[i].y == 0)
+                        if (neighbors[i].y == 0)
                             validHorizontalPositions.Add(neighbor);
                         else
                             validVerticalPosition.Add(neighbor);
@@ -445,7 +434,7 @@ namespace MapUtil
             void SetTileWalls(Tile tile, Room room)
             {
                 Vector3 tilePosition = tile.gridPosition;
-                Vector3[] nList = tile.gridPosition.x % 2 == 0 ? genMap.evenNeighbors : genMap.oddNeighbors;
+                Vector3[] nList = genMap.neighbors;
 
                 // Cuts out the last two neighbors (the vertical neighbors)
                 for (int i = 0; i < nList.Length - 2; i++)
@@ -504,6 +493,89 @@ namespace MapUtil
                     pos.z >= 0 && pos.z < genMap.mapBounds.z
                 );
             }
+        }
+
+        /// <summary>
+        /// Returns the rotated position of the given Vector3
+        /// </summary>
+        /// <param name="pos">The Vector3 that will be rotated</param>
+        /// <param name="origin">The Vector3 that pos should be rotated around</param>
+        /// <param name="rot">The rotation amount (Use increments of 60 DEGREES)</param>
+        /// <returns></returns>
+        public static Vector3 GetRotatedPosition(Vector3 pos, Vector3 origin, int rot)
+        {
+            // Convert the vector 3 into a cube coordinate
+            CubeCoord cubePos = CubeCoord.FromVector3(pos);
+            CubeCoord cubeOrigin = CubeCoord.FromVector3(origin);
+
+            // The amount of times this should be rotated in increments of 60
+            int rotIncrements = Mathf.FloorToInt(rot / 60);
+
+            // Subtract the origin from the position to get the local position
+            CubeCoord rotatedPos = CubeCoord.Subtract(cubePos, cubeOrigin);
+            Debug.Log(rotatedPos);
+            for(int i = 0; i < rotIncrements; i++)
+            {
+                rotatedPos = new CubeCoord
+                    (
+                        -rotatedPos.s,
+                        -rotatedPos.q,
+                        -rotatedPos.r,
+                        rotatedPos.h
+                    );
+            }
+            Debug.Log(rotatedPos);
+
+            Debug.Log(CubeCoord.ToVector3(cubeOrigin) + " -- " + CubeCoord.ToVector3(rotatedPos));
+            return CubeCoord.ToVector3(CubeCoord.Add(cubeOrigin, rotatedPos));
+        }
+    }
+    public class CubeCoord
+    {
+        public int q;
+        public int r;
+        public int s;
+        public int h;
+
+        public CubeCoord(int q, int r, int s, int h)
+        {
+            this.q = q;
+            this.r = r;
+            this.s = s;
+            this.h = h;
+        }
+
+        public static Vector3 ToVector3(CubeCoord c)
+        {
+            int x = c.q;
+            int y = 2 * c.r + c.q;
+            return new Vector3(x, c.h, y);
+        }
+        public static CubeCoord FromVector3(Vector3 pos)
+        {
+            int q = (int)pos.x;
+            int r = (int)((pos.z - pos.x) / 2);
+            return new CubeCoord(q, r, -q - r, (int)pos.y);
+        }
+
+        public static CubeCoord Add(CubeCoord a, CubeCoord b)
+        {
+            return new CubeCoord(a.q + b.q, a.r + b.r, a.s + b.s, a.h + b.h);
+        }
+        public static CubeCoord Subtract(CubeCoord a, CubeCoord b)
+        {
+            return new CubeCoord(a.q - b.q, a.r - b.r, a.s - b.s, a.h - b.h);
+        }
+
+        public static float Distance(CubeCoord a, CubeCoord b)
+        {
+            CubeCoord vec = Subtract(a, b);
+            return (Mathf.Abs(vec.q) + Mathf.Abs(vec.r) + Mathf.Abs(vec.s)) / 2;
+        }
+
+        public override string ToString()
+        {
+            return q.ToString() + "," + r.ToString() + "," + s.ToString() + "," + h.ToString();
         }
     }
 }
