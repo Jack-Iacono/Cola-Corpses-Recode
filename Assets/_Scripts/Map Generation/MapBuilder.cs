@@ -15,25 +15,27 @@ public class MapBuilder : MonoBehaviour
     [SerializeField]
     private List<MapPreset> roomPresets = new List<MapPreset>();
 
-    private Vector3 mapDim = new Vector3(50, 1, 50);
-    private Vector2 roomTileRange = new Vector2(10, 20);
+    private Vector3 mapDim = new Vector3(100, 1, 100);
+    private Vector2 roomTileRange = new Vector2(50, 100);
 
-    private float tileRadius = 1f;
+    private float tileRadius = 2f;
     private float floorHeight = 2;
+    private float wallWidth = 0.05f;
 
     public Map currentMap;
 
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 1, roomTileRange, roomPresets);
-        BuildMap(currentMap);
+        //currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 5, roomTileRange, roomPresets);
+        //BuildMap(currentMap);
     }
 
     private void BuildMap(Map map)
     {
         float tileRadius = map.tileRadius;
         float tileSideDistance = map.tileSideDistance;
+        float wallWidthOffset = (wallWidth / 2 / Mathf.Sqrt(3)) * 2;
 
         GameObject mapParent = new GameObject("Map");
         
@@ -61,7 +63,7 @@ public class MapBuilder : MonoBehaviour
         {
             // Generate the room from the prefab at the location of the first tile
             Tile originTile = bonusRooms[i].GetTiles()[0];
-            GameObject roomParent = Instantiate(originTile.spawnPrefab, mapParent.transform);
+            GameObject roomParent = Instantiate(roomPresets[originTile.prefabIndex].obj, mapParent.transform);
             MapPreset preset = roomParent.GetComponent<MapPreset>();
             roomParent.name = "Bonus Room " + i;
 
@@ -72,6 +74,9 @@ public class MapBuilder : MonoBehaviour
                 originTile.gridPosition.y * map.floorHeight,
                 originTile.gridPosition.z * tileSideDistance
             );
+            // Rotate the room to match the tile's desired rotation
+            roomParent.transform.rotation = Quaternion.Euler(0, originTile.prefabRotation, 0);
+            roomParent.transform.localScale = Vector3.one * tileRadius;
 
             List<Tile> tiles = bonusRooms[i].GetTiles();
             for (int j = 0; j < tiles.Count; j++)
@@ -98,7 +103,7 @@ public class MapBuilder : MonoBehaviour
             tileObject.transform.position = tilePosition;
             tileObject.transform.rotation = Quaternion.identity;
             tileObject.name = "Tile " + tileGridPosition.ToString();
-            tileObject.transform.localScale = Vector3.one * (map.tileRadius * (tile.type == TileType.STAIR ? 0.5f : 1));
+            tileObject.transform.localScale = Vector3.one * map.tileRadius;
 
             tile.obj = tileObject;
 
@@ -118,12 +123,13 @@ public class MapBuilder : MonoBehaviour
                     {
                         GameObject wallObject = Instantiate(wallPrefabNormal, tileObject.transform);
                         wallObject.name = "Wall " + k;
-                        wallObject.transform.localScale = new Vector3(tileRadius, 1, 0.1f);
-                        wallObject.transform.localPosition = new Vector3
+                        // the extra amount accounts for 
+                        wallObject.transform.localScale = new Vector3(1 + wallWidthOffset, 1, wallWidth);
+                        wallObject.transform.position = new Vector3
                         (
-                            map.hexagonExteriorSidePositions[k].x,
-                            0,
-                            map.hexagonExteriorSidePositions[k].y
+                            map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,
+                            0 + tile.obj.transform.position.y,
+                            map.hexagonExteriorSidePositions[k].y + tile.obj.transform.position.z
                         );
                         wallObject.transform.rotation = Quaternion.Euler(new Vector3(0, k * 60, 0));
 
@@ -132,6 +138,8 @@ public class MapBuilder : MonoBehaviour
                         placedWalls.Add(wall);
                     }
                 }
+
+                
             }
         }
     }

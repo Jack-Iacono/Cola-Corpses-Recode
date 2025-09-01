@@ -18,7 +18,6 @@ public class MapPreset: MonoBehaviour
     [Tooltip("Make sure that the primary tile is at index 0 in the list or else spawning will not work as intended")]
     [SerializeField]
     private List<Preset_Tile> footprint = new List<Preset_Tile>();
-    public bool evenStartingColumn = true;
 
     public Dictionary<Vector3, GameObject> tileLinks = new Dictionary<Vector3, GameObject>();
 

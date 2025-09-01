@@ -151,7 +151,8 @@ namespace MapUtil
 
         public TileType type { get; private set; } = TileType.NORMAL;
 
-        public GameObject spawnPrefab = null;
+        public int prefabIndex = -1;
+        public int prefabRotation = 0;
 
         public Tile(Vector3 gridPosition, Room room)
         {
@@ -176,10 +177,11 @@ namespace MapUtil
                 walls[index] = null;
         }
 
-        public void AssignPreset(GameObject prefab)
+        public void AssignPrefabIndex(int index, int rotation)
         {
             type = TileType.PRESET;
-            spawnPrefab = prefab;
+            this.prefabIndex = index;
+            this.prefabRotation = rotation;
         }
 
         public void SetType(TileType type)
@@ -264,46 +266,101 @@ namespace MapUtil
 
             // The below functions are used purely for organizational purposes
 
-            Room GeneratePresetRoom(List<MapPreset> presetList, int partnerRoomIndex)
+            Room GeneratePresetRoom(List<MapPreset> presetList, int roomIndex)
             {
                 // NEED TO ACCOUNT FOR ODD VERSUS EVEN COLUMN GENERATION
-                Room newRoom = new Room();
-                MapPreset preset = presetList[Random.Range(0, presetList.Count)];
+                int presetIndex = Random.Range(0, presetList.Count);
+                MapPreset preset = presetList[presetIndex];
 
-                // Run through all tiles listed in the preset
                 List<Preset_Tile> tiles = preset.GetFootprint();
-                for (int i = 0; i < tiles.Count; i++)
+                Dictionary<int, Room> validRooms = new Dictionary<int, Room>();
+
+                // Go through all rotations of the chosen preset
+                for (int i = 0; i < 6; i++)
                 {
-                    if (PositionOpen(tiles[i].gridPosition + currentLocation))
+                    // Initialize this room
+                    Room newRoom = new Room();
+
+                    // Loop through each tile in the preset for the given rotation
+                    for(int j = 0; j < tiles.Count; j++)
                     {
-                        // Set the presets after the instantiation
-                        Vector3 columnOffset = Vector3.zero;
+                        Vector3 rotPosition = GetRotatedPosition(tiles[j].gridPosition + currentLocation, currentLocation, i * 60);
 
-                        if (preset.evenStartingColumn && currentLocation.x % 2 == 1 && tiles[i].gridPosition.x % 2 == 1)
-                            columnOffset = Vector3.forward;
-                        else if(!preset.evenStartingColumn && currentLocation.x % 2 == 2 && tiles[i].gridPosition.x % 2 == 2)
-                            columnOffset = -Vector3.forward;
+                        // Check if this rotation variant of the tile is open
+                        if (PositionOpen(rotPosition))
+                        {
+                            Tile newTile = new Tile(rotPosition, newRoom);
+                            newTile.SetType(TileType.PRESET);
 
-                        Tile newTile = new Tile(tiles[i].gridPosition + currentLocation + columnOffset, newRoom);
-                        newTile.SetType(TileType.PRESET);
-                        if (i == 0)
-                            newTile.AssignPreset(preset.obj);
-                        newTile.obj = tiles[i].tileObject;
-                        newRoom.AddTile(newTile);
-                        SetTileWalls(newTile, newRoom);
+                            newTile.obj = tiles[i].tileObject;
+                            newRoom.AddTile(newTile);
+                            SetTileWalls(newTile, newRoom);
+
+                            // Check if the tile is the center point, if so, assign the preset to that so that the builder knows where to place the prefab
+                            if (tiles[j].gridPosition == Vector3.zero)
+                            {
+                                newTile.AssignPrefabIndex(presetIndex, i*60);
+                            }
+                        }
+                        else
+                        {
+                            // If this position is not open, break the loop since this preset can't be used
+                            break;
+                        }  
                     }
-                    else
+
+                    // Check to see if all tiles cleared
+                    if (newRoom.GetTiles().Count == tiles.Count)
                     {
-                        // Temporary for now, will add backtracking later
-                        return null;
+                        validRooms.Add(i*60, newRoom);
                     }
                 }
 
-                genMap.bonusRooms.Add(newRoom);
-                List<Vector3> roomPath = roomGenPaths[partnerRoomIndex];
-                currentLocation = GetBacktrackNeighbor(ref roomPath, newRoom);
+                // Check to make sure that at least one valid room was found
+                // If not, backtrack to find a possible position for it
+                if (validRooms.Count == 0)
+                {
+                    // If this triggers, all possible neighbors are invalid and the map is basically filled
+                    if (roomIndex - 1 < 0)
+                        return null;
 
-                return newRoom;
+                    // Set the loop to redo the current room at a new point not within the deadzones
+                    // Make this a loop that will go until it finds a neighbor
+
+                    Vector3 nextLocation = NULL_VECTOR;
+                    int nextRoomIndex = roomIndex;
+
+                    // Start at the previous room and run through all previous rooms to find
+                    for (int k = roomIndex - 1; k >= 0; k--)
+                    {
+                        List<Vector3> previousPath = roomGenPaths[k];
+                        nextLocation = GetBacktrackNeighbor(ref previousPath);
+
+                        // If the next location has been found, break the loop
+                        if (nextLocation != NULL_VECTOR)
+                        {
+                            nextRoomIndex = k;
+                            break;
+                        }
+                    }
+
+                    // This will run if no previous rooms have any open tiles at all, in which case the map is dead and done
+                    if (nextLocation == NULL_VECTOR)
+                        return null;
+
+                    // Set the current location and generate a room at the new location
+                    currentLocation = nextLocation;
+                    return GeneratePresetRoom(presetList, nextRoomIndex);
+                }
+
+                // Get a random rotation from the valid rotations
+                Room nextRoom = validRooms[validRooms.Keys.ToList()[Random.Range(0, validRooms.Keys.ToList().Count)]];
+
+                genMap.bonusRooms.Add(nextRoom);
+                List<Vector3> roomPath = roomGenPaths[roomIndex];
+                currentLocation = GetBacktrackNeighbor(ref roomPath, nextRoom);
+
+                return nextRoom;
             }
             Room GenerateNormalRoom(int roomIndex)
             {
@@ -333,7 +390,7 @@ namespace MapUtil
                         if (nextTilePosition == NULL_VECTOR)
                             break;
                     }
-                    Debug.Log(nextTilePosition + ": " + GetRotatedPosition(nextTilePosition, new Vector3(25,0,25), 60));
+
                     currentLocation = nextTilePosition;
                 }
 
@@ -513,7 +570,6 @@ namespace MapUtil
 
             // Subtract the origin from the position to get the local position
             CubeCoord rotatedPos = CubeCoord.Subtract(cubePos, cubeOrigin);
-            Debug.Log(rotatedPos);
             for(int i = 0; i < rotIncrements; i++)
             {
                 rotatedPos = new CubeCoord
@@ -524,9 +580,6 @@ namespace MapUtil
                         rotatedPos.h
                     );
             }
-            Debug.Log(rotatedPos);
-
-            Debug.Log(CubeCoord.ToVector3(cubeOrigin) + " -- " + CubeCoord.ToVector3(rotatedPos));
             return CubeCoord.ToVector3(CubeCoord.Add(cubeOrigin, rotatedPos));
         }
     }
