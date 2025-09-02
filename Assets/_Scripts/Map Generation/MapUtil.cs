@@ -194,6 +194,9 @@ namespace MapUtil
         public WallType type {  get; private set; }
         public GameObject obj = null;
 
+        public int themeIndex = 0;
+        public int materialIndex = 0;
+
         public List<Tile> connectedTiles { get; private set; } = new List<Tile>();
 
         public Wall(WallType type, Tile connectedTile)

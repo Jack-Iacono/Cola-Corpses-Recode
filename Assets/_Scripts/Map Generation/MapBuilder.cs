@@ -6,11 +6,18 @@ using UnityEngine;
 using MapUtil;
 using System.Drawing;
 using System.Net;
+using UnityEditor.SceneManagement;
 
 public class MapBuilder : MonoBehaviour
 {
     public GameObject floorPrefabNormal;
     public GameObject wallPrefabNormal;
+
+    public Mesh wallMesh;
+    public Material wallMaterial;
+
+    public Mesh floorMesh;
+    public Material floorMaterial;
 
     [SerializeField]
     private List<MapPreset> roomPresets = new List<MapPreset>();
@@ -27,8 +34,8 @@ public class MapBuilder : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 5, roomTileRange, roomPresets);
-        //BuildMap(currentMap);
+        currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 5, roomTileRange, roomPresets);
+        BuildMap(currentMap);
     }
 
     private void BuildMap(Map map)
@@ -51,11 +58,18 @@ public class MapBuilder : MonoBehaviour
             UnityEngine.Color roomColor = Random.ColorHSV();
 
             List<Tile> tiles = normalRooms[i].GetTiles();
+            List<Wall> walls = new List<Wall>();
             for(int j = 0; j < tiles.Count; j++)
             {
                 BuildTile(tiles[j], roomParent, roomColor);
                 BuildWalls(tiles[j]);
+                foreach(Wall w in tiles[j].GetWalls())
+                {
+                    if(w != null)
+                        walls.Add(w);
+                }
             }
+            GenerateWallMesh(walls, roomParent);
         }
 
         List<Room> bonusRooms = map.GetBonusRooms();
@@ -88,7 +102,7 @@ public class MapBuilder : MonoBehaviour
             }
         }
 
-        void BuildTile(Tile tile, GameObject roomParent, UnityEngine.Color roomColor)
+        GameObject BuildTile(Tile tile, GameObject roomParent, UnityEngine.Color roomColor)
         {
             GameObject tileObject = Instantiate(floorPrefabNormal);
             tileObject.transform.parent = roomParent.transform;
@@ -108,10 +122,15 @@ public class MapBuilder : MonoBehaviour
             tile.obj = tileObject;
 
             tileObject.GetComponentInChildren<MeshRenderer>().material.color = roomColor;
+
+            return tileObject;
         }
-        void BuildWalls(Tile tile)
+        List<GameObject> BuildWalls(Tile tile)
         {
             GameObject tileObject = tile.obj;
+
+            List<GameObject> walls = new List<GameObject>();
+
             for (int k = 0; k < tile.walls.Length; k++)
             {
                 // Check if this wall was already placed by another tile
@@ -123,6 +142,7 @@ public class MapBuilder : MonoBehaviour
                     {
                         GameObject wallObject = Instantiate(wallPrefabNormal, tileObject.transform);
                         wallObject.name = "Wall " + k;
+
                         // the extra amount accounts for 
                         wallObject.transform.localScale = new Vector3(1 + wallWidthOffset, 1, wallWidth);
                         wallObject.transform.position = new Vector3
@@ -136,11 +156,63 @@ public class MapBuilder : MonoBehaviour
                         tile.walls[k].obj = wallObject;
 
                         placedWalls.Add(wall);
+
+                        walls.Add(wallObject);
                     }
                 }
 
-                
             }
+
+            return walls;
         }
+    }
+
+    private Mesh GenerateWallMesh(List<Wall> walls, GameObject roomParent)
+    {
+        List<List<CombineInstance>> materialGroups = new List<List<CombineInstance>>();
+        foreach (Wall wall in walls)
+        {
+            GameObject wallObject = wall.obj;
+            CombineInstance newInstance = new CombineInstance();
+            newInstance.mesh = wallMesh;
+            Transform newTrans = wallObject.transform;
+            Matrix4x4 transformationMatrix = Matrix4x4.TRS
+                (
+                    newTrans.position,
+                    newTrans.rotation,
+                    newTrans.localScale * tileRadius
+                );
+            newInstance.transform = transformationMatrix;
+
+            if (materialGroups.Count <= wall.materialIndex)
+                materialGroups.Add(new List<CombineInstance>());
+            materialGroups[wall.materialIndex].Add(newInstance);
+        }
+
+        List<Mesh> combinedMaterialMeshes = new List<Mesh>();
+        foreach(List<CombineInstance> materialInstances in materialGroups)
+        {
+            Mesh newMesh = new Mesh();
+            newMesh.CombineMeshes(materialInstances.ToArray(), true);
+            combinedMaterialMeshes.Add(newMesh);
+        }
+
+        CombineInstance[] finalInstances = new CombineInstance[combinedMaterialMeshes.Count];
+        for(int i = 0; i < combinedMaterialMeshes.Count; i++)
+        {
+            CombineInstance newInstance = new CombineInstance();
+            newInstance.mesh = combinedMaterialMeshes[i];
+            newInstance.transform = roomParent.transform.localToWorldMatrix;
+            finalInstances[i] = newInstance;
+        }
+
+        Mesh combinedMesh = new Mesh();
+        combinedMesh.CombineMeshes(finalInstances, false);
+        GameObject testObj = new GameObject("Static Walls Mesh");
+        testObj.transform.parent = roomParent.transform;
+        testObj.AddComponent<MeshFilter>().mesh = combinedMesh;
+        testObj.AddComponent<MeshRenderer>().materials = new Material[] { wallMaterial };
+
+        return combinedMesh;
     }
 }
