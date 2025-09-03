@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -14,7 +15,7 @@ namespace MapUtil
     public class Map
     {
         public List<Room> rooms { get; private set; } = new List<Room>();
-        public List<Room> bonusRooms { get; private set; } = new List<Room>();
+        public List<PresetRoom> bonusRooms { get; private set; } = new List<PresetRoom>();
         public Tile[,,] tiles;
 
         public Vector3 mapBounds { get; private set; } = new Vector3(50, 1, 50);
@@ -92,7 +93,7 @@ namespace MapUtil
         {
             return rooms;
         }
-        public List<Room> GetBonusRooms() 
+        public List<PresetRoom> GetBonusRooms() 
         {
             return bonusRooms; 
         }
@@ -118,6 +119,8 @@ namespace MapUtil
 
         public GameObject obj;
 
+        public int themeIndex = 0;
+
         public Room()
         {
 
@@ -141,6 +144,20 @@ namespace MapUtil
             tiles.Add(tile.gridPosition, tile);
         }
     }
+    public class PresetRoom : Room
+    {
+        public int presetIndex = -1;
+        public Vector3 presetOrigin = Vector3.zero;
+        public int presetRotation = 0;
+
+        public PresetRoom(int presetIndex, Vector3 presetOrigin, int presetRotation) : base()
+        {
+            this.presetIndex = presetIndex;
+            this.presetOrigin = presetOrigin;
+            this.presetRotation = presetRotation;
+        }
+    }
+
     public class Tile
     {
         public Vector3 gridPosition = Vector3.zero;
@@ -151,8 +168,7 @@ namespace MapUtil
 
         public TileType type { get; private set; } = TileType.NORMAL;
 
-        public int prefabIndex = -1;
-        public int prefabRotation = 0;
+        public int materialIndex = 0;
 
         public Tile(Vector3 gridPosition, Room room)
         {
@@ -174,19 +190,25 @@ namespace MapUtil
         public void RemoveWall(int index)
         {
             if (walls[index] != null)
+            {
+                walls[index].RemoveConnectedTile(this);
                 walls[index] = null;
-        }
-
-        public void AssignPrefabIndex(int index, int rotation)
-        {
-            type = TileType.PRESET;
-            this.prefabIndex = index;
-            this.prefabRotation = rotation;
+            }
         }
 
         public void SetType(TileType type)
         {
             this.type = type;
+        }
+
+        public override bool Equals(object obj)
+        {
+            Tile t = obj as Tile;
+            return gridPosition.x == t.gridPosition.x && gridPosition.y == t.gridPosition.y && gridPosition.z == t.gridPosition.z;
+        }
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(gridPosition.GetHashCode());
         }
     }
     public class Wall
@@ -194,7 +216,6 @@ namespace MapUtil
         public WallType type {  get; private set; }
         public GameObject obj = null;
 
-        public int themeIndex = 0;
         public int materialIndex = 0;
 
         public List<Tile> connectedTiles { get; private set; } = new List<Tile>();
@@ -202,16 +223,20 @@ namespace MapUtil
         public Wall(WallType type, Tile connectedTile)
         {
             this.type = type;
+            this.connectedTiles.Add(connectedTile);
         }
 
         public void AddConnectedTile(Tile tile)
         {
-            connectedTiles.Add(tile);
+            if (!connectedTiles.Contains(tile))
+            {
+                connectedTiles.Add(tile);
+            }
         }
         public void RemoveConnectedTile(Tile tile)
         {
             if(connectedTiles.Count > 1 && connectedTiles.Contains(tile))
-                connectedTiles.RemoveAt(0);
+                connectedTiles.Remove(tile);
         }
 
         public List<Tile> GetConnectedTiles()
@@ -226,7 +251,7 @@ namespace MapUtil
         private static readonly Vector3 NULL_VECTOR = new Vector3(-1, -1, -1);
         private const float floorChangeChance = 0.01f;
 
-        public static Map Generate(Vector3 bounds, float tileRadius, float floorHeight, int roomCount, Vector2 roomTileRange, List<MapPreset> roomPresets)
+        public static Map Generate(Vector3 bounds, float tileRadius, float floorHeight, int roomCount, Vector2 roomTileRange, List<MapPreset> roomPresets, List<RoomTheme> roomThemes)
         {
             // The map will store all the placed tiles and rooms
             Map genMap = new Map(bounds, tileRadius, floorHeight);
@@ -269,20 +294,20 @@ namespace MapUtil
 
             // The below functions are used purely for organizational purposes
 
-            Room GeneratePresetRoom(List<MapPreset> presetList, int roomIndex)
+            PresetRoom GeneratePresetRoom(List<MapPreset> presetList, int roomIndex)
             {
                 // NEED TO ACCOUNT FOR ODD VERSUS EVEN COLUMN GENERATION
-                int presetIndex = Random.Range(0, presetList.Count);
+                int presetIndex = UnityEngine.Random.Range(0, presetList.Count);
                 MapPreset preset = presetList[presetIndex];
 
                 List<Preset_Tile> tiles = preset.GetFootprint();
-                Dictionary<int, Room> validRooms = new Dictionary<int, Room>();
+                Dictionary<int, PresetRoom> validRooms = new Dictionary<int, PresetRoom>();
 
                 // Go through all rotations of the chosen preset
                 for (int i = 0; i < 6; i++)
                 {
                     // Initialize this room
-                    Room newRoom = new Room();
+                    PresetRoom newRoom = new PresetRoom(presetIndex, tiles[0].gridPosition + currentLocation, i * 60);
 
                     // Loop through each tile in the preset for the given rotation
                     for(int j = 0; j < tiles.Count; j++)
@@ -298,12 +323,6 @@ namespace MapUtil
                             newTile.obj = tiles[i].tileObject;
                             newRoom.AddTile(newTile);
                             SetTileWalls(newTile, newRoom);
-
-                            // Check if the tile is the center point, if so, assign the preset to that so that the builder knows where to place the prefab
-                            if (tiles[j].gridPosition == Vector3.zero)
-                            {
-                                newTile.AssignPrefabIndex(presetIndex, i*60);
-                            }
                         }
                         else
                         {
@@ -357,7 +376,7 @@ namespace MapUtil
                 }
 
                 // Get a random rotation from the valid rotations
-                Room nextRoom = validRooms[validRooms.Keys.ToList()[Random.Range(0, validRooms.Keys.ToList().Count)]];
+                PresetRoom nextRoom = validRooms[validRooms.Keys.ToList()[UnityEngine.Random.Range(0, validRooms.Keys.ToList().Count)]];
 
                 genMap.bonusRooms.Add(nextRoom);
                 List<Vector3> roomPath = roomGenPaths[roomIndex];
@@ -370,6 +389,9 @@ namespace MapUtil
                 // Create the new Room to hold the data needed
                 Room newRoom = new Room();
 
+                // Assign a theme to the room randomly from the list of themes
+                newRoom.themeIndex = UnityEngine.Random.Range(0, roomThemes.Count);
+
                 // Get a temporary clone of the map tiles for modification here
                 List<Vector3> genPath = new List<Vector3>();
 
@@ -379,7 +401,10 @@ namespace MapUtil
                 // Generate the tiles in the given room
                 for (int j = 0; j < roomTileGoal; j++)
                 {
+                    // Add this tile to the path of generated tiles
                     genPath.Add(currentLocation);
+
+                    // create a new tile at this location
                     Tile newTile = new Tile(currentLocation, newRoom);
                     newRoom.AddTile(newTile);
                     SetTileWalls(newTile, newRoom);
@@ -388,12 +413,14 @@ namespace MapUtil
                     Vector3 nextTilePosition = GetRandomValidNeighbor(genPath.Last(), newRoom);
                     if (nextTilePosition == NULL_VECTOR)
                     {
+                        // Remove this tile from the path since it is invlaid due to not having a neighbor
                         genPath.RemoveAt(genPath.Count - 1);
                         nextTilePosition = GetBacktrackNeighbor(ref genPath, newRoom);
                         if (nextTilePosition == NULL_VECTOR)
                             break;
                     }
 
+                    // Set the current location to the next location
                     currentLocation = nextTilePosition;
                 }
 
@@ -503,6 +530,7 @@ namespace MapUtil
                     Tile globalNeighbor = genMap.GetTileAtLocation(tilePosition + nList[i]);
                     Tile localNeighbor = room.GetTileAtLocation(tilePosition + nList[i]);
 
+                    // If there is a neighbor in another room
                     if (globalNeighbor != null)
                     {
                         // These walls should be stored as candidates for doors between rooms
@@ -513,6 +541,9 @@ namespace MapUtil
                             Wall newWall = new Wall(WallType.NORMAL, tile);
                             tile.AddWall(i, newWall);
                             globalNeighbor.AddWall((i + 3) % 6, newWall);
+
+                            // Assign a random material from the list to the wall
+                            newWall.materialIndex = UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count);
                         }
                         else
                         {
@@ -522,7 +553,10 @@ namespace MapUtil
                     }
                     else if (localNeighbor == null)
                     {
-                        tile.walls[i] = new Wall(WallType.NORMAL, tile);
+                        tile.AddWall(i, new Wall(WallType.NORMAL, tile));
+
+                        // Assign a random material from the list to the wall
+                        tile.walls[i].materialIndex = UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count);
                     }
                     else
                     {
