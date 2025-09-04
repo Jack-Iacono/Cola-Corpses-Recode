@@ -339,10 +339,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   floorPrefabNormal: {fileID: 4686199875529075276, guid: b21183efd62e86b4b98acf262210aa46, type: 3}
   wallPrefabNormal: {fileID: 2278421077726955728, guid: 735eef81471f57b4e8d84c0a41b3f555, type: 3}
-  wallMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
-  floorMesh: {fileID: 0}
+  floorMesh: {fileID: 2534964839176971238, guid: 03b4ed3721765e34581af207f62c5c8c, type: 3}
   roomThemes:
-  - floorMaterials: []
+  - floorMaterials:
+    - {fileID: 2100000, guid: 7de8420f0c8e0464594971247a2719d1, type: 2}
+    - {fileID: 2100000, guid: 0ba30ad8e1697e047bdbcb850b7ee3de, type: 2}
     wallMaterials:
     - {fileID: 2100000, guid: 27c7f252731c4664297c895895d9fd7c, type: 2}
     - {fileID: 2100000, guid: 9adc695f3000d4743b6d815a9e102909, type: 2}

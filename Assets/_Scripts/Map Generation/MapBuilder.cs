@@ -4,18 +4,13 @@ using Unity.VisualScripting;
 using UnityEngine;
 
 using MapUtil;
-using System.Drawing;
-using System.Net;
-using UnityEditor.SceneManagement;
 using System;
-using System.Linq;
 
 public class MapBuilder : MonoBehaviour
 {
     public GameObject floorPrefabNormal;
     public GameObject wallPrefabNormal;
 
-    public Mesh wallMesh;
     public Mesh floorMesh;
 
     [SerializeField]
@@ -27,9 +22,10 @@ public class MapBuilder : MonoBehaviour
     private Vector3 mapDim = new Vector3(100, 1, 100);
     private Vector2 roomTileRange = new Vector2(50, 50);
 
-    private float tileRadius = 2f;
-    private float floorHeight = 2;
+    private float tileRadius = 1f;
+    private float floorHeight = 1;
     private float wallThickness = 0.05f;
+    private float floorThickness = 0.05f;
 
     public Map currentMap;
 
@@ -71,6 +67,7 @@ public class MapBuilder : MonoBehaviour
                         walls.Add(w);
                 }
             }
+            GenerateTileMesh(normalRooms[i]);
             GenerateWallMesh(normalRooms[i]);
         }
 
@@ -110,20 +107,26 @@ public class MapBuilder : MonoBehaviour
             tileObject.transform.parent = roomParent.transform;
             Vector3 tileGridPosition = tile.gridPosition;
 
-            Vector3 tilePosition = new Vector3
+            tileObject.transform.position = new Vector3
             (
                 tileGridPosition.x * (tileRadius * 1.5f),
                 tileGridPosition.y * map.floorHeight,
                 tileGridPosition.z * tileSideDistance
             );
-            tileObject.transform.position = tilePosition;
             tileObject.transform.rotation = Quaternion.identity;
+
+            foreach(Collider c in tileObject.GetComponentsInChildren<Collider>())
+            {
+                c.transform.localScale = new Vector3
+                (
+                    c.transform.localScale.x * map.tileRadius,
+                    c.transform.localScale.y * floorThickness,
+                    c.transform.localScale.z * map.tileRadius
+                );
+            }
             tileObject.name = "Tile " + tileGridPosition.ToString();
-            tileObject.transform.localScale = Vector3.one * map.tileRadius;
 
             tile.obj = tileObject;
-
-            tileObject.GetComponentInChildren<MeshRenderer>().material.color = roomColor;
         }
         void BuildWalls(Tile tile)
         {
@@ -142,7 +145,7 @@ public class MapBuilder : MonoBehaviour
                         wallObject.name = "Wall " + k;
 
                         // the extra amount accounts for 
-                        wallObject.transform.localScale = new Vector3(1 + wallWidthOffset, 1, wallThickness);
+                        wallObject.transform.localScale = new Vector3(1 + wallWidthOffset, floorHeight, wallThickness);
                         wallObject.transform.position = new Vector3
                         (
                             map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,
@@ -164,9 +167,13 @@ public class MapBuilder : MonoBehaviour
             // Create a 2D list of combine instances that
             List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].wallMaterials.Count];
 
+            // Loop through all tiles within the given room
             foreach (Tile tile in room.GetTiles())
             {
+                // Get the walls present within the current tile
                 Wall[] walls = tile.GetWalls();
+
+                // Loop through the walls in the tile to add their meshes to the correct "submesh" meshes
                 for (int i = 0; i < walls.Length; i++)
                 {
                     // Use this to determine the index of the wall in respect to the tile for rotation
@@ -178,25 +185,30 @@ public class MapBuilder : MonoBehaviour
 
                     GameObject wallObject = wall.obj;
                     CombineInstance newInstance = new CombineInstance();
-                    //newInstance.mesh = wallMesh;
 
-                    // Create a basic 1 sided wall mesh for the wall since you won't be able to see it from the other
+                    // Create a basic 1 sided wall mesh for the wall since you won't be able to see it from the other side
                     Mesh n = new Mesh();
-                    n.vertices = new Vector3[] { new Vector3(-0.5f, -0.5f, 0), new Vector3(0.5f, -0.5f, 0), new Vector3(-0.5f, 0.5f, 0), new Vector3(0.5f, 0.5f, 0) };
+                    // This offset will place the mesh on the outer side of the wall so that it matches with collision
+                    float zOffset = -wallThickness / 2 * tileRadius;
+                    n.vertices = new Vector3[] 
+                    { 
+                        new Vector3(-0.5f, -0.5f, zOffset), 
+                        new Vector3(0.5f, -0.5f, zOffset), 
+                        new Vector3(-0.5f, 0.5f, zOffset), 
+                        new Vector3(0.5f, 0.5f, zOffset) 
+                    };
                     n.triangles = new int[] { 0, 2, 1, 1, 2, 3 };
                     n.uv = new Vector2[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
                     newInstance.mesh = n;
 
-                    Vector3 scale = new Vector3(1 + wallWidthOffset, 1, 1) * tileRadius;
+                    // Set the "transform" of the mesh which is basically just the transform of the wall
+                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, floorHeight, 1) ;
                     Vector3 pos = new Vector3
                     (
                         map.hexagonExteriorSidePositions[i].x + tile.obj.transform.position.x,
                         tile.obj.transform.position.y + floorHeight / 2,
                         map.hexagonExteriorSidePositions[i].y + tile.obj.transform.position.z
                     );
-                    // Not sure where 1.15f comes from, need to investigate
-                    // Maybe restructure this to build the vertecies right onto the collider vertexes
-                    pos += (tile.obj.transform.position - wall.obj.transform.position).normalized * wallThickness * 1.15f;
                     Quaternion rot = Quaternion.Euler(new Vector3(0, i * 60, 0));
 
                     Matrix4x4 transformationMatrix = Matrix4x4.TRS
@@ -205,12 +217,14 @@ public class MapBuilder : MonoBehaviour
                         );
                     newInstance.transform = transformationMatrix;
 
-                    if (materialGroups[wall.materialIndex] == null)
-                        materialGroups[wall.materialIndex] = new List<CombineInstance>();
-                    materialGroups[wall.materialIndex].Add(newInstance);
+                    // Add this mesh to the appropriate group for submesh creation
+                    if (materialGroups[wall.materialIndexes[tile]] == null)
+                        materialGroups[wall.materialIndexes[tile]] = new List<CombineInstance>();
+                    materialGroups[wall.materialIndexes[tile]].Add(newInstance);
                 }
             }
 
+            // Create a list of material meshes that each contain meshes with one material type
             List<Mesh> combinedMaterialMeshes = new List<Mesh>();
             foreach (List<CombineInstance> materialInstances in materialGroups)
             {
@@ -219,6 +233,7 @@ public class MapBuilder : MonoBehaviour
                 combinedMaterialMeshes.Add(newMesh);
             }
 
+            // Create a final combined mesh that has a submesh for each material
             CombineInstance[] finalInstances = new CombineInstance[combinedMaterialMeshes.Count];
             for (int i = 0; i < combinedMaterialMeshes.Count; i++)
             {
@@ -228,6 +243,7 @@ public class MapBuilder : MonoBehaviour
                 finalInstances[i] = newInstance;
             }
 
+            // Assign this mesh to a new gameobject within the room
             Mesh combinedMesh = new Mesh();
             combinedMesh.CombineMeshes(finalInstances, false);
             GameObject testObj = new GameObject("Static Walls Mesh");
@@ -237,9 +253,61 @@ public class MapBuilder : MonoBehaviour
 
             return combinedMesh;
         }
-}
+        Mesh GenerateTileMesh(Room room)
+        {
+            // Create a 2D list of combine instances that
+            List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].floorMaterials.Count];
 
-    
+            // Loop through all tiles within the given room
+            foreach (Tile tile in room.GetTiles())
+            {
+                CombineInstance newInstance = new CombineInstance();
+
+                GameObject tileObject = tile.obj;
+                newInstance.mesh = floorMesh;
+
+                Vector3 scale = new Vector3(tileObject.transform.localScale.x, tileObject.transform.localScale.y * floorThickness, tileObject.transform.localScale.z);
+                Vector3 pos = tileObject.transform.position;
+                Quaternion rot = tileObject.transform.rotation;
+
+                newInstance.transform = Matrix4x4.TRS( pos, rot, scale );
+
+                // Add this mesh to the appropriate group for submesh creation
+                if (materialGroups[tile.materialIndex] == null)
+                    materialGroups[tile.materialIndex] = new List<CombineInstance>();
+                materialGroups[tile.materialIndex].Add(newInstance);
+            }
+
+            // Create a list of material meshes that each contain meshes with one material type
+            List<Mesh> combinedMaterialMeshes = new List<Mesh>();
+            foreach (List<CombineInstance> materialInstances in materialGroups)
+            {
+                Mesh newMesh = new Mesh();
+                newMesh.CombineMeshes(materialInstances.ToArray(), true);
+                combinedMaterialMeshes.Add(newMesh);
+            }
+
+            // Create a final combined mesh that has a submesh for each material
+            CombineInstance[] finalInstances = new CombineInstance[combinedMaterialMeshes.Count];
+            for (int i = 0; i < combinedMaterialMeshes.Count; i++)
+            {
+                CombineInstance newInstance = new CombineInstance();
+                newInstance.mesh = combinedMaterialMeshes[i];
+                newInstance.transform = room.obj.transform.localToWorldMatrix;
+                finalInstances[i] = newInstance;
+            }
+
+            // Assign this mesh to a new gameobject within the room
+            Mesh combinedMesh = new Mesh();
+            combinedMesh.CombineMeshes(finalInstances, false);
+            GameObject testObj = new GameObject("Static Tile Mesh");
+            testObj.transform.parent = room.obj.transform;
+            testObj.AddComponent<MeshFilter>().mesh = combinedMesh;
+            testObj.AddComponent<MeshRenderer>().materials = roomThemes[room.themeIndex].floorMaterials.ToArray();
+
+            return combinedMesh;
+        }
+    }
 }
 
 [Serializable]

@@ -112,6 +112,7 @@ namespace MapUtil
             );
         }
     }
+
     public class Room
     {
         private Dictionary<Vector3, Tile> tiles = new Dictionary<Vector3, Tile>();
@@ -201,6 +202,11 @@ namespace MapUtil
             this.type = type;
         }
 
+        public void SetMaterialIndex(int index)
+        {
+            materialIndex = index;
+        }
+
         public override bool Equals(object obj)
         {
             Tile t = obj as Tile;
@@ -216,7 +222,7 @@ namespace MapUtil
         public WallType type {  get; private set; }
         public GameObject obj = null;
 
-        public int materialIndex = 0;
+        public Dictionary<Tile, int> materialIndexes = new Dictionary<Tile, int>();
 
         public List<Tile> connectedTiles { get; private set; } = new List<Tile>();
 
@@ -236,7 +242,18 @@ namespace MapUtil
         public void RemoveConnectedTile(Tile tile)
         {
             if(connectedTiles.Count > 1 && connectedTiles.Contains(tile))
+            {
                 connectedTiles.Remove(tile);
+                materialIndexes.Remove(tile);
+            }
+        }
+
+        public void SetMaterialIndex(Tile tile, int index)
+        {
+            if (materialIndexes.ContainsKey(tile))
+                materialIndexes[tile] = index;
+            else
+                materialIndexes.Add(tile, index);
         }
 
         public List<Tile> GetConnectedTiles()
@@ -274,6 +291,7 @@ namespace MapUtil
                     foreach (Tile t in newRoom.GetTiles())
                     {
                         Vector3 pos = t.gridPosition;
+                        t.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[newRoom.themeIndex].floorMaterials.Count));
                         genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
                     }
                 }
@@ -543,20 +561,25 @@ namespace MapUtil
                             globalNeighbor.AddWall((i + 3) % 6, newWall);
 
                             // Assign a random material from the list to the wall
-                            newWall.materialIndex = UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count);
+                            newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                            newWall.SetMaterialIndex(globalNeighbor, UnityEngine.Random.Range(0, roomThemes[globalNeighbor.room.themeIndex].wallMaterials.Count));
                         }
                         else
                         {
                             // If the neighbor already has a wall in this position, add it to this tile as well and connected them
                             tile.AddWall(i, neighborWall);
+
+                            // Assign the wall a random material index
+                            neighborWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
                         }
                     }
                     else if (localNeighbor == null)
                     {
-                        tile.AddWall(i, new Wall(WallType.NORMAL, tile));
+                        Wall newWall = new Wall(WallType.NORMAL, tile);
+                        tile.AddWall(i, newWall);
 
                         // Assign a random material from the list to the wall
-                        tile.walls[i].materialIndex = UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count);
+                        newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
                     }
                     else
                     {
@@ -620,6 +643,7 @@ namespace MapUtil
             return CubeCoord.ToVector3(CubeCoord.Add(cubeOrigin, rotatedPos));
         }
     }
+
     public class CubeCoord
     {
         public int q;
