@@ -29,7 +29,7 @@ public class MapBuilder : MonoBehaviour
 
     private float tileRadius = 2f;
     private float floorHeight = 2;
-    private float wallWidth = 0.05f;
+    private float wallThickness = 0.05f;
 
     public Map currentMap;
 
@@ -44,7 +44,7 @@ public class MapBuilder : MonoBehaviour
     {
         float tileRadius = map.tileRadius;
         float tileSideDistance = map.tileSideDistance;
-        float wallWidthOffset = (wallWidth / 2 / Mathf.Sqrt(3)) * 2;
+        float wallWidthOffset = (wallThickness / 2 / Mathf.Sqrt(3)) * 2;
 
         GameObject mapParent = new GameObject("Map");
         
@@ -142,7 +142,7 @@ public class MapBuilder : MonoBehaviour
                         wallObject.name = "Wall " + k;
 
                         // the extra amount accounts for 
-                        wallObject.transform.localScale = new Vector3(1 + wallWidthOffset, 1, wallWidth);
+                        wallObject.transform.localScale = new Vector3(1 + wallWidthOffset, 1, wallThickness);
                         wallObject.transform.position = new Vector3
                         (
                             map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,
@@ -180,23 +180,25 @@ public class MapBuilder : MonoBehaviour
                     CombineInstance newInstance = new CombineInstance();
                     //newInstance.mesh = wallMesh;
 
+                    // Create a basic 1 sided wall mesh for the wall since you won't be able to see it from the other
                     Mesh n = new Mesh();
                     n.vertices = new Vector3[] { new Vector3(-0.5f, -0.5f, 0), new Vector3(0.5f, -0.5f, 0), new Vector3(-0.5f, 0.5f, 0), new Vector3(0.5f, 0.5f, 0) };
                     n.triangles = new int[] { 0, 2, 1, 1, 2, 3 };
                     n.uv = new Vector2[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
                     newInstance.mesh = n;
 
-                    Vector3 scale = new Vector3(1 + wallWidthOffset, 1, wallWidth) * tileRadius;
+                    Vector3 scale = new Vector3(1 + wallWidthOffset, 1, 1) * tileRadius;
                     Vector3 pos = new Vector3
                     (
                         map.hexagonExteriorSidePositions[i].x + tile.obj.transform.position.x,
                         tile.obj.transform.position.y + floorHeight / 2,
                         map.hexagonExteriorSidePositions[i].y + tile.obj.transform.position.z
                     );
+                    // Not sure where 1.15f comes from, need to investigate
+                    // Maybe restructure this to build the vertecies right onto the collider vertexes
+                    pos += (tile.obj.transform.position - wall.obj.transform.position).normalized * wallThickness * 1.15f;
                     Quaternion rot = Quaternion.Euler(new Vector3(0, i * 60, 0));
 
-                    Transform newTrans = wallObject.transform;
-                    //wall.connectedTiles[0].room == room ? newTrans.rotation : Quaternion.Euler(newTrans.rotation.eulerAngles.x, newTrans.rotation.eulerAngles.y + 180, newTrans.rotation.eulerAngles.z),
                     Matrix4x4 transformationMatrix = Matrix4x4.TRS
                         (
                             pos, rot, scale
