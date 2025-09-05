@@ -23,6 +23,8 @@ public class MapPreset: MonoBehaviour
 
     public GameObject obj;
 
+    public List<Vector3> entryPoints = new List<Vector3>();
+
     public List<Preset_Tile> GetFootprint()
     {
         return footprint;

@@ -19,11 +19,15 @@ namespace MapUtil
         public Tile[,,] tiles;
 
         public Vector3 mapBounds { get; private set; } = new Vector3(50, 1, 50);
-        public float tileRadius { get; private set; } = 1;
-        public float floorHeight { get; private set; } = 10;
-        
-        // The length from the center of the hexagon to the mid point of any side
-        public float tileSideDistance { get; private set; } = 0.86602f;
+
+        // These are the parameters for what a normal map's proportions look like
+        public const float TILE_RADIUS = 2f;
+        public const float FLOOR_HEIGHT = 3;
+        public const float WALL_THICKNESS = 0.05f;
+        public const float FLOOR_THICKNESS = 0.05f;
+
+        // The length from the center of the hexagon to the middle of any side
+        public static readonly float TILE_SIDE_DISTANCE = Mathf.Sqrt((TILE_RADIUS * TILE_RADIUS) - ((TILE_RADIUS/2) * (TILE_RADIUS/2)));
 
         // These two lists contain which cells will be neighbors for a cell depending on their x position
         // This is needed since the rows are not linear and offset between eachother
@@ -45,14 +49,12 @@ namespace MapUtil
         public Vector2[] hexagonExteriorSidePositions { get; private set; } = new Vector2[] { };
         public Vector2[] hexagonInteriorSidePositions { get; private set; } = new Vector2[] { };
 
-        public Map(Vector3 bounds, float tileRadius, float floorHeight)
+        public Map(Vector3 bounds)
         {
             mapBounds = bounds;
-            this.tileRadius = tileRadius;
-            this.floorHeight = floorHeight;
 
             // The length from the center of the hexagon to the mid point of any side
-            tileSideDistance = Mathf.Sqrt((tileRadius * tileRadius) - (tileRadius / 2) * (tileRadius / 2));
+            //TILE_SIDE_DISTANCE = Mathf.Sqrt((TILE_RADIUS * TILE_RADIUS) - (TILE_RADIUS / 2) * (TILE_RADIUS / 2));
 
             // Initialize the array for storing the tiles being used
             tiles = new Tile[(int)mapBounds.x, (int)mapBounds.y, (int)mapBounds.z];
@@ -60,20 +62,20 @@ namespace MapUtil
             // Vertexes labelled clockwise starting at the 2 o'clock position
             hexagonVertexes = new Vector2[]
             {
-                new Vector2(tileRadius / 2, tileSideDistance),
-                new Vector2(tileRadius, 0),
-                new Vector2(tileRadius / 2, -tileSideDistance),
-                new Vector2(-tileRadius / 2,-tileSideDistance),
-                new Vector2(-tileRadius, 0),
-                new Vector2(-tileRadius / 2,tileSideDistance),
+                new Vector2(TILE_RADIUS / 2, TILE_SIDE_DISTANCE),
+                new Vector2(TILE_RADIUS, 0),
+                new Vector2(TILE_RADIUS / 2, -TILE_SIDE_DISTANCE),
+                new Vector2(-TILE_RADIUS / 2,-TILE_SIDE_DISTANCE),
+                new Vector2(-TILE_RADIUS, 0),
+                new Vector2(-TILE_RADIUS / 2,TILE_SIDE_DISTANCE),
             };
             // Sides are labelled clockwise starting at the top side (12 o'clock)
             hexagonExteriorSidePositions = new Vector2[]
             {
-                new Vector2(0,tileSideDistance),
+                new Vector2(0,TILE_SIDE_DISTANCE),
                 new Vector2((hexagonVertexes[0].x + hexagonVertexes[1].x) / 2, (hexagonVertexes[0].y + hexagonVertexes[1].y) / 2),
                 new Vector2((hexagonVertexes[1].x + hexagonVertexes[2].x) / 2, (hexagonVertexes[1].y + hexagonVertexes[2].y) / 2),
-                new Vector2(0,-tileSideDistance),
+                new Vector2(0,-TILE_SIDE_DISTANCE),
                 new Vector2((hexagonVertexes[3].x + hexagonVertexes[4].x) / 2, (hexagonVertexes[3].y + hexagonVertexes[4].y) / 2),
                 new Vector2((hexagonVertexes[4].x + hexagonVertexes[5].x) / 2, (hexagonVertexes[4].y + hexagonVertexes[5].y) / 2)
             };
@@ -81,10 +83,10 @@ namespace MapUtil
             hexagonInteriorSidePositions = new Vector2[]
             {
                 new Vector2(hexagonVertexes[0].x/ 2, hexagonVertexes[0].y / 2),
-                new Vector2(tileRadius / 2, 0),
+                new Vector2(TILE_RADIUS / 2, 0),
                 new Vector2(hexagonVertexes[2].x/ 2, hexagonVertexes[2].y / 2),
                 new Vector2(hexagonVertexes[3].x/ 2, hexagonVertexes[3].y / 2),
-                new Vector2(-tileRadius / 2, 0),
+                new Vector2(-TILE_RADIUS / 2, 0),
                 new Vector2(hexagonVertexes[5].x/ 2, hexagonVertexes[5].y / 2)
             };
         }
@@ -268,10 +270,10 @@ namespace MapUtil
         private static readonly Vector3 NULL_VECTOR = new Vector3(-1, -1, -1);
         private const float floorChangeChance = 0.01f;
 
-        public static Map Generate(Vector3 bounds, float tileRadius, float floorHeight, int roomCount, Vector2 roomTileRange, List<MapPreset> roomPresets, List<RoomTheme> roomThemes)
+        public static Map Generate(Vector3 bounds, int roomCount, Vector2 roomTileRange, List<MapPreset> roomPresets, List<RoomTheme> roomThemes)
         {
             // The map will store all the placed tiles and rooms
-            Map genMap = new Map(bounds, tileRadius, floorHeight);
+            Map genMap = new Map(bounds);
 
             // Dead zones and roomGenPaths allow the generator to correctly generate rooms with full exploration
             List<Vector3> deadZones = new List<Vector3>();
@@ -338,7 +340,7 @@ namespace MapUtil
                             Tile newTile = new Tile(rotPosition, newRoom);
                             newTile.SetType(TileType.PRESET);
 
-                            newTile.obj = tiles[i].tileObject;
+                            newTile.obj = tiles[j].tileObject;
                             newRoom.AddTile(newTile);
                             SetTileWalls(newTile, newRoom);
                         }
@@ -426,6 +428,10 @@ namespace MapUtil
                     Tile newTile = new Tile(currentLocation, newRoom);
                     newRoom.AddTile(newTile);
                     SetTileWalls(newTile, newRoom);
+
+                    // Assign the tile as a hole in the floor for vertical traversal
+                    if (genPath[genPath.Count - 1].y < currentLocation.y)
+                        Debug.Log("");
 
                     // Get next tile in the map
                     Vector3 nextTilePosition = GetRandomValidNeighbor(genPath.Last(), newRoom);

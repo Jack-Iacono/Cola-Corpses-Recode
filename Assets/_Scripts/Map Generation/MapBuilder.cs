@@ -19,28 +19,27 @@ public class MapBuilder : MonoBehaviour
     [SerializeField]
     private List<MapPreset> roomPresets = new List<MapPreset>();
 
-    private Vector3 mapDim = new Vector3(100, 1, 100);
+    private readonly Vector3 mapDim = new Vector3(100, 4, 100);
     private Vector2 roomTileRange = new Vector2(50, 50);
+    private int roomCount = 2;
 
-    private float tileRadius = 1f;
-    private float floorHeight = 1;
-    private float wallThickness = 0.05f;
-    private float floorThickness = 0.05f;
+    // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
+    private const float MAP_SCALE = 1f;
 
     public Map currentMap;
 
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = MapGenerator.Generate(mapDim, tileRadius, floorHeight, 2, roomTileRange, roomPresets, roomThemes);
+        currentMap = MapGenerator.Generate(mapDim, roomCount, roomTileRange, roomPresets, roomThemes);
         BuildMap(currentMap);
     }
 
     private void BuildMap(Map map)
     {
-        float tileRadius = map.tileRadius;
-        float tileSideDistance = map.tileSideDistance;
-        float wallWidthOffset = (wallThickness / 2 / Mathf.Sqrt(3)) * 2;
+        float tileRadius = Map.TILE_RADIUS;
+        float tileSideDistance = Map.TILE_SIDE_DISTANCE;
+        float wallWidthOffset = (Map.WALL_THICKNESS / 2 / Mathf.Sqrt(3)) * 2;
 
         GameObject mapParent = new GameObject("Map");
         
@@ -84,7 +83,7 @@ public class MapBuilder : MonoBehaviour
             roomParent.transform.position = new Vector3
             (
                 room.presetOrigin.x * (tileRadius * 1.5f),
-                room.presetOrigin.y * map.floorHeight,
+                room.presetOrigin.y * Map.FLOOR_HEIGHT,
                 room.presetOrigin.z * tileSideDistance
             );
             // Rotate the room to match the tile's desired rotation
@@ -101,6 +100,8 @@ public class MapBuilder : MonoBehaviour
             }
         }
 
+        mapParent.transform.localScale *= MAP_SCALE;
+
         void BuildTile(Tile tile, GameObject roomParent, UnityEngine.Color roomColor)
         {
             GameObject tileObject = Instantiate(floorPrefabNormal);
@@ -110,7 +111,7 @@ public class MapBuilder : MonoBehaviour
             tileObject.transform.position = new Vector3
             (
                 tileGridPosition.x * (tileRadius * 1.5f),
-                tileGridPosition.y * map.floorHeight,
+                tileGridPosition.y * Map.FLOOR_HEIGHT,
                 tileGridPosition.z * tileSideDistance
             );
             tileObject.transform.rotation = Quaternion.identity;
@@ -119,9 +120,9 @@ public class MapBuilder : MonoBehaviour
             {
                 c.transform.localScale = new Vector3
                 (
-                    c.transform.localScale.x * map.tileRadius,
-                    c.transform.localScale.y * floorThickness,
-                    c.transform.localScale.z * map.tileRadius
+                    c.transform.localScale.x * Map.TILE_RADIUS,
+                    c.transform.localScale.y * Map.FLOOR_THICKNESS,
+                    c.transform.localScale.z * Map.TILE_RADIUS
                 );
             }
             tileObject.name = "Tile " + tileGridPosition.ToString();
@@ -145,11 +146,11 @@ public class MapBuilder : MonoBehaviour
                         wallObject.name = "Wall " + k;
 
                         // the extra amount accounts for 
-                        wallObject.transform.localScale = new Vector3(1 + wallWidthOffset, floorHeight, wallThickness);
+                        wallObject.GetComponentInChildren<Collider>().transform.localScale = new Vector3(1 + wallWidthOffset, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS);
                         wallObject.transform.position = new Vector3
                         (
                             map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,
-                            tile.obj.transform.position.y + floorHeight / 2,
+                            tile.obj.transform.position.y + Map.FLOOR_HEIGHT / 2,
                             map.hexagonExteriorSidePositions[k].y + tile.obj.transform.position.z
                         );
                         wallObject.transform.rotation = Quaternion.Euler(new Vector3(0, k * 60, 0));
@@ -179,8 +180,8 @@ public class MapBuilder : MonoBehaviour
                     // Use this to determine the index of the wall in respect to the tile for rotation
                     Wall wall = walls[i];
 
-                    // If there is no wall in the given spot in the tile,
-                    if (wall == null)
+                    // If there is no wall in the given spot in the tile or if the wall is not normal, skip it
+                    if (wall == null || wall.type != WallType.NORMAL)
                         continue;
 
                     GameObject wallObject = wall.obj;
@@ -189,7 +190,7 @@ public class MapBuilder : MonoBehaviour
                     // Create a basic 1 sided wall mesh for the wall since you won't be able to see it from the other side
                     Mesh n = new Mesh();
                     // This offset will place the mesh on the outer side of the wall so that it matches with collision
-                    float zOffset = -wallThickness / 2 * tileRadius;
+                    float zOffset = -Map.WALL_THICKNESS / 2 * tileRadius;
                     n.vertices = new Vector3[] 
                     { 
                         new Vector3(-0.5f, -0.5f, zOffset), 
@@ -202,11 +203,11 @@ public class MapBuilder : MonoBehaviour
                     newInstance.mesh = n;
 
                     // Set the "transform" of the mesh which is basically just the transform of the wall
-                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, floorHeight, 1) ;
+                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, Map.FLOOR_HEIGHT, 1) ;
                     Vector3 pos = new Vector3
                     (
                         map.hexagonExteriorSidePositions[i].x + tile.obj.transform.position.x,
-                        tile.obj.transform.position.y + floorHeight / 2,
+                        tile.obj.transform.position.y + Map.FLOOR_HEIGHT / 2,
                         map.hexagonExteriorSidePositions[i].y + tile.obj.transform.position.z
                     );
                     Quaternion rot = Quaternion.Euler(new Vector3(0, i * 60, 0));
@@ -261,12 +262,16 @@ public class MapBuilder : MonoBehaviour
             // Loop through all tiles within the given room
             foreach (Tile tile in room.GetTiles())
             {
+                // Exclude non normal tiles from generation
+                if (tile.type != TileType.NORMAL)
+                    continue;
+
                 CombineInstance newInstance = new CombineInstance();
 
                 GameObject tileObject = tile.obj;
                 newInstance.mesh = floorMesh;
 
-                Vector3 scale = new Vector3(tileObject.transform.localScale.x, tileObject.transform.localScale.y * floorThickness, tileObject.transform.localScale.z);
+                Vector3 scale = new Vector3(tileObject.transform.localScale.x * Map.TILE_RADIUS, tileObject.transform.localScale.y / 2 * Map.FLOOR_THICKNESS, tileObject.transform.localScale.z * Map.TILE_RADIUS);
                 Vector3 pos = tileObject.transform.position;
                 Quaternion rot = tileObject.transform.rotation;
 
