@@ -15,7 +15,7 @@ namespace MapUtil
     public class Map
     {
         public List<Room> rooms { get; private set; } = new List<Room>();
-        public List<PresetRoom> bonusRooms { get; private set; } = new List<PresetRoom>();
+        public List<Room> bonusRooms { get; private set; } = new List<Room>();
         public Tile[,,] tiles;
 
         public Vector3 mapBounds { get; private set; } = new Vector3(50, 1, 50);
@@ -95,7 +95,7 @@ namespace MapUtil
         {
             return rooms;
         }
-        public List<PresetRoom> GetBonusRooms() 
+        public List<Room> GetBonusRooms() 
         {
             return bonusRooms; 
         }
@@ -124,6 +124,8 @@ namespace MapUtil
 
         public int themeIndex = 0;
 
+        public List<PresetData> presets = new List<PresetData>();
+
         public Room()
         {
 
@@ -146,18 +148,32 @@ namespace MapUtil
         {
             tiles.Add(tile.gridPosition, tile);
         }
-    }
-    public class PresetRoom : Room
-    {
-        public int presetIndex = -1;
-        public Vector3 presetOrigin = Vector3.zero;
-        public int presetRotation = 0;
 
-        public PresetRoom(int presetIndex, Vector3 presetOrigin, int presetRotation) : base()
+        public void AddPreset(PresetData pData, List<MapPreset> presetList)
         {
-            this.presetIndex = presetIndex;
-            this.presetOrigin = presetOrigin;
-            this.presetRotation = presetRotation;
+            if (pData == null)
+                return;
+
+            MapPreset preset = presetList[pData.index];
+            List<Preset_Tile> tiles = preset.GetFootprint();
+
+            // Add the preset to the room's list of presets
+            // This allows the room to instantiate the preset later in the building phase
+            presets.Add(pData);
+
+            // Loop through all preset tiles within the preset
+            foreach (Preset_Tile tile in tiles)
+            {
+                // Get the global position of this tile
+                Vector3 tilePosition = CubeCoord.GetRotatedPosition(tile.gridPosition, pData.localOrigin, pData.rotation) + pData.globalOrigin;
+
+                // Create the tile and assign it's variables
+                Tile newTile = new Tile(tilePosition, this);
+                newTile.SetType(TileType.PRESET);
+
+                // Add the new tile to the room
+                AddTile(newTile);
+            }
         }
     }
 
@@ -289,21 +305,14 @@ namespace MapUtil
                 Room newRoom = GenerateNormalRoom(i);
                 if(newRoom != null)
                 {
+                    newRoom.AddPreset(GetRandomValidPreset(currentLocation, newRoom), roomPresets);
+
                     // Add each tile to the tile map for later access and comparison
                     foreach (Tile t in newRoom.GetTiles())
                     {
                         Vector3 pos = t.gridPosition;
+                        // Change this to uninclude presets later
                         t.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[newRoom.themeIndex].floorMaterials.Count));
-                        genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
-                    }
-                }
-
-                Room bonusRoom = GeneratePresetRoom(roomPresets, i);
-                if(bonusRoom != null)
-                {
-                    foreach (Tile t in bonusRoom.GetTiles())
-                    {
-                        Vector3 pos = t.gridPosition;
                         genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
                     }
                 }
@@ -311,99 +320,7 @@ namespace MapUtil
 
             return genMap;
 
-
             // The below functions are used purely for organizational purposes
-
-            PresetRoom GeneratePresetRoom(List<MapPreset> presetList, int roomIndex)
-            {
-                // NEED TO ACCOUNT FOR ODD VERSUS EVEN COLUMN GENERATION
-                int presetIndex = UnityEngine.Random.Range(0, presetList.Count);
-                MapPreset preset = presetList[presetIndex];
-
-                List<Preset_Tile> tiles = preset.GetFootprint();
-                Dictionary<int, PresetRoom> validRooms = new Dictionary<int, PresetRoom>();
-
-                // Go through all rotations of the chosen preset
-                for (int i = 0; i < 6; i++)
-                {
-                    // Initialize this room
-                    PresetRoom newRoom = new PresetRoom(presetIndex, tiles[0].gridPosition + currentLocation, i * 60);
-
-                    // Loop through each tile in the preset for the given rotation
-                    for(int j = 0; j < tiles.Count; j++)
-                    {
-                        Vector3 rotPosition = GetRotatedPosition(tiles[j].gridPosition + currentLocation, currentLocation, i * 60);
-
-                        // Check if this rotation variant of the tile is open
-                        if (PositionOpen(rotPosition))
-                        {
-                            Tile newTile = new Tile(rotPosition, newRoom);
-                            newTile.SetType(TileType.PRESET);
-
-                            newTile.obj = tiles[j].tileObject;
-                            newRoom.AddTile(newTile);
-                            SetTileWalls(newTile, newRoom);
-                        }
-                        else
-                        {
-                            // If this position is not open, break the loop since this preset can't be used
-                            break;
-                        }  
-                    }
-
-                    // Check to see if all tiles cleared
-                    if (newRoom.GetTiles().Count == tiles.Count)
-                    {
-                        validRooms.Add(i*60, newRoom);
-                    }
-                }
-
-                // Check to make sure that at least one valid room was found
-                // If not, backtrack to find a possible position for it
-                if (validRooms.Count == 0)
-                {
-                    // If this triggers, all possible neighbors are invalid and the map is basically filled
-                    if (roomIndex - 1 < 0)
-                        return null;
-
-                    // Set the loop to redo the current room at a new point not within the deadzones
-                    // Make this a loop that will go until it finds a neighbor
-
-                    Vector3 nextLocation = NULL_VECTOR;
-                    int nextRoomIndex = roomIndex;
-
-                    // Start at the previous room and run through all previous rooms to find
-                    for (int k = roomIndex - 1; k >= 0; k--)
-                    {
-                        List<Vector3> previousPath = roomGenPaths[k];
-                        nextLocation = GetBacktrackNeighbor(ref previousPath);
-
-                        // If the next location has been found, break the loop
-                        if (nextLocation != NULL_VECTOR)
-                        {
-                            nextRoomIndex = k;
-                            break;
-                        }
-                    }
-
-                    // This will run if no previous rooms have any open tiles at all, in which case the map is dead and done
-                    if (nextLocation == NULL_VECTOR)
-                        return null;
-
-                    // Set the current location and generate a room at the new location
-                    currentLocation = nextLocation;
-                    return GeneratePresetRoom(presetList, nextRoomIndex);
-                }
-
-                // Get a random rotation from the valid rotations
-                PresetRoom nextRoom = validRooms[validRooms.Keys.ToList()[UnityEngine.Random.Range(0, validRooms.Keys.ToList().Count)]];
-
-                genMap.bonusRooms.Add(nextRoom);
-                List<Vector3> roomPath = roomGenPaths[roomIndex];
-                currentLocation = GetBacktrackNeighbor(ref roomPath, nextRoom);
-
-                return nextRoom;
-            }
             Room GenerateNormalRoom(int roomIndex)
             {
                 // Create the new Room to hold the data needed
@@ -542,6 +459,72 @@ namespace MapUtil
                 return NULL_VECTOR;
             }
 
+            PresetData GetRandomValidPreset(Vector3 presetStart, Room room = null)
+            {
+                // Make a copy of the preset list for use in this function
+                List<MapPreset> presets = new List<MapPreset>(roomPresets);
+                
+                // Loop until either preset is found or the list is empty
+                while(presets.Count > 0)
+                {
+                    // Get a random preset index and remove it from the list
+                    int index = UnityEngine.Random.Range(0, presets.Count);
+                    presets.RemoveAt(index);
+
+                    // Get the valid rotations of this preset at the position
+                    List<PresetData> validPresets = GetValidPresetRotations(index, presetStart, room);
+
+                    // Check to see if this preset has any valid rotations
+                    if(validPresets.Count > 0)
+                    {
+                        // Return a preset data with the random rotation
+                        return validPresets[UnityEngine.Random.Range(0, validPresets.Count)];
+                    }
+                }
+
+                // No presets were able to be placed at this location
+                return null;
+            }
+            List<PresetData> GetValidPresetRotations(int presetIndex, Vector3 origin, Room room = null)
+            {
+                MapPreset preset = roomPresets[presetIndex];
+                List<Preset_Tile> tiles = preset.GetFootprint();
+                List<PresetData> validPresets = new List<PresetData>();
+
+                // Check every entry point
+                foreach (Vector3 pivotTile in preset.entryPoints)
+                {
+                    // Check every rotation of the room in respect to the entrypoint
+                    for (int i = 0; i < 6; i++)
+                    {
+                        // Create an array to store all the tile gridPositions
+                        List<Vector3> gridPositions = new List<Vector3>();
+
+                        // Loop through each tile in the preset for the given rotation
+                        for (int j = 0; j < tiles.Count; j++)
+                        {
+                            // Get the local position of the tile rotated around the origin
+                            Vector3 rotPosition = CubeCoord.GetRotatedPosition(tiles[j].gridPosition, pivotTile, i * 60);
+
+                            // Check if the global position of this tile is open
+                            if (PositionOpen(rotPosition + origin, room))
+                                gridPositions.Add(rotPosition + origin);
+                            else
+                                // If this position is not open, break the loop since this preset can't be used
+                                break;
+                        }
+
+                        // Check to see if all tiles cleared, if so, add this to the list of valid presets
+                        if (gridPositions.Count == tiles.Count)
+                        {
+                            validPresets.Add(new PresetData(pivotTile, origin, i*60, presetIndex, gridPositions));
+                        }
+                    }
+                }
+
+                return validPresets;
+            }
+
             void SetTileWalls(Tile tile, Room room)
             {
                 Vector3 tilePosition = tile.gridPosition;
@@ -618,38 +601,35 @@ namespace MapUtil
             }
         }
 
-        /// <summary>
-        /// Returns the rotated position of the given Vector3
-        /// </summary>
-        /// <param name="pos">The Vector3 that will be rotated</param>
-        /// <param name="origin">The Vector3 that pos should be rotated around</param>
-        /// <param name="rot">The rotation amount (Use increments of 60 DEGREES)</param>
-        /// <returns></returns>
-        public static Vector3 GetRotatedPosition(Vector3 pos, Vector3 origin, int rot)
-        {
-            // Convert the vector 3 into a cube coordinate
-            CubeCoord cubePos = CubeCoord.FromVector3(pos);
-            CubeCoord cubeOrigin = CubeCoord.FromVector3(origin);
-
-            // The amount of times this should be rotated in increments of 60
-            int rotIncrements = Mathf.FloorToInt(rot / 60);
-
-            // Subtract the origin from the position to get the local position
-            CubeCoord rotatedPos = CubeCoord.Subtract(cubePos, cubeOrigin);
-            for(int i = 0; i < rotIncrements; i++)
-            {
-                rotatedPos = new CubeCoord
-                    (
-                        -rotatedPos.s,
-                        -rotatedPos.q,
-                        -rotatedPos.r,
-                        rotatedPos.h
-                    );
-            }
-            return CubeCoord.ToVector3(CubeCoord.Add(cubeOrigin, rotatedPos));
-        }
+        
     }
 
+    public class PresetData
+    {
+        public int rotation;
+        public int index;
+        public Vector3 localOrigin;
+        public Vector3 globalOrigin;
+
+        public List<Vector3> tilePositions { get; private set; } = new List<Vector3>();
+
+        public PresetData(Vector3 localOrigin, Vector3 globalOrigin,  int rotation, int index, List<Vector3> tilePositions)
+        {
+            this.localOrigin = localOrigin;
+            this.globalOrigin = globalOrigin;
+            this.rotation = rotation;
+            this.index = index;
+            this.tilePositions = tilePositions;
+        }
+
+        public void AddTile(Vector3 tile)
+        {
+            if (!tilePositions.Contains(tile))
+            {
+                tilePositions.Add(tile);
+            }
+        }
+    }
     public class CubeCoord
     {
         public int q;
@@ -691,6 +671,37 @@ namespace MapUtil
         {
             CubeCoord vec = Subtract(a, b);
             return (Mathf.Abs(vec.q) + Mathf.Abs(vec.r) + Mathf.Abs(vec.s)) / 2;
+        }
+
+        /// <summary>
+        /// Returns the rotated position of the given Vector3
+        /// </summary>
+        /// <param name="pos">The Vector3 that will be rotated</param>
+        /// <param name="origin">The Vector3 that pos should be rotated around</param>
+        /// <param name="rot">The rotation amount (Use increments of 60 DEGREES)</param>
+        /// <returns></returns>
+        public static Vector3 GetRotatedPosition(Vector3 pos, Vector3 origin, int rot)
+        {
+            // Convert the vector 3 into a cube coordinate
+            CubeCoord cubePos = FromVector3(pos);
+            CubeCoord cubeOrigin = FromVector3(origin);
+
+            // The amount of times this should be rotated in increments of 60
+            int rotIncrements = Mathf.FloorToInt(rot % 360);
+
+            // Subtract the origin from the position to get the local position
+            CubeCoord rotatedPos = Subtract(cubePos, cubeOrigin);
+            for (int i = 0; i < rotIncrements; i++)
+            {
+                rotatedPos = new CubeCoord
+                    (
+                        -rotatedPos.s,
+                        -rotatedPos.q,
+                        -rotatedPos.r,
+                        rotatedPos.h
+                    );
+            }
+            return ToVector3(Add(cubeOrigin, rotatedPos));
         }
 
         public override string ToString()

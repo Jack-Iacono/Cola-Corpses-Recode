@@ -19,7 +19,7 @@ public class MapBuilder : MonoBehaviour
     [SerializeField]
     private List<MapPreset> roomPresets = new List<MapPreset>();
 
-    private readonly Vector3 mapDim = new Vector3(100, 4, 100);
+    private readonly Vector3 mapDim = new Vector3(100, 1, 100);
     private Vector2 roomTileRange = new Vector2(50, 50);
     private int roomCount = 2;
 
@@ -52,82 +52,79 @@ public class MapBuilder : MonoBehaviour
             normalRooms[i].obj = roomParent;
             roomParent.transform.parent = mapParent.transform;
 
-            UnityEngine.Color roomColor = UnityEngine.Random.ColorHSV();
-
             List<Tile> tiles = normalRooms[i].GetTiles();
-            List<Wall> walls = new List<Wall>();
-            for(int j = 0; j < tiles.Count; j++)
+
+            // Spawn the presets within the given room
+            for (int j = 0; j < normalRooms[i].presets.Count; j++)
             {
-                BuildTile(tiles[j], roomParent, roomColor);
-                BuildWalls(tiles[j]);
-                foreach(Wall w in tiles[j].GetWalls())
+                PresetData data = normalRooms[i].presets[j];
+                GameObject presetParent = Instantiate(roomPresets[data.index].obj, roomParent.transform);
+                MapPreset preset = presetParent.GetComponent<MapPreset>();
+                preset.CreateTileLinks();
+                presetParent.name = "Preset " + j;
+
+                // Sets the room to the correct position on the map
+                presetParent.transform.position = new Vector3
+                (
+                    (data.globalOrigin.x + data.localOrigin.x) * (tileRadius * 1.5f),
+                    (data.globalOrigin.y + data.localOrigin.y) * Map.FLOOR_HEIGHT,
+                    (data.globalOrigin.z + data.localOrigin.z) * tileSideDistance
+                );
+                // Rotate the room to match the tile's desired rotation
+                presetParent.transform.rotation = Quaternion.Euler(0, data.rotation, 0);
+                presetParent.transform.localScale = Vector3.one * tileRadius;
+
+                foreach(Vector3 position in data.tilePositions)
                 {
-                    if(w != null)
-                        walls.Add(w);
+                    Tile presetTile = normalRooms[i].GetTileAtLocation(position);
+                    presetTile.obj = preset.tileLinks[CubeCoord.GetRotatedPosition(position - data.globalOrigin, data.localOrigin, -data.rotation)];
+                    presetTile.obj.name = "Preset Tile " + position;
                 }
             }
+
+            // Create the tiles and walls from each tile
+            for (int j = 0; j < tiles.Count; j++)
+            {
+                BuildTile(tiles[j], roomParent);
+                BuildWalls(tiles[j]);
+            }
+
+            // Generate the wall and tile mesh for this room
             GenerateTileMesh(normalRooms[i]);
             GenerateWallMesh(normalRooms[i]);
         }
 
-        List<PresetRoom> bonusRooms = map.GetBonusRooms();
-        for (int i = 0; i < bonusRooms.Count; i++)
-        {
-            // Generate the room from the prefab at the location of the first tile
-            PresetRoom room = bonusRooms[i];
-            GameObject roomParent = Instantiate(roomPresets[bonusRooms[i].presetIndex].obj, mapParent.transform);
-            MapPreset preset = roomParent.GetComponent<MapPreset>();
-            roomParent.name = "Bonus Room " + i;
-
-            // Sets the room to the correct position on the map
-            roomParent.transform.position = new Vector3
-            (
-                room.presetOrigin.x * (tileRadius * 1.5f),
-                room.presetOrigin.y * Map.FLOOR_HEIGHT,
-                room.presetOrigin.z * tileSideDistance
-            );
-            // Rotate the room to match the tile's desired rotation
-            roomParent.transform.rotation = Quaternion.Euler(0, room.presetRotation, 0);
-            roomParent.transform.localScale = Vector3.one * tileRadius;
-
-            List<Tile> tiles = bonusRooms[i].GetTiles();
-            for (int j = 0; j < tiles.Count; j++)
-            {
-                // Set the tile object from the linked objects dictionary in the preset
-                tiles[j].obj = preset.GetFootprint()[j].tileObject;
-                tiles[j].obj.name = "Tile " + tiles[j].gridPosition.ToString();
-                BuildWalls(tiles[j]);
-            }
-        }
-
         mapParent.transform.localScale *= MAP_SCALE;
 
-        void BuildTile(Tile tile, GameObject roomParent, UnityEngine.Color roomColor)
+        void BuildTile(Tile tile, GameObject roomParent)
         {
-            GameObject tileObject = Instantiate(floorPrefabNormal);
-            tileObject.transform.parent = roomParent.transform;
-            Vector3 tileGridPosition = tile.gridPosition;
-
-            tileObject.transform.position = new Vector3
-            (
-                tileGridPosition.x * (tileRadius * 1.5f),
-                tileGridPosition.y * Map.FLOOR_HEIGHT,
-                tileGridPosition.z * tileSideDistance
-            );
-            tileObject.transform.rotation = Quaternion.identity;
-
-            foreach(Collider c in tileObject.GetComponentsInChildren<Collider>())
+            if(tile.type == TileType.NORMAL)
             {
-                c.transform.localScale = new Vector3
-                (
-                    c.transform.localScale.x * Map.TILE_RADIUS,
-                    c.transform.localScale.y * Map.FLOOR_THICKNESS,
-                    c.transform.localScale.z * Map.TILE_RADIUS
-                );
-            }
-            tileObject.name = "Tile " + tileGridPosition.ToString();
+                GameObject tileObject = Instantiate(floorPrefabNormal);
+                tileObject.transform.parent = roomParent.transform;
+                Vector3 tileGridPosition = tile.gridPosition;
 
-            tile.obj = tileObject;
+                tileObject.transform.position = new Vector3
+                (
+                    tileGridPosition.x * (tileRadius * 1.5f),
+                    tileGridPosition.y * Map.FLOOR_HEIGHT,
+                    tileGridPosition.z * tileSideDistance
+                );
+                tileObject.transform.rotation = Quaternion.identity;
+
+                foreach (Collider c in tileObject.GetComponentsInChildren<Collider>())
+                {
+                    c.transform.localScale = new Vector3
+                    (
+                        c.transform.localScale.x * Map.TILE_RADIUS,
+                        c.transform.localScale.y * Map.FLOOR_THICKNESS,
+                        c.transform.localScale.z * Map.TILE_RADIUS
+                    );
+                }
+                tileObject.name = "Tile " + tileGridPosition.ToString();
+
+                tile.obj = tileObject;
+            }
         }
         void BuildWalls(Tile tile)
         {
@@ -146,7 +143,7 @@ public class MapBuilder : MonoBehaviour
                         wallObject.name = "Wall " + k;
 
                         // the extra amount accounts for 
-                        wallObject.GetComponentInChildren<Collider>().transform.localScale = new Vector3(1 + wallWidthOffset, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS);
+                        wallObject.GetComponentInChildren<Collider>().transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS);
                         wallObject.transform.position = new Vector3
                         (
                             map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,

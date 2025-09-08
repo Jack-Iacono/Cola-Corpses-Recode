@@ -30,10 +30,10 @@ public class MapPreset: MonoBehaviour
         return footprint;
     }
 
-    private void OnValidate()
+    public void CreateTileLinks()
     {
         tileLinks = new Dictionary<Vector3, GameObject>();
-        for(int i = 0; i < footprint.Count; i++)
+        for (int i = 0; i < footprint.Count; i++)
         {
             tileLinks.Add(footprint[i].gridPosition, footprint[i].tileObject);
         }

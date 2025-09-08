@@ -71,6 +71,8 @@ MonoBehaviour:
   - tileObject: {fileID: 4527184963968559519}
     gridPosition: {x: 2, y: 0, z: 4}
   obj: {fileID: 1881235094641870815}
+  entryPoints:
+  - {x: 0, y: 0, z: 0}
 --- !u!1 &7424853187232873562
 GameObject:
   m_ObjectHideFlags: 0
