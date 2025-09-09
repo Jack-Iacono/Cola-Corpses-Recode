@@ -315,6 +315,9 @@ namespace MapUtil
                         t.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[newRoom.themeIndex].floorMaterials.Count));
                         genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
                     }
+
+                    // This will backtrack anywhere on the map to find a new starting location
+                    currentLocation = BacktrackMap();
                 }
             }
 
@@ -346,17 +349,13 @@ namespace MapUtil
                     newRoom.AddTile(newTile);
                     SetTileWalls(newTile, newRoom);
 
-                    // Assign the tile as a hole in the floor for vertical traversal
-                    if (genPath[genPath.Count - 1].y < currentLocation.y)
-                        Debug.Log("");
-
                     // Get next tile in the map
                     Vector3 nextTilePosition = GetRandomValidNeighbor(genPath.Last(), newRoom);
                     if (nextTilePosition == NULL_VECTOR)
                     {
                         // Remove this tile from the path since it is invlaid due to not having a neighbor
                         genPath.RemoveAt(genPath.Count - 1);
-                        nextTilePosition = GetBacktrackNeighbor(ref genPath, newRoom);
+                        nextTilePosition = BacktrackRoom(ref genPath, newRoom);
                         if (nextTilePosition == NULL_VECTOR)
                             break;
                     }
@@ -366,7 +365,7 @@ namespace MapUtil
                 }
 
                 // Check to see if the room fully generated
-                if (newRoom.GetTiles().Count < roomTileGoal - 5)
+                if (newRoom.GetTiles().Count < roomTileGoal * 0.75f)
                 {
                     // Add the room tiles to the deadzone
                     foreach (Tile t in newRoom.GetTiles())
@@ -378,25 +377,8 @@ namespace MapUtil
                     if (roomIndex - 1 < 0)
                         return null;
 
-                    // Set the loop to redo the current room at a new point not within the deadzones
-                    // Make this a loop that will go until it finds a neighbor
-
-                    Vector3 nextLocation = NULL_VECTOR;
-                    int nextRoomIndex = roomIndex;
-
-                    // Start at the previous room and run through all previous rooms to find
-                    for(int k = roomIndex - 1; k >= 0; k--)
-                    {
-                        List<Vector3> previousPath = roomGenPaths[k];
-                        nextLocation = GetBacktrackNeighbor(ref previousPath);
-
-                        // If the next location has been found, break the loop
-                        if (nextLocation != NULL_VECTOR)
-                        {
-                            nextRoomIndex = k;
-                            break;
-                        }
-                    }
+                    // Loop through the whole map to find a new starting location
+                    Vector3 nextLocation = BacktrackMap();
                     
                     // This will run if no previous rooms have any open tiles at all, in which case the map is dead and done
                     if (nextLocation == NULL_VECTOR)
@@ -409,7 +391,7 @@ namespace MapUtil
 
                 // Add the current room to the map since it generated correctly
                 genMap.rooms.Add(newRoom);
-                currentLocation = GetBacktrackNeighbor(ref genPath, newRoom);
+                currentLocation = BacktrackRoom(ref genPath, newRoom);
                 roomGenPaths.Add(genPath);
 
                 return newRoom;
@@ -443,7 +425,7 @@ namespace MapUtil
                 // If no valid neighbor was found, return a null
                 return NULL_VECTOR;
             }
-            Vector3 GetBacktrackNeighbor(ref List<Vector3> roomGenPath, Room room = null)
+            Vector3 BacktrackRoom(ref List<Vector3> roomGenPath, Room room = null)
             {
                 // Run through the list, removing items as you go to find one that has an open tile
                 for (int i = roomGenPath.Count - 1; i > 0; i--)
@@ -458,7 +440,39 @@ namespace MapUtil
 
                 return NULL_VECTOR;
             }
+            Vector3 BacktrackMap(int startingRoom = -1)
+            {
+                // Check whether to start at the end of the map generation or at one specific room
+                int startIndex = startingRoom == -1 ? roomGenPaths.Count - 1 : startingRoom;
 
+                // Go backwards through all rooms in the map
+                for (int i = startIndex; i >= 0; i--)
+                {
+                    List<Vector3> path = roomGenPaths[i];
+                    Vector3 neighbor = BacktrackRoom(ref path);
+
+                    // Check to see if a neighbor was found in the previous room
+                    if(neighbor != NULL_VECTOR)
+                        return neighbor;
+                }
+
+                // THERE IS NOTHING AVAILABLE
+                return NULL_VECTOR;
+            }
+
+            PresetData GetValidPresetPlacement(int presetIndex, Vector3 origin, Room room = null)
+            {
+                // Get the actual preset
+                MapPreset preset = roomPresets[presetIndex];
+                List<PresetData> validPresets = GetValidPresetRotations(presetIndex, origin, room);
+
+                // Check if there are presets to choose from
+                if (validPresets == null || validPresets.Count == 0)
+                    return null;
+
+                // Return a random rotation of this preset
+                return validPresets[UnityEngine.Random.Range(0, validPresets.Count)];
+            }
             PresetData GetRandomValidPreset(Vector3 presetStart, Room room = null)
             {
                 // Make a copy of the preset list for use in this function
@@ -482,7 +496,6 @@ namespace MapUtil
                     }
                 }
 
-                // No presets were able to be placed at this location
                 return null;
             }
             List<PresetData> GetValidPresetRotations(int presetIndex, Vector3 origin, Room room = null)
@@ -601,7 +614,6 @@ namespace MapUtil
             }
         }
 
-        
     }
 
     public class PresetData
@@ -628,6 +640,16 @@ namespace MapUtil
             {
                 tilePositions.Add(tile);
             }
+        }
+
+        public override string ToString()
+        {
+            string temp = string.Empty;
+            foreach (Vector3 tile in tilePositions)
+            {
+                temp += tile + "\n";
+            }
+            return temp;
         }
     }
     public class CubeCoord
@@ -687,7 +709,7 @@ namespace MapUtil
             CubeCoord cubeOrigin = FromVector3(origin);
 
             // The amount of times this should be rotated in increments of 60
-            int rotIncrements = Mathf.FloorToInt(rot % 360);
+            int rotIncrements = Mathf.FloorToInt((360 + (rot % 360)) % 360 / 60);
 
             // Subtract the origin from the position to get the local position
             CubeCoord rotatedPos = Subtract(cubePos, cubeOrigin);

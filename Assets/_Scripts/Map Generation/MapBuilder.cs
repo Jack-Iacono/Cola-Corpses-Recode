@@ -19,9 +19,11 @@ public class MapBuilder : MonoBehaviour
     [SerializeField]
     private List<MapPreset> roomPresets = new List<MapPreset>();
 
-    private readonly Vector3 mapDim = new Vector3(100, 1, 100);
+    // Double the Z that you want, the way hex grids works takes out half of the Z positions
+    // Yes, I know what I'm doing, don't question me
+    private readonly Vector3 mapDim = new Vector3(100, 1, 200);
     private Vector2 roomTileRange = new Vector2(50, 50);
-    private int roomCount = 2;
+    private int roomCount = 10;
 
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
     private const float MAP_SCALE = 1f;
