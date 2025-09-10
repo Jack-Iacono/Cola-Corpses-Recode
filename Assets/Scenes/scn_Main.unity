@@ -354,7 +354,6 @@ MonoBehaviour:
     - {fileID: 2100000, guid: 30b761cadd32d84409539b863f075f00, type: 2}
     - {fileID: 2100000, guid: a44c3de9a346a104b9432e8566a74ce0, type: 2}
   roomPresets:
-  - {fileID: 6051904046834266543, guid: b21a250282e545042b755d37b188d05a, type: 3}
   - {fileID: 6051904046834266543, guid: 73a1a7ded6d9dae49b07d0bf990dd0bb, type: 3}
 --- !u!4 &1680608673
 Transform:

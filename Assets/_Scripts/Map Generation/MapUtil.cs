@@ -38,9 +38,7 @@ namespace MapUtil
             new Vector3(1,0,-1),
             new Vector3(0,0,-2),
             new Vector3(-1,0,-1),
-            new Vector3(-1,0,1),
-            new Vector3(0,1,0),
-            new Vector3(0,-1,0)
+            new Vector3(-1,0,1)
         };
 
         // Initialized later due to initializationg of hexShortLength
@@ -149,26 +147,21 @@ namespace MapUtil
             tiles.Add(tile.gridPosition, tile);
         }
 
-        public void AddPreset(PresetData pData, List<MapPreset> presetList)
+        public void AddPreset(PresetData pData)
         {
+            // Check if the PresetData is null
             if (pData == null)
                 return;
-
-            MapPreset preset = presetList[pData.index];
-            List<Preset_Tile> tiles = preset.GetFootprint();
 
             // Add the preset to the room's list of presets
             // This allows the room to instantiate the preset later in the building phase
             presets.Add(pData);
 
             // Loop through all preset tiles within the preset
-            foreach (Preset_Tile tile in tiles)
+            foreach (Vector3 pos in pData.tilePositions)
             {
-                // Get the global position of this tile
-                Vector3 tilePosition = CubeCoord.GetRotatedPosition(tile.gridPosition, pData.localOrigin, pData.rotation) + pData.globalOrigin;
-
                 // Create the tile and assign it's variables
-                Tile newTile = new Tile(tilePosition, this);
+                Tile newTile = new Tile(pos, this);
                 newTile.SetType(TileType.PRESET);
 
                 // Add the new tile to the room
@@ -305,8 +298,6 @@ namespace MapUtil
                 Room newRoom = GenerateNormalRoom(i);
                 if(newRoom != null)
                 {
-                    newRoom.AddPreset(GetRandomValidPreset(currentLocation, newRoom), roomPresets);
-
                     // Add each tile to the tile map for later access and comparison
                     foreach (Tile t in newRoom.GetTiles())
                     {
@@ -389,6 +380,12 @@ namespace MapUtil
                     return GenerateNormalRoom(roomIndex);
                 }
 
+                PresetData preset = GetPreset(-1, currentLocation, ref genPath, newRoom);
+                if(preset != null)
+                {
+                    newRoom.AddPreset(preset);
+                }
+
                 // Add the current room to the map since it generated correctly
                 genMap.rooms.Add(newRoom);
                 currentLocation = BacktrackRoom(ref genPath, newRoom);
@@ -460,20 +457,29 @@ namespace MapUtil
                 return NULL_VECTOR;
             }
 
-            PresetData GetValidPresetPlacement(int presetIndex, Vector3 origin, Room room = null)
+            PresetData GetPreset(int presetIndex, Vector3 origin, ref List<Vector3> path, Room room = null)
             {
-                // Get the actual preset
-                MapPreset preset = roomPresets[presetIndex];
-                List<PresetData> validPresets = GetValidPresetRotations(presetIndex, origin, room);
+                // Get the list of valid presets for the location
+                // if the user enters -1 for the preset, a random preset will be chosen
+                List<PresetData> validPresets = presetIndex != -1 ? GetValidPresetRotations(presetIndex, origin, room) : GetValidPresets(origin,room);
 
                 // Check if there are presets to choose from
                 if (validPresets == null || validPresets.Count == 0)
-                    return null;
+                {
+                    Vector3 nextNeighbor = BacktrackRoom(ref path, room);
+                    if (nextNeighbor != NULL_VECTOR)
+                    {
+                        path.RemoveAt(path.Count - 1);
+                        return GetPreset(presetIndex, nextNeighbor, ref path, room);
+                    }
+                    else
+                        return null;
+                }
 
                 // Return a random rotation of this preset
                 return validPresets[UnityEngine.Random.Range(0, validPresets.Count)];
             }
-            PresetData GetRandomValidPreset(Vector3 presetStart, Room room = null)
+            List<PresetData> GetValidPresets(Vector3 presetStart, Room room = null)
             {
                 // Make a copy of the preset list for use in this function
                 List<MapPreset> presets = new List<MapPreset>(roomPresets);
@@ -492,7 +498,7 @@ namespace MapUtil
                     if(validPresets.Count > 0)
                     {
                         // Return a preset data with the random rotation
-                        return validPresets[UnityEngine.Random.Range(0, validPresets.Count)];
+                        return validPresets;
                     }
                 }
 
@@ -517,7 +523,7 @@ namespace MapUtil
                         for (int j = 0; j < tiles.Count; j++)
                         {
                             // Get the local position of the tile rotated around the origin
-                            Vector3 rotPosition = CubeCoord.GetRotatedPosition(tiles[j].gridPosition, pivotTile, i * 60);
+                            Vector3 rotPosition = CubeCoord.GetRotatedPosition(tiles[j].gridPosition - pivotTile, Vector3.zero, i * 60);
 
                             // Check if the global position of this tile is open
                             if (PositionOpen(rotPosition + origin, room))
@@ -620,9 +626,11 @@ namespace MapUtil
     {
         public int rotation;
         public int index;
+
         public Vector3 localOrigin;
         public Vector3 globalOrigin;
 
+        // This is the global positions of the tiles
         public List<Vector3> tilePositions { get; private set; } = new List<Vector3>();
 
         public PresetData(Vector3 localOrigin, Vector3 globalOrigin,  int rotation, int index, List<Vector3> tilePositions)
