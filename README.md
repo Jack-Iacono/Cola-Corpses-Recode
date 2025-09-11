@@ -1,2 +1,2 @@
 # Cola-Corpses-Recode
-Teh original Cola Corpses, but updated with more consistent code
+The original Cola Corpses, but updated with more consistent code
