@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEditor.Presets;
 using UnityEngine;
 
 using static MapPreset;
@@ -146,28 +147,6 @@ namespace MapUtil
         {
             tiles.Add(tile.gridPosition, tile);
         }
-
-        public void AddPreset(PresetData pData)
-        {
-            // Check if the PresetData is null
-            if (pData == null)
-                return;
-
-            // Add the preset to the room's list of presets
-            // This allows the room to instantiate the preset later in the building phase
-            presets.Add(pData);
-
-            // Loop through all preset tiles within the preset
-            foreach (Vector3 pos in pData.tilePositions)
-            {
-                // Create the tile and assign it's variables
-                Tile newTile = new Tile(pos, this);
-                newTile.SetType(TileType.PRESET);
-
-                // Add the new tile to the room
-                AddTile(newTile);
-            }
-        }
     }
 
     public class Tile
@@ -288,6 +267,14 @@ namespace MapUtil
             List<Vector3> deadZones = new List<Vector3>();
             List<List<Vector3>> roomGenPaths = new List<List<Vector3>>();
 
+            // Use this list to determine the indices of all presets that can be used as stairs
+            List<int> stairPresetIndices = new List<int>();
+            for(int i = 0; i < roomPresets.Count; i++)
+            {
+                if (roomPresets[i].isStair)
+                    stairPresetIndices.Add(i);
+            }
+
             // Get the mid point of the map bounds
             Vector3 currentLocation = new Vector3(Mathf.FloorToInt(genMap.mapBounds.x / 2), Mathf.FloorToInt(genMap.mapBounds.y / 2), Mathf.FloorToInt(genMap.mapBounds.z / 2));
 
@@ -306,9 +293,6 @@ namespace MapUtil
                         t.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[newRoom.themeIndex].floorMaterials.Count));
                         genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
                     }
-
-                    // This will backtrack anywhere on the map to find a new starting location
-                    currentLocation = BacktrackMap();
                 }
             }
 
@@ -334,22 +318,50 @@ namespace MapUtil
                 {
                     // Add this tile to the path of generated tiles
                     genPath.Add(currentLocation);
+                    Vector3 nextTilePosition = NULL_VECTOR;
 
-                    // create a new tile at this location
-                    Tile newTile = new Tile(currentLocation, newRoom);
-                    newRoom.AddTile(newTile);
-                    SetTileWalls(newTile, newRoom);
+                    if(UnityEngine.Random.Range(0,1f) < floorChangeChance)
+                    {
+                        // Get a random stair preset
+                        int stairPresetIndex = stairPresetIndices[UnityEngine.Random.Range(0, stairPresetIndices.Count)];
+                        PresetData preset = GetPreset(stairPresetIndex, currentLocation, ref genPath, newRoom);
+
+                        // Check if the preset is invalid
+                        if (preset != null)
+                        {
+                            // Add the preset to the room's list of presets
+                            // This allows the room to instantiate the preset later in the building phase
+                            newRoom.presets.Add(preset);
+
+                            // Loop through all preset tiles within the preset
+                            foreach (Vector3 pos in preset.tilePositions)
+                            {
+                                // Create the tile and assign it's variables
+                                Tile newTile = new Tile(pos, newRoom);
+                                newTile.SetType(TileType.PRESET);
+                                SetTileWalls(newTile, newRoom);
+
+                                // Add the new tile to the room
+                                newRoom.AddTile(newTile);
+                            }
+
+                            // If the room had an exit point, get a random one
+                            if (preset.exitPositions.Count > 0)
+                                genPath.Add(preset.exitPositions[UnityEngine.Random.Range(0, preset.exitPositions.Count)]);
+                        }
+                    }
+                    else
+                    {
+                        // create a new tile at this location
+                        Tile newTile = new Tile(currentLocation, newRoom);
+                        newRoom.AddTile(newTile);
+                        SetTileWalls(newTile, newRoom);
+                    }
 
                     // Get next tile in the map
-                    Vector3 nextTilePosition = GetRandomValidNeighbor(genPath.Last(), newRoom);
+                    nextTilePosition = GetNextTile(genPath.Last(), ref genPath, newRoom);
                     if (nextTilePosition == NULL_VECTOR)
-                    {
-                        // Remove this tile from the path since it is invlaid due to not having a neighbor
-                        genPath.RemoveAt(genPath.Count - 1);
-                        nextTilePosition = BacktrackRoom(ref genPath, newRoom);
-                        if (nextTilePosition == NULL_VECTOR)
-                            break;
-                    }
+                        break;
 
                     // Set the current location to the next location
                     currentLocation = nextTilePosition;
@@ -380,12 +392,6 @@ namespace MapUtil
                     return GenerateNormalRoom(roomIndex);
                 }
 
-                PresetData preset = GetPreset(-1, currentLocation, ref genPath, newRoom);
-                if(preset != null)
-                {
-                    newRoom.AddPreset(preset);
-                }
-
                 // Add the current room to the map since it generated correctly
                 genMap.rooms.Add(newRoom);
                 currentLocation = BacktrackRoom(ref genPath, newRoom);
@@ -394,6 +400,17 @@ namespace MapUtil
                 return newRoom;
             }
 
+            Vector3 GetNextTile(Vector3 current, ref List<Vector3> roomGenPath, Room room = null)
+            {
+                Vector3 nextTilePosition = GetRandomValidNeighbor(roomGenPath.Last(), room);
+                if (nextTilePosition == NULL_VECTOR)
+                {
+                    // Remove this tile from the path since it is invlaid due to not having a neighbor
+                    roomGenPath.RemoveAt(roomGenPath.Count - 1);
+                    return BacktrackRoom(ref roomGenPath, room);
+                }
+                return nextTilePosition;
+            }
             Vector3 GetRandomValidNeighbor(Vector3 current, Room room = null)
             {
                 List<Vector3> validHorizontalPositions = new List<Vector3>();
@@ -518,12 +535,19 @@ namespace MapUtil
                     {
                         // Create an array to store all the tile gridPositions
                         List<Vector3> gridPositions = new List<Vector3>();
+                        List<Vector3> exitPositions = new List<Vector3>();
 
                         // Loop through each tile in the preset for the given rotation
                         for (int j = 0; j < tiles.Count; j++)
                         {
                             // Get the local position of the tile rotated around the origin
                             Vector3 rotPosition = CubeCoord.GetRotatedPosition(tiles[j].gridPosition - pivotTile, Vector3.zero, i * 60);
+
+                            // Denote this space as a potential exit point for the preset so that the generation can continue through it
+                            if (preset.entryPoints.Contains(tiles[j].gridPosition) && tiles[j].gridPosition != pivotTile)
+                            {
+                                exitPositions.Add(rotPosition + origin);
+                            }
 
                             // Check if the global position of this tile is open
                             if (PositionOpen(rotPosition + origin, room))
@@ -536,7 +560,7 @@ namespace MapUtil
                         // Check to see if all tiles cleared, if so, add this to the list of valid presets
                         if (gridPositions.Count == tiles.Count)
                         {
-                            validPresets.Add(new PresetData(pivotTile, origin, i*60, presetIndex, gridPositions));
+                            validPresets.Add(new PresetData(pivotTile, origin, i*60, presetIndex, gridPositions, exitPositions));
                         }
                     }
                 }
@@ -544,13 +568,13 @@ namespace MapUtil
                 return validPresets;
             }
 
-            void SetTileWalls(Tile tile, Room room)
+            void SetTileWalls(Tile tile, Room room = null)
             {
                 Vector3 tilePosition = tile.gridPosition;
                 Vector3[] nList = genMap.neighbors;
 
                 // Cuts out the last two neighbors (the vertical neighbors)
-                for (int i = 0; i < nList.Length - 2; i++)
+                for (int i = 0; i < nList.Length; i++)
                 {
                     // Global neighbor shows tiles placed on the global map while local Neighbor
                     Tile globalNeighbor = genMap.GetTileAtLocation(tilePosition + nList[i]);
@@ -632,14 +656,16 @@ namespace MapUtil
 
         // This is the global positions of the tiles
         public List<Vector3> tilePositions { get; private set; } = new List<Vector3>();
+        public List<Vector3> exitPositions = new List<Vector3>();
 
-        public PresetData(Vector3 localOrigin, Vector3 globalOrigin,  int rotation, int index, List<Vector3> tilePositions)
+        public PresetData(Vector3 localOrigin, Vector3 globalOrigin,  int rotation, int index, List<Vector3> tilePositions, List<Vector3> exitPositions)
         {
             this.localOrigin = localOrigin;
             this.globalOrigin = globalOrigin;
             this.rotation = rotation;
             this.index = index;
             this.tilePositions = tilePositions;
+            this.exitPositions = exitPositions;
         }
 
         public void AddTile(Vector3 tile)

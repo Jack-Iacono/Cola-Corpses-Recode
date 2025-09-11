@@ -25,6 +25,12 @@ public class MapPreset: MonoBehaviour
 
     public List<Vector3> entryPoints = new List<Vector3>();
 
+    [Header("Properties")]
+    [Tooltip("Should this preset be used as a staircase?")]
+    public bool isStair = false;
+    [Tooltip("Should this preset be walled in on it's own? Or contained within the walls of the room itself")]
+    public bool isContained = true;
+
     public List<Preset_Tile> GetFootprint()
     {
         return footprint;

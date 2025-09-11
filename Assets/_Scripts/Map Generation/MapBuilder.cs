@@ -17,12 +17,12 @@ public class MapBuilder : MonoBehaviour
     private List<RoomTheme> roomThemes = new List<RoomTheme>();
 
     [SerializeField]
-    private List<MapPreset> roomPresets = new List<MapPreset>();
+    private List<MapPreset> presets = new List<MapPreset>();
 
     // Double the Z that you want, the way hex grids works takes out half of the Z positions
     // Yes, I know what I'm doing, don't question me
-    private readonly Vector3 mapDim = new Vector3(100, 3, 200);
-    private Vector2 roomTileRange = new Vector2(50, 50);
+    private readonly Vector3 mapDim = new Vector3(100, 5, 200);
+    private Vector2 roomTileRange = new Vector2(100, 100);
     private int roomCount = 3;
 
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
@@ -33,7 +33,7 @@ public class MapBuilder : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentMap = MapGenerator.Generate(mapDim, roomCount, roomTileRange, roomPresets, roomThemes);
+        currentMap = MapGenerator.Generate(mapDim, roomCount, roomTileRange, presets, roomThemes);
         BuildMap(currentMap);
     }
 
@@ -60,7 +60,7 @@ public class MapBuilder : MonoBehaviour
             for (int j = 0; j < normalRooms[i].presets.Count; j++)
             {
                 PresetData data = normalRooms[i].presets[j];
-                GameObject presetParent = Instantiate(roomPresets[data.index].obj, roomParent.transform);
+                GameObject presetParent = Instantiate(presets[data.index].obj, roomParent.transform);
                 MapPreset preset = presetParent.GetComponent<MapPreset>();
                 preset.CreateTileLinks();
                 presetParent.name = "Preset " + j;
