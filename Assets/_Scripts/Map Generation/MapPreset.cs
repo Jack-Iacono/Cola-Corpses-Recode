@@ -50,4 +50,5 @@ public class Preset_Tile
 {
     public GameObject tileObject;
     public Vector3 gridPosition;
+    public bool isEmpty = false;
 }

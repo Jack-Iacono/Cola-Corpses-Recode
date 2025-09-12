@@ -5,6 +5,7 @@ using UnityEngine;
 
 using MapUtil;
 using System;
+using UnityEngine.UIElements;
 
 public class MapBuilder : MonoBehaviour
 {
@@ -80,11 +81,14 @@ public class MapBuilder : MonoBehaviour
                 presetParent.transform.localScale = Vector3.one * tileRadius;
 
                 // Connect the tile to the object that was instantiated
-                foreach(Vector3 position in data.tilePositions)
+                foreach(Tile t in data.tiles.Keys)
                 {
-                    Tile presetTile = normalRooms[i].GetTileAtLocation(position);
-                    presetTile.obj = preset.tileLinks[CubeCoord.GetRotatedPosition(position - data.globalOrigin, Vector3.zero, -data.rotation) + data.localOrigin];
-                    presetTile.obj.name = "Preset Tile " + position;
+                    if(t.type == TileType.PRESET)
+                    {
+                        t.obj = preset.tileLinks[data.tiles[t]];
+                        t.obj.name = "Preset Tile " + t.gridPosition;
+                        //presetTile.obj = preset.tileLinks[CubeCoord.GetRotatedPosition(position - data.globalOrigin, Vector3.zero, -data.rotation) + data.localOrigin];
+                    }
                 }
             }
 
