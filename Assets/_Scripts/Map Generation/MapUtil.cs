@@ -333,12 +333,20 @@ namespace MapUtil
                             // This allows the room to instantiate the preset later in the building phase
                             newRoom.presets.Add(preset);
 
+                            // Check if this prefab should be self contained or open to the room
+                            bool contained = roomPresets[preset.index].isContained;
+
+                            // Set all walls for this contained prefab
+                            if (contained)
+                                SetTileWallsIsolated(preset.tiles.Keys.ToList(), newRoom);
+
                             // Loop through all preset tiles within the preset
                             foreach (Tile tile in preset.tiles.Keys)
                             {
                                 // Build walls around the preset
                                 // Add differentiation between contained and not contained later
-                                SetTileWalls(tile, newRoom);
+                                if (!contained)
+                                    SetTileWalls(tile, newRoom);
 
                                 // Add the new tile to the room
                                 newRoom.AddTile(tile);
@@ -613,7 +621,7 @@ namespace MapUtil
                 return validPresets;
             }
 
-            void SetTileWalls(Tile tile, Room room = null)
+            void SetTileWalls(Tile tile, Room room)
             {
                 Vector3 tilePosition = tile.gridPosition;
                 Vector3[] nList = genMap.neighbors;
@@ -661,6 +669,65 @@ namespace MapUtil
                     else
                     {
                         localNeighbor.RemoveWall((i + 3) % 6);
+                    }
+                }
+            }
+            void SetTileWallsIsolated(List<Tile> tiles, Room room)
+            {
+                for(int i = 0; i < tiles.Count; i++)
+                {
+                    Tile tile = tiles[i];
+                    Vector3 tilePosition = tile.gridPosition;
+                    Vector3[] nList = genMap.neighbors;
+
+                    // Cuts out the last two neighbors (the vertical neighbors)
+                    for (int j = 0; j < nList.Length; j++)
+                    {
+                        // Check if a neighbor is present
+                        Tile localNeighbor = room == null ? null : room.GetTileAtLocation(tilePosition + nList[i]);
+                        Tile globalNeighbor = genMap.GetTileAtLocation(nList[j] + tilePosition);
+
+                        if (globalNeighbor != null)
+                        {
+                            // Get the wall that the neighbor may or may not have
+                            Wall neighborWall = globalNeighbor.walls[(j + 3) % 6];
+
+                            if (neighborWall == null)
+                            {
+                                // If there is currently no wall between this tile and the neighbor, create on
+                                Wall newWall = new Wall(WallType.NORMAL, tile);
+                                tile.AddWall(j, newWall);
+                                globalNeighbor.AddWall((j + 3) % 6, newWall);
+
+                                // Assign a random material from the list to the wall
+                                newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                                newWall.SetMaterialIndex(globalNeighbor, UnityEngine.Random.Range(0, roomThemes[globalNeighbor.room.themeIndex].wallMaterials.Count));
+                            }
+                            else
+                            {
+                                // If the neighbor already has a wall in this position, add it to this tile as well and connected them
+                                tile.AddWall(j, neighborWall);
+
+                                // Assign the wall a random material index
+                                neighborWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                            }
+                        }
+                        else if (localNeighbor == null)
+                        {
+                            Wall newWall = new Wall(WallType.NORMAL, tile);
+                            tile.AddWall(j, newWall);
+
+                            // Assign a random material from the list to the wall
+                            newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                        }
+                        else if(!tiles.Contains(new Tile(tilePosition + nList[j], room)))
+                        {
+                            Wall newWall = new Wall(WallType.NORMAL, tile);
+                            tile.AddWall(j, newWall);
+
+                            // Assign a random material from the list to the wall
+                            newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                        }
                     }
                 }
             }

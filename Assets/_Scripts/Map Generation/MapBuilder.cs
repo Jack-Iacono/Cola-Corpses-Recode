@@ -87,7 +87,6 @@ public class MapBuilder : MonoBehaviour
                     {
                         t.obj = preset.tileLinks[data.tiles[t]];
                         t.obj.name = "Preset Tile " + t.gridPosition;
-                        //presetTile.obj = preset.tileLinks[CubeCoord.GetRotatedPosition(position - data.globalOrigin, Vector3.zero, -data.rotation) + data.localOrigin];
                     }
                 }
             }
@@ -131,6 +130,23 @@ public class MapBuilder : MonoBehaviour
                         c.transform.localScale.z * Map.TILE_RADIUS
                     );
                 }
+                tileObject.name = "Tile " + tileGridPosition.ToString();
+
+                tile.obj = tileObject;
+            }
+            else if(tile.type == TileType.EMPTY)
+            {
+                GameObject tileObject = new GameObject();
+                tileObject.transform.parent = roomParent.transform;
+                Vector3 tileGridPosition = tile.gridPosition;
+
+                tileObject.transform.position = new Vector3
+                (
+                    tileGridPosition.x * (tileRadius * 1.5f),
+                    tileGridPosition.y * Map.FLOOR_HEIGHT,
+                    tileGridPosition.z * tileSideDistance
+                );
+                tileObject.transform.rotation = Quaternion.identity;
                 tileObject.name = "Tile " + tileGridPosition.ToString();
 
                 tile.obj = tileObject;
