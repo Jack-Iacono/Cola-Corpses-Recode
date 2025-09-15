@@ -83,7 +83,7 @@ public class MapBuilder : MonoBehaviour
                 // Connect the tile to the object that was instantiated
                 foreach(Tile t in data.tiles.Keys)
                 {
-                    if(t.type == TileType.PRESET)
+                    if(t.type == TileType.CUSTOM)
                     {
                         t.obj = preset.tileLinks[data.tiles[t]];
                         t.obj.name = "Preset Tile " + t.gridPosition;
