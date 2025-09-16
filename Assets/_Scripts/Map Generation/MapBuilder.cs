@@ -22,7 +22,7 @@ public class MapBuilder : MonoBehaviour
 
     // Double the Z that you want, the way hex grids works takes out half of the Z positions
     // Yes, I know what I'm doing, don't question me
-    private readonly Vector3 mapDim = new Vector3(100, 5, 200);
+    private readonly Vector3 mapDim = new Vector3(100, 1, 200);
     private Vector2 roomTileRange = new Vector2(100, 100);
     private int roomCount = 3;
 

@@ -288,6 +288,10 @@ namespace MapUtil
             // Store the potential doors that are found from generating the map
             Dictionary<RoomPair, List<Wall>> potentialDoors = new Dictionary<RoomPair, List <Wall>>();
 
+            // Store the doors that lead out of contained presets
+            // This is a little more complicated since each preset needs to store multiple exit tiles and their doors
+            Dictionary<PresetData, Dictionary<Room, List<Wall>>> containedPresetWalls = new Dictionary<PresetData, Dictionary<Room, List<Wall>>>();
+
             // Use this list to determine the indices of all presets that can be used as stairs
             List<int> stairPresetIndices = new List<int>();
             for(int i = 0; i < roomPresets.Count; i++)
@@ -317,12 +321,17 @@ namespace MapUtil
                 }
             }
 
-            // Place all the doors on the completed map
+            // Generate the walls for the map
+            foreach(Room room in genMap.GetRooms())
+            {
+                SetRoomWalls(room);
+            }
+            // Place all the doors on the map
             SetDoors();
 
             return genMap;
 
-            // The below functions are used purely for organizational purposes
+            // The below functions are used purely for organizational purposes -----------------------------------------------------
             Room GenerateNormalRoom(int roomIndex)
             {
                 // Create the new Room to hold the data needed
@@ -356,6 +365,8 @@ namespace MapUtil
                             // Add the preset to the room's list of presets
                             // This allows the room to instantiate the preset later in the building phase
                             newRoom.presets.Add(preset);
+
+                            Debug.Log(preset.localOrigin + "|| " + preset.rotation);
 
                             // Loop through all preset tiles within the preset
                             foreach (Tile tile in preset.tiles.Keys)
@@ -408,11 +419,6 @@ namespace MapUtil
                     // Set the current location and generate a room at the new location
                     currentLocation = nextLocation;
                     return GenerateNormalRoom(roomIndex);
-                }
-                else
-                {
-                    // Since the room was built correctly, generate the walls
-                    SetRoomWalls(newRoom);
                 }
 
                 // Add the current room to the map since it generated correctly
@@ -623,7 +629,6 @@ namespace MapUtil
                                 else
                                     newTile.SetType(TileType.CUSTOM);
 
-
                                 presetTiles.Add(newTile, tiles[j].gridPosition);
                             }
                             else
@@ -648,25 +653,28 @@ namespace MapUtil
                 // This works since this is the minimum walls a preset could have as well
                 List<Tile> roomTiles = room.GetTiles();
 
+                // This is for normal tiles
                 foreach(Tile tile in room.GetTiles())
                 {
+                    // Don't evaluate this tile if it is in a contained preset
+                    if (tile.presetContained)
+                        continue;
+
                     Vector3 tilePosition = tile.gridPosition;
                     Vector3[] nList = genMap.neighbors;
 
-                    // Cuts out the last two neighbors (the vertical neighbors)
                     for (int i = 0; i < nList.Length; i++)
                     {
                         // Global neighbor shows tiles placed on the global map while local Neighbor
-                        Tile globalNeighbor = genMap.GetTileAtLocation(tilePosition + nList[i]);
-                        Tile localNeighbor = room.GetTileAtLocation(tilePosition + nList[i]);
+                        Tile neighbor = genMap.GetTileAtLocation(tilePosition + nList[i]);
 
-                        // If there is a neighbor in another room
-                        if (globalNeighbor != null)
+                        // Check if there is a tile and if it is in another room
+                        if (neighbor != null && neighbor.room != room)
                         {
                             // These walls should be stored as candidates for doors between rooms
-                            Wall neighborWall = globalNeighbor.walls[(i + 3) % 6];
+                            Wall neighborWall = neighbor.walls[(i + 3) % 6];
 
-                            RoomPair connectedRooms = new RoomPair(room, globalNeighbor.room);
+                            RoomPair connectedRooms = new RoomPair(room, neighbor.room);
                             if (!potentialDoors.ContainsKey(connectedRooms))
                                 potentialDoors.Add(connectedRooms, new List<Wall>());
 
@@ -675,14 +683,14 @@ namespace MapUtil
                                 // If there is currently no wall between this tile and the neighbor, create on
                                 Wall newWall = new Wall(WallType.NORMAL, tile);
                                 tile.AddWall(i, newWall);
-                                globalNeighbor.AddWall((i + 3) % 6, newWall);
+                                neighbor.AddWall((i + 3) % 6, newWall);
 
                                 // Assign a random material from the list to the wall
                                 newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
-                                newWall.SetMaterialIndex(globalNeighbor, UnityEngine.Random.Range(0, roomThemes[globalNeighbor.room.themeIndex].wallMaterials.Count));
+                                newWall.SetMaterialIndex(neighbor, UnityEngine.Random.Range(0, roomThemes[neighbor.room.themeIndex].wallMaterials.Count));
 
                                 // Add this wall to the list of potential doors
-                                if(!tile.modificationLocked && !globalNeighbor.modificationLocked)
+                                if(!tile.modificationLocked && !neighbor.modificationLocked && !neighbor.presetContained)
                                     potentialDoors[connectedRooms].Add(newWall);
                             }
                             else
@@ -694,21 +702,17 @@ namespace MapUtil
                                 neighborWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
 
                                 // Add this wall to the list of potential doors
-                                if (!tile.modificationLocked && !globalNeighbor.modificationLocked)
+                                if (!tile.modificationLocked && !neighbor.modificationLocked && !neighbor.presetContained)
                                     potentialDoors[connectedRooms].Add(neighborWall);
                             }
                         }
-                        else if (localNeighbor == null)
+                        else if(neighbor == null)
                         {
                             Wall newWall = new Wall(WallType.NORMAL, tile);
                             tile.AddWall(i, newWall);
 
                             // Assign a random material from the list to the wall
                             newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
-                        }
-                        else
-                        {
-                            localNeighbor.RemoveWall((i + 3) % 6);
                         }
                     }
                 }
@@ -725,24 +729,51 @@ namespace MapUtil
                             Vector3 tilePosition = tile.gridPosition;
                             Vector3[] nList = genMap.neighbors;
 
-                            List<Wall> potentialDoors = new List<Wall>();
-
                             // Cuts out the last two neighbors (the vertical neighbors)
                             for (int i = 0; i < nList.Length; i++)
                             {
                                 // Global neighbor shows tiles placed on the global map while local Neighbor
-                                Tile localNeighbor = room.GetTileAtLocation(tilePosition + nList[i]);
+                                Tile neighbor = genMap.GetTileAtLocation(tilePosition + nList[i]);
 
-                                if (localNeighbor != null && !pData.tiles.Keys.ToList().Contains(localNeighbor))
+                                // Check if there is a neighbor and whether it is within this prefab or not
+                                if (neighbor != null && !pData.tiles.Keys.ToList().Contains(neighbor))
                                 {
-                                    // If there is currently no wall between this tile and the neighbor, create on
+                                    Room neighborRoom = neighbor.room;
+
+                                    // These walls should be stored as candidates for doors between rooms
+                                    Wall neighborWall = neighbor.walls[(i + 3) % 6];
+
+                                    if (neighborWall == null)
+                                    {
+                                        // If there is currently no wall between this tile and the neighbor, create on
+                                        Wall newWall = new Wall(WallType.NORMAL, tile);
+                                        tile.AddWall(i, newWall);
+                                        neighbor.AddWall((i + 3) % 6, newWall);
+
+                                        // Assign a random material from the list to the wall
+                                        newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                                        newWall.SetMaterialIndex(neighbor, UnityEngine.Random.Range(0, roomThemes[neighbor.room.themeIndex].wallMaterials.Count));
+
+                                        // Add this tile as a potential door for this preset
+                                        // Potential tiles are located at any entry/exit point of the preset
+                                        if (pData.globalOrigin == tile.gridPosition || pData.exitPositions.Contains(tile.gridPosition))
+                                        {
+                                            if(!containedPresetWalls.ContainsKey(pData))
+                                                containedPresetWalls.Add(pData, new Dictionary<Room, List<Wall>>());
+                                            if(!containedPresetWalls[pData].ContainsKey(neighborRoom))
+                                                containedPresetWalls[pData].Add(neighborRoom, new List<Wall>());
+                                            containedPresetWalls[pData][neighborRoom].Add(newWall);
+                                        }
+                                    }
+                                }
+                                else if(neighbor == null)
+                                {
+                                    // If there is no neighbor on the map, place a wall
                                     Wall newWall = new Wall(WallType.NORMAL, tile);
                                     tile.AddWall(i, newWall);
-                                    localNeighbor.AddWall((i + 3) % 6, newWall);
 
                                     // Assign a random material from the list to the wall
                                     newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
-                                    newWall.SetMaterialIndex(localNeighbor, UnityEngine.Random.Range(0, roomThemes[localNeighbor.room.themeIndex].wallMaterials.Count));
                                 }
                             }
                         }
@@ -755,6 +786,15 @@ namespace MapUtil
                 foreach(List<Wall> doorSpots in potentialDoors.Values)
                 {
                     doorSpots[UnityEngine.Random.Range(0, doorSpots.Count)].SetType(WallType.DOOR);
+                }
+
+                // Loop through all doors within all contained presets in the map
+                foreach(Dictionary<Room, List<Wall>> dict in containedPresetWalls.Values)
+                {
+                    foreach(List<Wall> walls in dict.Values)
+                    {
+                        walls[UnityEngine.Random.Range(0, walls.Count)].SetType(WallType.DOOR);
+                    }
                 }
             }
 
@@ -841,6 +881,16 @@ namespace MapUtil
                 temp += tile.gridPosition + "\n";
             }
             return temp;
+        }
+
+        public override bool Equals(object obj)
+        {
+            PresetData other = obj as PresetData;
+            return tiles.Equals(other.tiles) && index == other.index;
+        }
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(tiles,index);
         }
     }
     public class CubeCoord
