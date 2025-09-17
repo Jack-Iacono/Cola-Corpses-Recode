@@ -292,6 +292,9 @@ namespace MapUtil
             // This is a little more complicated since each preset needs to store multiple exit tiles and their doors
             Dictionary<PresetData, Dictionary<Room, List<Wall>>> containedPresetWalls = new Dictionary<PresetData, Dictionary<Room, List<Wall>>>();
 
+            // These tiles are denoted as walls no matter what to ensure map traversal is possible
+            List<(Tile,int)> wallOverrides = new List<(Tile, int)>();
+
             // Use this list to determine the indices of all presets that can be used as stairs
             List<int> stairPresetIndices = new List<int>();
             for(int i = 0; i < roomPresets.Count; i++)
@@ -332,6 +335,7 @@ namespace MapUtil
             return genMap;
 
             // The below functions are used purely for organizational purposes -----------------------------------------------------
+
             Room GenerateNormalRoom(int roomIndex)
             {
                 // Create the new Room to hold the data needed
@@ -366,8 +370,6 @@ namespace MapUtil
                             // This allows the room to instantiate the preset later in the building phase
                             newRoom.presets.Add(preset);
 
-                            Debug.Log(preset.localOrigin + "|| " + preset.rotation);
-
                             // Loop through all preset tiles within the preset
                             foreach (Tile tile in preset.tiles.Keys)
                             {
@@ -377,7 +379,13 @@ namespace MapUtil
 
                             // If the room had an exit point, get a random one
                             if (preset.exitPositions.Count > 0)
+                            {
                                 genPath.Add(preset.exitPositions[UnityEngine.Random.Range(0, preset.exitPositions.Count)]);
+                            }
+                            else if (roomPresets[preset.index].isContained)
+                            {
+                                genPath.RemoveAt(genPath.Count-1);
+                            }
                         }
                     }
                     else
@@ -509,7 +517,7 @@ namespace MapUtil
                 // if the user enters -1 for the preset, a random preset will be chosen
                 List<PresetData> validPresets = presetIndex != -1 ? GetValidPresetRotations(presetIndex, origin, room) : GetValidPresets(origin,room);
 
-                // Check if there are presets to choose from
+                // Check if there are no presets to choose from
                 if (validPresets == null || validPresets.Count == 0)
                 {
                     Vector3 nextNeighbor = BacktrackRoom(ref path, room);
@@ -605,7 +613,8 @@ namespace MapUtil
                             Vector3 rotPosition = CubeCoord.GetRotatedPosition(tiles[j].gridPosition - pivotTile, Vector3.zero, i * 60);
 
                             // Denote this space as a potential exit point for the preset so that the generation can continue through it
-                            if (preset.entryPoints.Contains(tiles[j].gridPosition) && tiles[j].gridPosition != pivotTile)
+                            // This can choose the same tile as the entrance and exit
+                            if (preset.entryPoints.Contains(tiles[j].gridPosition))
                             {
                                 exitPositions.Add(rotPosition + origin);
                             }
@@ -785,7 +794,9 @@ namespace MapUtil
                 // Run through all the potential doors to choose random ones
                 foreach(List<Wall> doorSpots in potentialDoors.Values)
                 {
-                    doorSpots[UnityEngine.Random.Range(0, doorSpots.Count)].SetType(WallType.DOOR);
+                    // Door spots can sometimes yield no doors
+                    if(doorSpots.Count > 0)
+                        doorSpots[UnityEngine.Random.Range(0, doorSpots.Count)].SetType(WallType.DOOR);
                 }
 
                 // Loop through all doors within all contained presets in the map
