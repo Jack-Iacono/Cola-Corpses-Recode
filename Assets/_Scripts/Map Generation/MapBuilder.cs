@@ -6,6 +6,7 @@ using UnityEngine;
 using MapUtil;
 using System;
 using UnityEngine.UIElements;
+using UnityEditor.Presets;
 
 public class MapBuilder : MonoBehaviour
 {
@@ -22,9 +23,9 @@ public class MapBuilder : MonoBehaviour
 
     // Double the Z that you want, the way hex grids works takes out half of the Z positions
     // Yes, I know what I'm doing, don't question me
-    private readonly Vector3 mapDim = new Vector3(1000, 1, 2000);
+    private readonly Vector3 mapDim = new Vector3(100, 5, 200);
     private Vector2 roomTileRange = new Vector2(100, 100);
-    private int roomCount = 20;
+    private int roomCount = 3;
 
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
     private const float MAP_SCALE = 1f;
@@ -163,13 +164,18 @@ public class MapBuilder : MonoBehaviour
                 {
                     Wall wall = tile.walls[k];
 
-                    if (wall != null)
+                    // Make sure the wall is normal
+                    if (wall != null && wall.type == WallType.NORMAL)
                     {
+                        // Create the wall object
                         GameObject wallObject = Instantiate(wallPrefabNormal, tileObject.transform);
                         wallObject.name = "Wall " + k;
 
-                        // the extra amount accounts for 
-                        wallObject.GetComponentInChildren<Collider>().transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS);
+                        // This size mod will adjust the size of the walls on the preset to account for the change in size of the preset
+                        float sizeMod = tile.type == TileType.CUSTOM ? Map.TILE_RADIUS : 1;
+
+                        // Set the transform of the wall
+                        wallObject.GetComponentInChildren<Collider>().transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS) / sizeMod;
                         wallObject.transform.position = new Vector3
                         (
                             map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,
@@ -178,8 +184,10 @@ public class MapBuilder : MonoBehaviour
                         );
                         wallObject.transform.rotation = Quaternion.Euler(new Vector3(0, k * 60, 0));
 
+                        // Assign this object to the wall data type
                         tile.walls[k].obj = wallObject;
 
+                        // Add this wall to the list of placed walls
                         placedWalls.Add(wall);
                     }
                 }
@@ -294,6 +302,7 @@ public class MapBuilder : MonoBehaviour
                 GameObject tileObject = tile.obj;
                 newInstance.mesh = floorMesh;
 
+                // Get the transform of the tile
                 Vector3 scale = new Vector3(tileObject.transform.localScale.x * Map.TILE_RADIUS, tileObject.transform.localScale.y / 2 * Map.FLOOR_THICKNESS, tileObject.transform.localScale.z * Map.TILE_RADIUS);
                 Vector3 pos = tileObject.transform.position;
                 Quaternion rot = tileObject.transform.rotation;

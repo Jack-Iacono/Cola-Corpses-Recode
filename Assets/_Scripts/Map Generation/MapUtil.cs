@@ -290,17 +290,17 @@ namespace MapUtil
 
             // Store the doors that lead out of contained presets
             // This is a little more complicated since each preset needs to store multiple exit tiles and their doors
-            Dictionary<PresetData, Dictionary<Room, List<Wall>>> containedPresetWalls = new Dictionary<PresetData, Dictionary<Room, List<Wall>>>();
+            Dictionary<Tile, List<Wall>> containedPresetWalls = new Dictionary<Tile, List<Wall>>();
 
-            // These tiles are denoted as walls no matter what to ensure map traversal is possible
-            List<(Tile,int)> wallOverrides = new List<(Tile, int)>();
-
-            // Use this list to determine the indices of all presets that can be used as stairs
+            // Orgainze the preset indices based on their function
             List<int> stairPresetIndices = new List<int>();
+            List<int> normalPresetIndices = new List<int>();
             for(int i = 0; i < roomPresets.Count; i++)
             {
                 if (roomPresets[i].isStair)
                     stairPresetIndices.Add(i);
+                else
+                    normalPresetIndices.Add(i);
             }
 
             // Get the mid point of the map bounds
@@ -353,8 +353,6 @@ namespace MapUtil
                 // Generate the tiles in the given room
                 for (int j = 0; j < roomTileGoal; j++)
                 {
-                    // Add this tile to the path of generated tiles
-                    genPath.Add(currentLocation);
                     Vector3 nextTilePosition = NULL_VECTOR;
 
                     if(UnityEngine.Random.Range(0,1f) < floorChangeChance)
@@ -377,26 +375,50 @@ namespace MapUtil
                                 newRoom.AddTile(tile);
                             }
 
-                            // If the room had an exit point, get a random one
+                            // Check if there are any valid exit positions from this preset
+                            //  If there are none: Don't do anything, the algorithm will continue from the previous position
+                            //  If there are: Continue through this prefab, this looks different for contained vs traversal presets
                             if (preset.exitPositions.Count > 0)
                             {
-                                genPath.Add(preset.exitPositions[UnityEngine.Random.Range(0, preset.exitPositions.Count)]);
-                            }
-                            else if (roomPresets[preset.index].isContained)
-                            {
-                                genPath.RemoveAt(genPath.Count-1);
+                                // If the room had an exit point, get a random one
+                                if (!preset.isContained)
+                                {
+                                    // Add the current location as well as the next location to the genPath for use later
+                                    genPath.Add(currentLocation);
+                                    Vector3 exitPosition = preset.exitPositions[UnityEngine.Random.Range(0, preset.exitPositions.Count)];
+                                    genPath.Add(exitPosition);
+                                    currentLocation = exitPosition;
+                                }
+                                else
+                                {
+                                    // Pick a random exit and get a tile that could come next
+                                    // This tile will likely be, but won't necessarily be, connected to the chosen exit
+                                    int index = UnityEngine.Random.Range(0, preset.exitPositions.Count);
+                                    Vector3 next = GetNextTile(preset.exitPositions[index], ref genPath, newRoom);
+                                    genPath.Add(next);
+
+                                    // Create a new tile to take the place of the next tile placed by the 
+                                    Tile newTile = new Tile(next, newRoom);
+                                    newRoom.AddTile(newTile);
+
+                                    // Move the current location to match the changes made here
+                                    currentLocation = next;
+                                }
                             }
                         }
                     }
                     else
                     {
+                        // Add this tile to the path of generated tiles
+                        genPath.Add(currentLocation);
+
                         // create a new tile at this location
                         Tile newTile = new Tile(currentLocation, newRoom);
                         newRoom.AddTile(newTile);
                     }
 
                     // Get next tile in the map
-                    nextTilePosition = GetNextTile(genPath.Last(), ref genPath, newRoom);
+                    nextTilePosition = GetNextTile(currentLocation, ref genPath, newRoom);
                     if (nextTilePosition == NULL_VECTOR)
                         break;
 
@@ -437,9 +459,10 @@ namespace MapUtil
                 return newRoom;
             }
 
+            // These methods control the flow of the algorithm through the map
             Vector3 GetNextTile(Vector3 current, ref List<Vector3> roomGenPath, Room room = null)
             {
-                Vector3 nextTilePosition = GetRandomValidNeighbor(roomGenPath.Last(), room);
+                Vector3 nextTilePosition = GetRandomValidNeighbor(current, room);
                 if (nextTilePosition == NULL_VECTOR)
                 {
                     // Remove this tile from the path since it is invlaid due to not having a neighbor
@@ -511,6 +534,7 @@ namespace MapUtil
                 return NULL_VECTOR;
             }
 
+            // These methods get valid preset locations based on the current state of the map
             PresetData GetPreset(int presetIndex, Vector3 origin, List<Vector3> path, Room room)
             {
                 // Get the list of valid presets for the location
@@ -614,7 +638,7 @@ namespace MapUtil
 
                             // Denote this space as a potential exit point for the preset so that the generation can continue through it
                             // This can choose the same tile as the entrance and exit
-                            if (preset.entryPoints.Contains(tiles[j].gridPosition))
+                            if (preset.entryPoints.Contains(tiles[j].gridPosition) && tiles[j].gridPosition != pivotTile)
                             {
                                 exitPositions.Add(rotPosition + origin);
                             }
@@ -648,7 +672,7 @@ namespace MapUtil
                         // Check to see if all tiles cleared, if so, add this to the list of valid presets
                         if (presetTiles.Count == tiles.Count)
                         {
-                            validPresets.Add(new PresetData(pivotTile, origin, i*60, presetIndex, presetTiles, exitPositions));
+                            validPresets.Add(new PresetData(pivotTile, origin, i*60, presetIndex, presetTiles, exitPositions, preset));
                         }
                     }
                 }
@@ -763,15 +787,17 @@ namespace MapUtil
                                         newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
                                         newWall.SetMaterialIndex(neighbor, UnityEngine.Random.Range(0, roomThemes[neighbor.room.themeIndex].wallMaterials.Count));
 
-                                        // Add this tile as a potential door for this preset
-                                        // Potential tiles are located at any entry/exit point of the preset
-                                        if (pData.globalOrigin == tile.gridPosition || pData.exitPositions.Contains(tile.gridPosition))
+                                        // Check for several conditions
+                                        // Is the tile NOT contained within a preset
+                                        // Is the tile either the entry point OR a potential exit point
+                                        if (!neighbor.presetContained && (pData.globalOrigin == tile.gridPosition || pData.exitPositions.Contains(tile.gridPosition)))
                                         {
-                                            if(!containedPresetWalls.ContainsKey(pData))
-                                                containedPresetWalls.Add(pData, new Dictionary<Room, List<Wall>>());
-                                            if(!containedPresetWalls[pData].ContainsKey(neighborRoom))
-                                                containedPresetWalls[pData].Add(neighborRoom, new List<Wall>());
-                                            containedPresetWalls[pData][neighborRoom].Add(newWall);
+                                            // Add the entry to the dictionary if it doesn't already exist
+                                            if(!containedPresetWalls.ContainsKey(tile))
+                                                containedPresetWalls.Add(tile, new List<Wall>());
+
+                                            // Add this tile as a door candidate
+                                            containedPresetWalls[tile].Add(newWall);
                                         }
                                     }
                                 }
@@ -799,13 +825,10 @@ namespace MapUtil
                         doorSpots[UnityEngine.Random.Range(0, doorSpots.Count)].SetType(WallType.DOOR);
                 }
 
-                // Loop through all doors within all contained presets in the map
-                foreach(Dictionary<Room, List<Wall>> dict in containedPresetWalls.Values)
+                // Go through all preset exits and add doors
+                foreach (List<Wall> walls in containedPresetWalls.Values)
                 {
-                    foreach(List<Wall> walls in dict.Values)
-                    {
-                        walls[UnityEngine.Random.Range(0, walls.Count)].SetType(WallType.DOOR);
-                    }
+                    walls[UnityEngine.Random.Range(0, walls.Count)].SetType(WallType.DOOR);
                 }
             }
 
@@ -861,6 +884,9 @@ namespace MapUtil
         public int rotation;
         public int index;
 
+        public bool isStair = false;
+        public bool isContained = false;
+
         public Vector3 localOrigin;
         public Vector3 globalOrigin;
 
@@ -869,7 +895,7 @@ namespace MapUtil
         // Exit points are global
         public List<Vector3> exitPositions = new List<Vector3>();
 
-        public PresetData(Vector3 localOrigin, Vector3 globalOrigin,  int rotation, int index, Dictionary<Tile, Vector3> tiles, List<Vector3> exitPositions)
+        public PresetData(Vector3 localOrigin, Vector3 globalOrigin,  int rotation, int index, Dictionary<Tile, Vector3> tiles, List<Vector3> exitPositions, MapPreset preset)
         {
             this.localOrigin = localOrigin;
             this.globalOrigin = globalOrigin;
@@ -877,6 +903,10 @@ namespace MapUtil
             this.index = index;
             this.tiles = tiles;
             this.exitPositions = exitPositions;
+
+            // Store the properties from the preset here as well for easier access later
+            this.isStair = preset.isStair;
+            this.isContained = preset.isContained;
         }
 
         public void AddTile(Tile tile, Vector3 localPos)
@@ -953,7 +983,7 @@ namespace MapUtil
         /// <param name="pos">The Vector3 that will be rotated</param>
         /// <param name="origin">The Vector3 that pos should be rotated around</param>
         /// <param name="rot">The rotation amount (Use increments of 60 DEGREES)</param>
-        /// <returns></returns>
+        /// <returns>The Vector3 representing the rotated pos variable</returns>
         public static Vector3 GetRotatedPosition(Vector3 pos, Vector3 origin, int rot)
         {
             // Convert the vector 3 into a cube coordinate
