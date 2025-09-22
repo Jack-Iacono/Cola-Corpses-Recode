@@ -13,7 +13,8 @@ public class MapBuilder : MonoBehaviour
     public GameObject floorPrefabNormal;
     public GameObject wallPrefabNormal;
 
-    public Mesh floorMesh;
+    public Mesh hexMesh;
+    public Mesh wallMesh;
 
     [SerializeField]
     private List<RoomTheme> roomThemes = new List<RoomTheme>();
@@ -102,6 +103,7 @@ public class MapBuilder : MonoBehaviour
             // Generate the wall and tile mesh for this room
             GenerateTileMesh(normalRooms[i]);
             GenerateWallMesh(normalRooms[i]);
+            GenerateCeilingMesh(normalRooms[i]);
         }
 
         mapParent.transform.localScale *= MAP_SCALE;
@@ -194,6 +196,7 @@ public class MapBuilder : MonoBehaviour
             }
         }
 
+        // These can probably be combined into one method, but I want to make it work before doing that
         Mesh GenerateWallMesh(Room room)
         {
             // Create a 2D list of combine instances that
@@ -218,29 +221,23 @@ public class MapBuilder : MonoBehaviour
                     GameObject wallObject = wall.obj;
                     CombineInstance newInstance = new CombineInstance();
 
-                    // Create a basic 1 sided wall mesh for the wall since you won't be able to see it from the other side
-                    Mesh n = new Mesh();
-                    // This offset will place the mesh on the outer side of the wall so that it matches with collision
-                    float zOffset = -Map.WALL_THICKNESS / 2 * tileRadius;
-                    n.vertices = new Vector3[] 
-                    { 
-                        new Vector3(-0.5f, -0.5f, zOffset), 
-                        new Vector3(0.5f, -0.5f, zOffset), 
-                        new Vector3(-0.5f, 0.5f, zOffset), 
-                        new Vector3(0.5f, 0.5f, zOffset) 
-                    };
-                    n.triangles = new int[] { 0, 2, 1, 1, 2, 3 };
-                    n.uv = new Vector2[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
-                    newInstance.mesh = n;
+                    newInstance.mesh = wallMesh;
 
                     // Set the "transform" of the mesh which is basically just the transform of the wall
-                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, Map.FLOOR_HEIGHT, 1) ;
+                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS) ;
+                    // Mess with this more to make it fit, but also figure out where the number comes from
                     Vector3 pos = new Vector3
                     (
                         map.hexagonExteriorSidePositions[i].x + tile.obj.transform.position.x,
                         tile.obj.transform.position.y + Map.FLOOR_HEIGHT / 2,
                         map.hexagonExteriorSidePositions[i].y + tile.obj.transform.position.z
                     );
+                    pos -= new Vector3
+                        (
+                        map.hexagonExteriorSidePositions[i].x * (Map.WALL_THICKNESS / 4),
+                        0,
+                        map.hexagonExteriorSidePositions[i].y * (Map.WALL_THICKNESS / 4)
+                        );
                     Quaternion rot = Quaternion.Euler(new Vector3(0, i * 60, 0));
 
                     Matrix4x4 transformationMatrix = Matrix4x4.TRS
@@ -300,11 +297,11 @@ public class MapBuilder : MonoBehaviour
                 CombineInstance newInstance = new CombineInstance();
 
                 GameObject tileObject = tile.obj;
-                newInstance.mesh = floorMesh;
+                newInstance.mesh = hexMesh;
 
                 // Get the transform of the tile
-                Vector3 scale = new Vector3(tileObject.transform.localScale.x * Map.TILE_RADIUS, tileObject.transform.localScale.y / 2 * Map.FLOOR_THICKNESS, tileObject.transform.localScale.z * Map.TILE_RADIUS);
-                Vector3 pos = tileObject.transform.position;
+                Vector3 scale = new Vector3(tileObject.transform.localScale.x * Map.TILE_RADIUS, tileObject.transform.localScale.y / 2 * (Map.FLOOR_THICKNESS / 2), tileObject.transform.localScale.z * Map.TILE_RADIUS);
+                Vector3 pos = tileObject.transform.position + (Map.FLOOR_THICKNESS / 4 * Vector3.up);
                 Quaternion rot = tileObject.transform.rotation;
 
                 newInstance.transform = Matrix4x4.TRS( pos, rot, scale );
@@ -337,10 +334,70 @@ public class MapBuilder : MonoBehaviour
             // Assign this mesh to a new gameobject within the room
             Mesh combinedMesh = new Mesh();
             combinedMesh.CombineMeshes(finalInstances, false);
-            GameObject testObj = new GameObject("Static Tile Mesh");
+            GameObject testObj = new GameObject("Static Floor Mesh");
             testObj.transform.parent = room.obj.transform;
             testObj.AddComponent<MeshFilter>().mesh = combinedMesh;
             testObj.AddComponent<MeshRenderer>().materials = roomThemes[room.themeIndex].floorMaterials.ToArray();
+
+            return combinedMesh;
+        }
+        Mesh GenerateCeilingMesh(Room room)
+        {
+            // Create a 2D list of combine instances that
+            List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].ceilingMaterials.Count];
+
+            // Loop through all tiles within the given room
+            foreach (Tile tile in room.GetTiles())
+            {
+                Ceiling ceil = tile.ceiling;
+
+                if (ceil == null)
+                    continue;
+
+                CombineInstance newInstance = new CombineInstance();
+
+                GameObject tileObject = tile.obj;
+                newInstance.mesh = hexMesh;
+
+                // Get the transform of the tile
+                Vector3 scale = new Vector3(tileObject.transform.localScale.x * Map.TILE_RADIUS, tileObject.transform.localScale.y / 2 * (Map.FLOOR_THICKNESS / 2), tileObject.transform.localScale.z * Map.TILE_RADIUS);
+                Vector3 pos = tileObject.transform.position + ((Map.FLOOR_HEIGHT - Map.FLOOR_THICKNESS / 4) * Vector3.up);
+                Quaternion rot = tileObject.transform.rotation;
+
+                newInstance.transform = Matrix4x4.TRS(pos, rot, scale);
+
+                // Add this mesh to the appropriate group for submesh creation
+                if (materialGroups[ceil.materialIndex] == null)
+                    materialGroups[ceil.materialIndex] = new List<CombineInstance>();
+                materialGroups[ceil.materialIndex].Add(newInstance);
+            }
+
+            // Create a list of material meshes that each contain meshes with one material type
+            List<Mesh> combinedMaterialMeshes = new List<Mesh>();
+            foreach (List<CombineInstance> materialInstances in materialGroups)
+            {
+                Mesh newMesh = new Mesh();
+                newMesh.CombineMeshes(materialInstances.ToArray(), true);
+                combinedMaterialMeshes.Add(newMesh);
+            }
+
+            // Create a final combined mesh that has a submesh for each material
+            CombineInstance[] finalInstances = new CombineInstance[combinedMaterialMeshes.Count];
+            for (int i = 0; i < combinedMaterialMeshes.Count; i++)
+            {
+                CombineInstance newInstance = new CombineInstance();
+                newInstance.mesh = combinedMaterialMeshes[i];
+                newInstance.transform = room.obj.transform.localToWorldMatrix;
+                finalInstances[i] = newInstance;
+            }
+
+            // Assign this mesh to a new gameobject within the room
+            Mesh combinedMesh = new Mesh();
+            combinedMesh.CombineMeshes(finalInstances, false);
+            GameObject testObj = new GameObject("Static Ceiling Mesh");
+            testObj.transform.parent = room.obj.transform;
+            testObj.AddComponent<MeshFilter>().mesh = combinedMesh;
+            testObj.AddComponent<MeshRenderer>().materials = roomThemes[room.themeIndex].ceilingMaterials.ToArray();
 
             return combinedMesh;
         }
@@ -354,4 +411,6 @@ public class RoomTheme
     public List<Material> floorMaterials = new List<Material>();
     [SerializeField]
     public List<Material> wallMaterials = new List<Material>();
+    [SerializeField]
+    public List<Material> ceilingMaterials = new List<Material>();
 }

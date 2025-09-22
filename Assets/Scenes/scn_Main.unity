@@ -339,12 +339,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   floorPrefabNormal: {fileID: 4686199875529075276, guid: b21183efd62e86b4b98acf262210aa46, type: 3}
   wallPrefabNormal: {fileID: 2278421077726955728, guid: 735eef81471f57b4e8d84c0a41b3f555, type: 3}
-  floorMesh: {fileID: 2534964839176971238, guid: 03b4ed3721765e34581af207f62c5c8c, type: 3}
+  hexMesh: {fileID: -4575734979276873811, guid: 03b4ed3721765e34581af207f62c5c8c, type: 3}
+  wallMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   roomThemes:
   - floorMaterials:
     - {fileID: 2100000, guid: 7de8420f0c8e0464594971247a2719d1, type: 2}
     - {fileID: 2100000, guid: 0ba30ad8e1697e047bdbcb850b7ee3de, type: 2}
     wallMaterials:
+    - {fileID: 2100000, guid: 17e12896471f5524695cca6d304471cc, type: 2}
+    - {fileID: 2100000, guid: ff1a5e8b36c6d5c4bbe517bcb74dda50, type: 2}
+    ceilingMaterials:
     - {fileID: 2100000, guid: 17e12896471f5524695cca6d304471cc, type: 2}
     - {fileID: 2100000, guid: ff1a5e8b36c6d5c4bbe517bcb74dda50, type: 2}
   - floorMaterials:
@@ -353,17 +357,20 @@ MonoBehaviour:
     wallMaterials:
     - {fileID: 2100000, guid: 30b761cadd32d84409539b863f075f00, type: 2}
     - {fileID: 2100000, guid: a44c3de9a346a104b9432e8566a74ce0, type: 2}
+    ceilingMaterials:
+    - {fileID: 2100000, guid: 30b761cadd32d84409539b863f075f00, type: 2}
+    - {fileID: 2100000, guid: a44c3de9a346a104b9432e8566a74ce0, type: 2}
   - floorMaterials:
     - {fileID: 2100000, guid: d189499bf8145c74497c36e5864be427, type: 2}
     - {fileID: 2100000, guid: f6ef1a805fb6445469874c843a76347d, type: 2}
     wallMaterials:
     - {fileID: 2100000, guid: e0a3975c7ba177d418a04132516b58e0, type: 2}
     - {fileID: 2100000, guid: 1d9106723638789468b5e2278b5fc34b, type: 2}
+    ceilingMaterials:
+    - {fileID: 2100000, guid: e0a3975c7ba177d418a04132516b58e0, type: 2}
+    - {fileID: 2100000, guid: 1d9106723638789468b5e2278b5fc34b, type: 2}
   presets:
   - {fileID: 6051904046834266543, guid: 73a1a7ded6d9dae49b07d0bf990dd0bb, type: 3}
-  - {fileID: 6051904046834266543, guid: b21a250282e545042b755d37b188d05a, type: 3}
-  - {fileID: 6051904046834266543, guid: fb22c8081ff78314d99aa09632da701b, type: 3}
-  - {fileID: 6051904046834266543, guid: 49317f78c6006374ba020ac3e716e1c2, type: 3}
 --- !u!4 &1680608673
 Transform:
   m_ObjectHideFlags: 0

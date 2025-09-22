@@ -162,6 +162,7 @@ namespace MapUtil
         public Vector3 gridPosition = Vector3.zero;
         public Room room;
         public Wall[] walls = new Wall[6];
+        public Ceiling ceiling = null;
 
         public GameObject obj = null;
 
@@ -199,6 +200,11 @@ namespace MapUtil
                 walls[index].RemoveConnectedTile(this);
                 walls[index] = null;
             }
+        }
+
+        public void SetCeiling(Ceiling ceiling)
+        {
+            this.ceiling = ceiling;
         }
 
         public void SetType(TileType type)
@@ -269,6 +275,18 @@ namespace MapUtil
             return connectedTiles;
         }
     }   
+    public class Ceiling
+    {
+        // Use this class to store the elements of the ceiling
+        // This can be lights or various other elements
+
+        public int materialIndex { get; private set; } = -1;
+
+        public void SetMaterialIndex(int index)
+        {
+            materialIndex = index;
+        }
+    }
 
     public static class MapGenerator
     {
@@ -310,7 +328,7 @@ namespace MapUtil
             for (int i = 0; i < roomCount; i++)
             {
                 // Create a new room to hold the tiles, but don't add it to the map yet in case it doesn't generate fully
-                Room newRoom = GenerateNormalRoom(i);
+                Room newRoom = GenerateRoom(i);
                 if(newRoom != null)
                 {
                     // Add each tile to the tile map for later access and comparison
@@ -328,6 +346,7 @@ namespace MapUtil
             foreach(Room room in genMap.GetRooms())
             {
                 SetRoomWalls(room);
+                SetRoomCeilings(room);
             }
             // Place all the doors on the map
             SetDoors();
@@ -336,7 +355,8 @@ namespace MapUtil
 
             // The below functions are used purely for organizational purposes -----------------------------------------------------
 
-            Room GenerateNormalRoom(int roomIndex)
+            // You'll never guess what this does
+            Room GenerateRoom(int roomIndex)
             {
                 // Create the new Room to hold the data needed
                 Room newRoom = new Room();
@@ -448,7 +468,7 @@ namespace MapUtil
 
                     // Set the current location and generate a room at the new location
                     currentLocation = nextLocation;
-                    return GenerateNormalRoom(roomIndex);
+                    return GenerateRoom(roomIndex);
                 }
 
                 // Add the current room to the map since it generated correctly
@@ -680,6 +700,26 @@ namespace MapUtil
                 return validPresets;
             }
 
+            // These functions are made to run after the map footprint is fully generated to give it other features
+            // Would it be more effecient to do this during generation, probably, does this allow it to have a more wholistic view of the map, yes, so shut up
+            void SetRoomCeilings(Room room)
+            {
+                List<Tile> tiles = room.GetTiles();
+                foreach (Tile tile in tiles)
+                {
+                    // Get the potential tile directly above this tile
+                    Tile aboveTile = genMap.GetTileAtLocation(tile.gridPosition + Vector3.up);
+
+                    // Check to make sure that the tile above is not just empty (in which case there should not be a ceiling)
+                    if(aboveTile == null || aboveTile.type != TileType.EMPTY)
+                    {
+                        // Create the ceiling and assign it to the tile
+                        Ceiling ceil = new Ceiling();
+                        ceil.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[room.themeIndex].ceilingMaterials.Count));
+                        tile.SetCeiling(ceil);
+                    }
+                }
+            }
             void SetRoomWalls(Room room)
             {
                 // Run through all tiles and place the necessary walls
@@ -832,6 +872,7 @@ namespace MapUtil
                 }
             }
 
+            // These functions just help with a bunch of stuff for tile checking
             bool PositionOpen(Vector3 pos, Room room = null)
             {
                 /*
