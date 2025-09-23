@@ -21,6 +21,8 @@ namespace MapUtil
 
         public Vector3 mapBounds { get; private set; } = new Vector3(50, 1, 50);
 
+        public Vector3 originTile = new Vector3(0, 0, 0);
+
         // These are the parameters for what a normal map's proportions look like
         public const float TILE_RADIUS = 2f;
         public const float FLOOR_HEIGHT = 3;
@@ -292,7 +294,7 @@ namespace MapUtil
     {
         // While this is not technically null, the graph that generates the points will never have to use this position
         private static readonly Vector3 NULL_VECTOR = new Vector3(-1, -1, -1);
-        private const float floorChangeChance = 0.01f;
+        private const float prefabPlaceChance = 0.01f;
 
         public static Map Generate(Vector3 bounds, int roomCount, Vector2 roomTileRange, List<MapPreset> roomPresets, List<RoomTheme> roomThemes)
         {
@@ -321,8 +323,9 @@ namespace MapUtil
                     normalPresetIndices.Add(i);
             }
 
-            // Get the mid point of the map bounds
+            // Get the mid point of the map bounds and set that to the origin point of the map
             Vector3 currentLocation = new Vector3(Mathf.FloorToInt(genMap.mapBounds.x / 2), Mathf.FloorToInt(genMap.mapBounds.y / 2), Mathf.FloorToInt(genMap.mapBounds.z / 2));
+            genMap.originTile = currentLocation;
 
             // Create the desired amount of rooms
             for (int i = 0; i < roomCount; i++)
@@ -375,10 +378,9 @@ namespace MapUtil
                 {
                     Vector3 nextTilePosition = NULL_VECTOR;
 
-                    if(UnityEngine.Random.Range(0,1f) < floorChangeChance)
+                    if(UnityEngine.Random.Range(0,1f) < prefabPlaceChance)
                     {
-                        // Get a random stair preset
-                        //PresetData preset = GetPresetFrom(stairPresetIndices, currentLocation, genPath, newRoom);
+                        // Get a random preset to place at thhis position
                         PresetData preset = GetPreset(-1, currentLocation, genPath, newRoom);
 
                         // Check if the preset is invalid
@@ -511,7 +513,7 @@ namespace MapUtil
                 }
 
                 // If there is a vertical neighbor and either the cahnce to change floors happens, or there are no horizontal neighbors
-                if (validVerticalPosition.Count > 0 && (UnityEngine.Random.Range(0, 1f) < floorChangeChance || validHorizontalPositions.Count == 0))
+                if (validVerticalPosition.Count > 0 && (UnityEngine.Random.Range(0, 1f) < prefabPlaceChance || validHorizontalPositions.Count == 0))
                     return validVerticalPosition[UnityEngine.Random.Range(0, validVerticalPosition.Count)];
                 else if (validHorizontalPositions.Count > 0)
                     return validHorizontalPositions[UnityEngine.Random.Range(0, validHorizontalPositions.Count)];

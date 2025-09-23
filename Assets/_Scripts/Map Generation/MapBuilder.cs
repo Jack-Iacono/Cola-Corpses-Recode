@@ -10,6 +10,9 @@ using UnityEditor.Presets;
 
 public class MapBuilder : MonoBehaviour
 {
+    // This class would be static if not for the prefabs that need to be given in the editor
+    public static MapBuilder Instance;
+
     public GameObject floorPrefabNormal;
     public GameObject wallPrefabNormal;
 
@@ -31,38 +34,49 @@ public class MapBuilder : MonoBehaviour
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
     private const float MAP_SCALE = 1f;
 
-    public Map currentMap;
-
-    // Start is called before the first frame update
-    void Start()
+    // Create a singleton for this class
+    private void Awake()
     {
-        currentMap = MapGenerator.Generate(mapDim, roomCount, roomTileRange, presets, roomThemes);
-        BuildMap(currentMap);
+        if(Instance == null)
+            Instance = this;
+        else
+            Destroy(this);
     }
 
-    private void BuildMap(Map map)
+    public Map GetNewMap()
     {
+        return MapGenerator.Generate(mapDim, roomCount, roomTileRange, presets, roomThemes);
+    }
+    public void BuildMap(Map map)
+    {
+        // Get some of the properties of this map for use later
         float tileRadius = Map.TILE_RADIUS;
         float tileSideDistance = Map.TILE_SIDE_DISTANCE;
         float wallWidthOffset = (Map.WALL_THICKNESS / 2 / Mathf.Sqrt(3)) * 2;
 
+        // Create an empty gameobject to store all of the instantiate things
         GameObject mapParent = new GameObject("Map");
         
+        // This stores walls that have already been placed since the walls link between multiple tiles
         List<Wall> placedWalls = new List<Wall>();
 
-        List<Room> normalRooms = map.GetRooms();
-        for( int i = 0; i < normalRooms.Count; i++)
+        // Loop through all rooms in the map
+        List<Room> rooms = map.GetRooms();
+        for( int i = 0; i < rooms.Count; i++)
         {
+            // Create the object that will house all the instantiated objects
             GameObject roomParent = new GameObject("Room " + i);
-            normalRooms[i].obj = roomParent;
+            rooms[i].obj = roomParent;
             roomParent.transform.parent = mapParent.transform;
 
-            List<Tile> tiles = normalRooms[i].GetTiles();
+            // Get the list of tiles from this room
+            List<Tile> tiles = rooms[i].GetTiles();
 
             // Spawn the presets within the given room
-            for (int j = 0; j < normalRooms[i].presets.Count; j++)
+            for (int j = 0; j < rooms[i].presets.Count; j++)
             {
-                PresetData data = normalRooms[i].presets[j];
+                // Instantiate the prefab that needs to be created
+                PresetData data = rooms[i].presets[j];
                 GameObject presetParent = Instantiate(presets[data.index].obj, roomParent.transform);
                 MapPreset preset = presetParent.GetComponent<MapPreset>();
                 preset.CreateTileLinks();
@@ -101,9 +115,9 @@ public class MapBuilder : MonoBehaviour
             }
 
             // Generate the wall and tile mesh for this room
-            GenerateTileMesh(normalRooms[i]);
-            GenerateWallMesh(normalRooms[i]);
-            GenerateCeilingMesh(normalRooms[i]);
+            GenerateTileMesh(rooms[i]);
+            GenerateWallMesh(rooms[i]);
+            GenerateCeilingMesh(rooms[i]);
         }
 
         mapParent.transform.localScale *= MAP_SCALE;
@@ -224,20 +238,14 @@ public class MapBuilder : MonoBehaviour
                     newInstance.mesh = wallMesh;
 
                     // Set the "transform" of the mesh which is basically just the transform of the wall
-                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS) ;
-                    // Mess with this more to make it fit, but also figure out where the number comes from
+                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS);
+                    Vector2 normalized = map.hexagonExteriorSidePositions[i].normalized;
                     Vector3 pos = new Vector3
                     (
-                        map.hexagonExteriorSidePositions[i].x + tile.obj.transform.position.x,
-                        tile.obj.transform.position.y + Map.FLOOR_HEIGHT / 2,
-                        map.hexagonExteriorSidePositions[i].y + tile.obj.transform.position.z
+                        wallObject.transform.position.x - (normalized.x * (Map.WALL_THICKNESS / 2)),
+                        wallObject.transform.position.y,
+                        wallObject.transform.position.z - (normalized.y * (Map.WALL_THICKNESS / 2))
                     );
-                    pos -= new Vector3
-                        (
-                        map.hexagonExteriorSidePositions[i].x * (Map.WALL_THICKNESS / 4),
-                        0,
-                        map.hexagonExteriorSidePositions[i].y * (Map.WALL_THICKNESS / 4)
-                        );
                     Quaternion rot = Quaternion.Euler(new Vector3(0, i * 60, 0));
 
                     Matrix4x4 transformationMatrix = Matrix4x4.TRS
