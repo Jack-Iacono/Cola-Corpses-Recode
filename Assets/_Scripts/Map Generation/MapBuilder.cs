@@ -45,7 +45,14 @@ public class MapBuilder : MonoBehaviour
 
     public Map GetNewMap()
     {
-        return MapGenerator.Generate(mapDim, roomCount, roomTileRange, presets, roomThemes);
+        Map newMap = MapGenerator.Generate(mapDim, roomCount, roomTileRange, presets, roomThemes);
+        newMap.originTile = new Vector3
+                (
+                    newMap.originTile.x * (Map.TILE_RADIUS * 1.5f),
+                    newMap.originTile.y * Map.FLOOR_HEIGHT,
+                    newMap.originTile.z * Map.TILE_SIDE_DISTANCE
+                );
+        return newMap;
     }
     public void BuildMap(Map map)
     {
@@ -124,12 +131,15 @@ public class MapBuilder : MonoBehaviour
 
         void BuildTile(Tile tile, GameObject roomParent)
         {
+            // Check the type of the given tile
             if(tile.type == TileType.NORMAL)
             {
+                // Create a tile from the given prefab
                 GameObject tileObject = Instantiate(floorPrefabNormal);
                 tileObject.transform.parent = roomParent.transform;
                 Vector3 tileGridPosition = tile.gridPosition;
 
+                // Set the transform of the tile to match the map size
                 tileObject.transform.position = new Vector3
                 (
                     tileGridPosition.x * (tileRadius * 1.5f),
@@ -138,6 +148,7 @@ public class MapBuilder : MonoBehaviour
                 );
                 tileObject.transform.rotation = Quaternion.identity;
 
+                // Set the size of all the colliders in the prefab
                 foreach (Collider c in tileObject.GetComponentsInChildren<Collider>())
                 {
                     c.transform.localScale = new Vector3
@@ -153,10 +164,12 @@ public class MapBuilder : MonoBehaviour
             }
             else if(tile.type == TileType.EMPTY)
             {
+                // Create an empty gameobject to store the walls
                 GameObject tileObject = new GameObject();
                 tileObject.transform.parent = roomParent.transform;
                 Vector3 tileGridPosition = tile.gridPosition;
 
+                // Set the transform as necessary
                 tileObject.transform.position = new Vector3
                 (
                     tileGridPosition.x * (tileRadius * 1.5f),
@@ -167,6 +180,30 @@ public class MapBuilder : MonoBehaviour
                 tileObject.name = "Tile " + tileGridPosition.ToString();
 
                 tile.obj = tileObject;
+            }
+
+            // Add a ceiling collider if there is no tile above this one
+            if(map.GetTileAtLocation(tile.gridPosition + Vector3.up) == null)
+            {
+                // Create a tile from the given prefab
+                GameObject ceilingObject = Instantiate(floorPrefabNormal);
+                ceilingObject.transform.parent = roomParent.transform;
+
+                // Set the transform of the ceiling to match the tile
+                ceilingObject.transform.position = tile.obj.transform.position + Vector3.up * Map.FLOOR_HEIGHT;
+                ceilingObject.transform.rotation = tile.obj.transform.rotation;
+
+                // Set the size of all the colliders in the prefab
+                foreach (Collider c in ceilingObject.GetComponentsInChildren<Collider>())
+                {
+                    c.transform.localScale = new Vector3
+                    (
+                        c.transform.localScale.x * Map.TILE_RADIUS,
+                        c.transform.localScale.y * Map.FLOOR_THICKNESS,
+                        c.transform.localScale.z * Map.TILE_RADIUS
+                    );
+                }
+                ceilingObject.name = "Ceiling " + tile.gridPosition.ToString();
             }
         }
         void BuildWalls(Tile tile)
