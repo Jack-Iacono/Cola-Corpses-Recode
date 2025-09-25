@@ -47,9 +47,6 @@ public class PlayerController : MonoBehaviour
     private KeyCode keySprint = KeyCode.LeftShift;
     private bool isSprinting = false;
 
-    private bool isTrapped = false;
-    private float trapTimer = 0;
-
     private void Awake()
     {
         // Get components on the player

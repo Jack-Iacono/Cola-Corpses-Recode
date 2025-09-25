@@ -20,11 +20,11 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientSkyColor: {r: 0.7735849, g: 0.7735849, b: 0.7735849, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 0
+  m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
   m_HaloStrength: 0.5
@@ -97,7 +97,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_LightingSettings: {fileID: 0}
+  m_LightingSettings: {fileID: 4890085278179872738, guid: 85ae99a4f7a179246858dea29fe252a9, type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -202,7 +202,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -233,7 +233,7 @@ Light:
   m_RenderMode: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 54
   m_RenderingLayerMask: 1
   m_Lightmapping: 1
   m_LightShadowCasterMode: 0
@@ -254,13 +254,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!1 &1680608671
 GameObject:
   m_ObjectHideFlags: 0
@@ -292,8 +292,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   floorPrefabNormal: {fileID: 4686199875529075276, guid: b21183efd62e86b4b98acf262210aa46, type: 3}
   wallPrefabNormal: {fileID: 2278421077726955728, guid: 735eef81471f57b4e8d84c0a41b3f555, type: 3}
-  hexMesh: {fileID: -4575734979276873811, guid: 03b4ed3721765e34581af207f62c5c8c, type: 3}
-  wallMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  ceilingPrefab: {fileID: 4686199875529075276, guid: 4e941fb59268ee246ae4b96b2eec37b7, type: 3}
+  hexMesh: {fileID: 7549645591732606959, guid: 8dd96bfb6eb834348920b551ec98f957, type: 3}
+  wallMesh: {fileID: 5295183640014958613, guid: 45f5ebdba84924c459d8e88304db75d4, type: 3}
   roomThemes:
   - floorMaterials:
     - {fileID: 2100000, guid: 7de8420f0c8e0464594971247a2719d1, type: 2}

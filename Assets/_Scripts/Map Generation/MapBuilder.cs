@@ -15,6 +15,7 @@ public class MapBuilder : MonoBehaviour
 
     public GameObject floorPrefabNormal;
     public GameObject wallPrefabNormal;
+    public GameObject ceilingPrefab;
 
     public Mesh hexMesh;
     public Mesh wallMesh;
@@ -29,7 +30,7 @@ public class MapBuilder : MonoBehaviour
     // Yes, I know what I'm doing, don't question me
     private readonly Vector3 mapDim = new Vector3(100, 5, 200);
     private Vector2 roomTileRange = new Vector2(100, 100);
-    private int roomCount = 3;
+    private int roomCount = 1;
 
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
     private const float MAP_SCALE = 1f;
@@ -122,7 +123,7 @@ public class MapBuilder : MonoBehaviour
             }
 
             // Generate the wall and tile mesh for this room
-            GenerateTileMesh(rooms[i]);
+            GenerateFloorMesh(rooms[i]);
             GenerateWallMesh(rooms[i]);
             GenerateCeilingMesh(rooms[i]);
         }
@@ -182,28 +183,34 @@ public class MapBuilder : MonoBehaviour
                 tile.obj = tileObject;
             }
 
-            // Add a ceiling collider if there is no tile above this one
-            if(map.GetTileAtLocation(tile.gridPosition + Vector3.up) == null)
+            // Add the ceiling for this tile
+            if(tile.ceiling != null)
             {
-                // Create a tile from the given prefab
-                GameObject ceilingObject = Instantiate(floorPrefabNormal);
-                ceilingObject.transform.parent = roomParent.transform;
+                Ceiling ceiling = tile.ceiling;
 
-                // Set the transform of the ceiling to match the tile
-                ceilingObject.transform.position = tile.obj.transform.position + Vector3.up * Map.FLOOR_HEIGHT;
-                ceilingObject.transform.rotation = tile.obj.transform.rotation;
-
-                // Set the size of all the colliders in the prefab
-                foreach (Collider c in ceilingObject.GetComponentsInChildren<Collider>())
+                // Add a ceiling collider if there is no tile above this one
+                if (ceiling.hasCollider)
                 {
-                    c.transform.localScale = new Vector3
-                    (
-                        c.transform.localScale.x * Map.TILE_RADIUS,
-                        c.transform.localScale.y * Map.FLOOR_THICKNESS,
-                        c.transform.localScale.z * Map.TILE_RADIUS
-                    );
+                    // Create a tile from the given prefab
+                    GameObject ceilingObject = Instantiate(floorPrefabNormal);
+                    ceilingObject.transform.parent = tile.obj.transform;
+
+                    // Set the transform of the ceiling to match the tile
+                    ceilingObject.transform.position = tile.obj.transform.position + Vector3.up * Map.FLOOR_HEIGHT;
+                    ceilingObject.transform.rotation = tile.obj.transform.rotation;
+
+                    // Set the size of all the colliders in the prefab
+                    foreach (Collider c in ceilingObject.GetComponentsInChildren<Collider>())
+                    {
+                        c.transform.localScale = new Vector3
+                        (
+                            c.transform.localScale.x * Map.TILE_RADIUS,
+                            c.transform.localScale.y * Map.FLOOR_THICKNESS,
+                            c.transform.localScale.z * Map.TILE_RADIUS
+                        );
+                    }
+                    ceilingObject.name = "Ceiling " + tile.gridPosition.ToString();
                 }
-                ceilingObject.name = "Ceiling " + tile.gridPosition.ToString();
             }
         }
         void BuildWalls(Tile tile)
@@ -275,15 +282,15 @@ public class MapBuilder : MonoBehaviour
                     newInstance.mesh = wallMesh;
 
                     // Set the "transform" of the mesh which is basically just the transform of the wall
-                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS);
+                    Vector3 scale = new Vector3((1 + wallWidthOffset) * tileRadius, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS / 2);
                     Vector2 normalized = map.hexagonExteriorSidePositions[i].normalized;
                     Vector3 pos = new Vector3
                     (
-                        wallObject.transform.position.x - (normalized.x * (Map.WALL_THICKNESS / 2)),
+                        wallObject.transform.position.x - (normalized.x * (Map.WALL_THICKNESS / (4 / Map.TILE_RADIUS))),
                         wallObject.transform.position.y,
-                        wallObject.transform.position.z - (normalized.y * (Map.WALL_THICKNESS / 2))
+                        wallObject.transform.position.z - (normalized.y * (Map.WALL_THICKNESS / (4 / Map.TILE_RADIUS)))
                     );
-                    Quaternion rot = Quaternion.Euler(new Vector3(0, i * 60, 0));
+                    Quaternion rot = Quaternion.Euler(new Vector3(0, i * 60 + 180, 0));
 
                     Matrix4x4 transformationMatrix = Matrix4x4.TRS
                         (
@@ -322,12 +329,17 @@ public class MapBuilder : MonoBehaviour
             combinedMesh.CombineMeshes(finalInstances, false);
             GameObject testObj = new GameObject("Static Walls Mesh");
             testObj.transform.parent = room.obj.transform;
-            testObj.AddComponent<MeshFilter>().mesh = combinedMesh;
-            testObj.AddComponent<MeshRenderer>().materials = roomThemes[room.themeIndex].wallMaterials.ToArray();
+            MeshFilter filter = testObj.AddComponent<MeshFilter>();
+            MeshRenderer rend = testObj.AddComponent<MeshRenderer>();
+
+            filter.mesh = combinedMesh;
+            rend.materials = roomThemes[room.themeIndex].wallMaterials.ToArray();
+            rend.receiveShadows = false;
+            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }
-        Mesh GenerateTileMesh(Room room)
+        Mesh GenerateFloorMesh(Room room)
         {
             // Create a 2D list of combine instances that
             List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].floorMaterials.Count];
@@ -381,8 +393,13 @@ public class MapBuilder : MonoBehaviour
             combinedMesh.CombineMeshes(finalInstances, false);
             GameObject testObj = new GameObject("Static Floor Mesh");
             testObj.transform.parent = room.obj.transform;
-            testObj.AddComponent<MeshFilter>().mesh = combinedMesh;
-            testObj.AddComponent<MeshRenderer>().materials = roomThemes[room.themeIndex].floorMaterials.ToArray();
+            MeshFilter filter = testObj.AddComponent<MeshFilter>();
+            MeshRenderer rend = testObj.AddComponent<MeshRenderer>();
+
+            filter.mesh = combinedMesh;
+            rend.materials = roomThemes[room.themeIndex].floorMaterials.ToArray();
+            rend.receiveShadows = false;
+            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }
@@ -407,7 +424,13 @@ public class MapBuilder : MonoBehaviour
                 // Get the transform of the tile
                 Vector3 scale = new Vector3(tileObject.transform.localScale.x * Map.TILE_RADIUS, tileObject.transform.localScale.y / 2 * (Map.FLOOR_THICKNESS / 2), tileObject.transform.localScale.z * Map.TILE_RADIUS);
                 Vector3 pos = tileObject.transform.position + ((Map.FLOOR_HEIGHT - Map.FLOOR_THICKNESS / 4) * Vector3.up);
-                Quaternion rot = tileObject.transform.rotation;
+                //Quaternion rot = tileObject.transform.rotation;
+                Quaternion rot = Quaternion.Euler
+                    (
+                        tileObject.transform.rotation.eulerAngles.x + 180,
+                        tileObject.transform.rotation.eulerAngles.y,
+                        tileObject.transform.rotation.eulerAngles.z
+                    );
 
                 newInstance.transform = Matrix4x4.TRS(pos, rot, scale);
 
@@ -441,8 +464,13 @@ public class MapBuilder : MonoBehaviour
             combinedMesh.CombineMeshes(finalInstances, false);
             GameObject testObj = new GameObject("Static Ceiling Mesh");
             testObj.transform.parent = room.obj.transform;
-            testObj.AddComponent<MeshFilter>().mesh = combinedMesh;
-            testObj.AddComponent<MeshRenderer>().materials = roomThemes[room.themeIndex].ceilingMaterials.ToArray();
+            MeshFilter filter = testObj.AddComponent<MeshFilter>();
+            MeshRenderer rend = testObj.AddComponent<MeshRenderer>();
+
+            filter.mesh = combinedMesh;
+            rend.materials = roomThemes[room.themeIndex].ceilingMaterials.ToArray();
+            rend.receiveShadows = false;
+            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }

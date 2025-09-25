@@ -24,9 +24,11 @@ namespace MapUtil
         public Vector3 originTile = new Vector3(0, 0, 0);
 
         // These are the parameters for what a normal map's proportions look like
-        public const float TILE_RADIUS = 2f;
-        public const float FLOOR_HEIGHT = 3;
+        public const float TILE_RADIUS = 4f;
+        public const float FLOOR_HEIGHT = 4;
+        // Relative to 1, treat as a percentage of the entire platform
         public const float WALL_THICKNESS = 0.05f;
+        // I believe this is a global measurement
         public const float FLOOR_THICKNESS = 0.05f;
 
         // The length from the center of the hexagon to the middle of any side
@@ -283,10 +285,15 @@ namespace MapUtil
         // This can be lights or various other elements
 
         public int materialIndex { get; private set; } = -1;
+        public bool hasCollider { get; private set; } = false;
 
         public void SetMaterialIndex(int index)
         {
             materialIndex = index;
+        }
+        public void SetHasCollider(bool hasCollider)
+        {
+            this.hasCollider = hasCollider;
         }
     }
 
@@ -718,6 +725,7 @@ namespace MapUtil
                         // Create the ceiling and assign it to the tile
                         Ceiling ceil = new Ceiling();
                         ceil.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[room.themeIndex].ceilingMaterials.Count));
+                        ceil.SetHasCollider(aboveTile == null);
                         tile.SetCeiling(ceil);
                     }
                 }
