@@ -334,8 +334,8 @@ public class MapBuilder : MonoBehaviour
 
             filter.mesh = combinedMesh;
             rend.materials = roomThemes[room.themeIndex].wallMaterials.ToArray();
-            rend.receiveShadows = false;
-            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            //rend.receiveShadows = false;
+            //rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }
@@ -398,8 +398,8 @@ public class MapBuilder : MonoBehaviour
 
             filter.mesh = combinedMesh;
             rend.materials = roomThemes[room.themeIndex].floorMaterials.ToArray();
-            rend.receiveShadows = false;
-            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            //rend.receiveShadows = false;
+            //rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }
@@ -469,8 +469,8 @@ public class MapBuilder : MonoBehaviour
 
             filter.mesh = combinedMesh;
             rend.materials = roomThemes[room.themeIndex].ceilingMaterials.ToArray();
-            rend.receiveShadows = false;
-            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            //rend.receiveShadows = false;
+            //rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }
