@@ -13,15 +13,34 @@ public class GameController : MonoBehaviour
     public static event EventHandler<bool> OnPlayerAliveChanged;
 
     [SerializeField]
-    private GameObject playerPrefab;
+    private bool testMode = false;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
-        spawnedMap = MapBuilder.Instance.GetNewMap();
-        MapBuilder.Instance.BuildMap(spawnedMap);
+        SceneController.OnMapLoaded += OnMapLoaded;
+    }
 
-        GameObject player = Instantiate(playerPrefab);
-        player.GetComponent<PlayerController>().Warp(spawnedMap.originTile + Vector3.up);
+    private void Initialize()
+    {
+        GameObject player = Instantiate(PrefabHandler.Instance.player);
+
+        if (!testMode)
+        {
+            spawnedMap = MapBuilder.Instance.GetNewMap();
+            MapBuilder.Instance.BuildMap(spawnedMap);
+            player.GetComponent<PlayerController>().Warp(spawnedMap.originTile + Vector3.up);
+        }
+        else
+            player.GetComponent<PlayerController>().Warp(Vector3.up);
+    }
+
+    private void OnMapLoaded(string mapName)
+    {
+        Initialize();
+    }
+
+    private void OnDestroy()
+    {
+        SceneController.OnMapLoaded -= OnMapLoaded;
     }
 }

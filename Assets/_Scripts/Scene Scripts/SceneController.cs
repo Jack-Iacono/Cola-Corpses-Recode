@@ -29,7 +29,7 @@ public class SceneController : MonoBehaviour
     public static event OnMapLoadedDelegate OnMapLoaded;
     public static Scene loadedMap;
 
-    public delegate void OnTargetChangeDelegate(List<m_Scene> list, bool fromNetwork = false);
+    public delegate void OnTargetChangeDelegate(List<m_Scene> list);
     public static event OnTargetChangeDelegate OnSceneTargetChange;
 
     private void Awake()
@@ -57,7 +57,7 @@ public class SceneController : MonoBehaviour
     private void Start()
     {
         // Load a scene when the game is started
-        LoadScene(m_Scene.GAME);
+        LoadGameTestScene();
     }
 
     private void OnSceneLoaded(Scene s, LoadSceneMode loadMode)
@@ -110,19 +110,19 @@ public class SceneController : MonoBehaviour
         // Show the loading screen based on b
         instance.loadingScreen.SetActive(b);
     }
-    public static void SetSceneTarget(List<m_Scene> list, bool fromNetwork = false)
+    public static void SetSceneTarget(List<m_Scene> list)
     {
         // Set the list of scenes that should be loaded
         sceneTarget = list;
-        OnSceneTargetChange?.Invoke(sceneTarget, fromNetwork);
+        OnSceneTargetChange?.Invoke(sceneTarget);
         CheckLoading();
     }
 
-    protected static void UnloadScene(m_Scene scene, bool offlineOverride = false)
+    protected static void UnloadScene(m_Scene scene)
     {
-        UnloadScene(scenes[scene].name, offlineOverride);
+        UnloadScene(scenes[scene].name);
     }
-    protected static void UnloadScene(string scene, bool offlineOverride = false)
+    protected static void UnloadScene(string scene)
     {
         if (SceneManager.GetSceneByName(scene).isLoaded)
         {
@@ -131,11 +131,11 @@ public class SceneController : MonoBehaviour
         }
     }
 
-    protected static void LoadScene(m_Scene scene, bool offlineOverride = false)
+    protected static void LoadScene(m_Scene scene)
     {
-        LoadScene(scenes[scene].name, offlineOverride);
+        LoadScene(scenes[scene].name);
     }
-    protected static void LoadScene(string scene, bool offlineOverride = false)
+    protected static void LoadScene(string scene)
     {
         SceneManager.LoadSceneAsync(scene, LoadSceneMode.Additive);
         CheckLoading();
@@ -211,7 +211,7 @@ public class SceneController : MonoBehaviour
         // Will load the test game scene if the option is ticked
         SceneController.SetScenes(new List<SceneController.m_Scene>()
         {
-            SceneController.m_Scene.GAME,
+            SceneController.m_Scene.GAME_TEST,
             SceneController.m_Scene.GAME_SYS,
             SceneController.m_Scene.UNIVERSAL
         });

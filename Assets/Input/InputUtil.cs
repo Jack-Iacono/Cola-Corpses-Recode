@@ -74,7 +74,7 @@ namespace InputUtil
     /// }
     /// </code>
     /// </example>
-    public partial class @InputSystem: IInputActionCollection2, IDisposable
+    public partial class @InputBind: IInputActionCollection2, IDisposable
     {
         /// <summary>
         /// Provides access to the underlying asset instance.
@@ -84,7 +84,7 @@ namespace InputUtil
         /// <summary>
         /// Constructs a new instance.
         /// </summary>
-        public @InputSystem()
+        public @InputBind()
         {
             asset = InputActionAsset.FromJson(@"{
     ""version"": 1,
@@ -95,36 +95,27 @@ namespace InputUtil
             ""id"": ""fce52cf2-ed54-4e33-8c87-796891428cc8"",
             ""actions"": [
                 {
-                    ""name"": ""Right"",
+                    ""name"": ""Move"",
+                    ""type"": ""Value"",
+                    ""id"": ""a8e4f413-ce72-4175-8a98-c7066ffbdf8a"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Jump"",
                     ""type"": ""Button"",
-                    ""id"": ""e1de8005-f957-427c-a090-d2e8797ffa9f"",
+                    ""id"": ""4b6d9d8e-940f-4f2b-bc60-721870f25840"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Left"",
+                    ""name"": ""Sprint"",
                     ""type"": ""Button"",
-                    ""id"": ""65f172fa-6bdc-4891-9064-d8af66b4fdd6"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
-                    ""name"": ""Forward"",
-                    ""type"": ""Button"",
-                    ""id"": ""0465c2d6-1d56-434a-8a1b-3542fcd627c6"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
-                    ""name"": ""Backward"",
-                    ""type"": ""Button"",
-                    ""id"": ""4d01bd1b-b72f-4266-a867-e0536079e891"",
+                    ""id"": ""1b004474-3304-4ae7-b072-726d6a9bd175"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -134,45 +125,78 @@ namespace InputUtil
             ""bindings"": [
                 {
                     ""name"": """",
-                    ""id"": ""df3137f7-91eb-40bf-9e1e-49ce482735ff"",
-                    ""path"": ""<Keyboard>/d"",
+                    ""id"": ""3612b75a-6001-4f6d-9c3a-c125f1cf0bdd"",
+                    ""path"": ""<Keyboard>/leftShift"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Right"",
+                    ""action"": ""Sprint"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": """",
-                    ""id"": ""9e4b255e-1bbe-48dc-9cff-b4f69c503d1b"",
-                    ""path"": ""<Keyboard>/a"",
+                    ""name"": ""WASD"",
+                    ""id"": ""324895e0-a7b0-4010-90be-1bdaeb4c14d7"",
+                    ""path"": ""2DVector"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Left"",
-                    ""isComposite"": false,
+                    ""action"": ""Move"",
+                    ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": """",
-                    ""id"": ""d837bec8-afd0-49a6-9976-b17455404015"",
+                    ""name"": ""up"",
+                    ""id"": ""fe865066-02c9-4c67-9a5d-09d485e2112c"",
                     ""path"": ""<Keyboard>/w"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Forward"",
+                    ""action"": ""Move"",
                     ""isComposite"": false,
-                    ""isPartOfComposite"": false
+                    ""isPartOfComposite"": true
                 },
                 {
-                    ""name"": """",
-                    ""id"": ""6859764b-bc55-4a15-b4ff-e1ae415fb7fa"",
+                    ""name"": ""down"",
+                    ""id"": ""8fd69513-995a-4d53-99b0-fd58853d98f2"",
                     ""path"": ""<Keyboard>/s"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Backward"",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""a6f894d0-5187-4232-8626-9746015e5ab3"",
+                    ""path"": ""<Keyboard>/a"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""9eee2bfd-e425-4c98-98bd-cd98d0efff70"",
+                    ""path"": ""<Keyboard>/d"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f4eec2c5-1a21-4b26-96b7-3113e36b019f"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Jump"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -231,20 +255,19 @@ namespace InputUtil
 }");
             // Movement
             m_Movement = asset.FindActionMap("Movement", throwIfNotFound: true);
-            m_Movement_Right = m_Movement.FindAction("Right", throwIfNotFound: true);
-            m_Movement_Left = m_Movement.FindAction("Left", throwIfNotFound: true);
-            m_Movement_Forward = m_Movement.FindAction("Forward", throwIfNotFound: true);
-            m_Movement_Backward = m_Movement.FindAction("Backward", throwIfNotFound: true);
+            m_Movement_Move = m_Movement.FindAction("Move", throwIfNotFound: true);
+            m_Movement_Jump = m_Movement.FindAction("Jump", throwIfNotFound: true);
+            m_Movement_Sprint = m_Movement.FindAction("Sprint", throwIfNotFound: true);
             // Attack
             m_Attack = asset.FindActionMap("Attack", throwIfNotFound: true);
             m_Attack_Primary = m_Attack.FindAction("Primary", throwIfNotFound: true);
             m_Attack_Secondary = m_Attack.FindAction("Secondary", throwIfNotFound: true);
         }
 
-        ~@InputSystem()
+        ~@InputBind()
         {
-            UnityEngine.Debug.Assert(!m_Movement.enabled, "This will cause a leak and performance issues, InputSystem.Movement.Disable() has not been called.");
-            UnityEngine.Debug.Assert(!m_Attack.enabled, "This will cause a leak and performance issues, InputSystem.Attack.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_Movement.enabled, "This will cause a leak and performance issues, InputBind.Movement.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_Attack.enabled, "This will cause a leak and performance issues, InputBind.Attack.Disable() has not been called.");
         }
 
         /// <summary>
@@ -320,37 +343,32 @@ namespace InputUtil
         // Movement
         private readonly InputActionMap m_Movement;
         private List<IMovementActions> m_MovementActionsCallbackInterfaces = new List<IMovementActions>();
-        private readonly InputAction m_Movement_Right;
-        private readonly InputAction m_Movement_Left;
-        private readonly InputAction m_Movement_Forward;
-        private readonly InputAction m_Movement_Backward;
+        private readonly InputAction m_Movement_Move;
+        private readonly InputAction m_Movement_Jump;
+        private readonly InputAction m_Movement_Sprint;
         /// <summary>
         /// Provides access to input actions defined in input action map "Movement".
         /// </summary>
         public struct MovementActions
         {
-            private @InputSystem m_Wrapper;
+            private @InputBind m_Wrapper;
 
             /// <summary>
             /// Construct a new instance of the input action map wrapper class.
             /// </summary>
-            public MovementActions(@InputSystem wrapper) { m_Wrapper = wrapper; }
+            public MovementActions(@InputBind wrapper) { m_Wrapper = wrapper; }
             /// <summary>
-            /// Provides access to the underlying input action "Movement/Right".
+            /// Provides access to the underlying input action "Movement/Move".
             /// </summary>
-            public InputAction @Right => m_Wrapper.m_Movement_Right;
+            public InputAction @Move => m_Wrapper.m_Movement_Move;
             /// <summary>
-            /// Provides access to the underlying input action "Movement/Left".
+            /// Provides access to the underlying input action "Movement/Jump".
             /// </summary>
-            public InputAction @Left => m_Wrapper.m_Movement_Left;
+            public InputAction @Jump => m_Wrapper.m_Movement_Jump;
             /// <summary>
-            /// Provides access to the underlying input action "Movement/Forward".
+            /// Provides access to the underlying input action "Movement/Sprint".
             /// </summary>
-            public InputAction @Forward => m_Wrapper.m_Movement_Forward;
-            /// <summary>
-            /// Provides access to the underlying input action "Movement/Backward".
-            /// </summary>
-            public InputAction @Backward => m_Wrapper.m_Movement_Backward;
+            public InputAction @Sprint => m_Wrapper.m_Movement_Sprint;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -377,18 +395,15 @@ namespace InputUtil
             {
                 if (instance == null || m_Wrapper.m_MovementActionsCallbackInterfaces.Contains(instance)) return;
                 m_Wrapper.m_MovementActionsCallbackInterfaces.Add(instance);
-                @Right.started += instance.OnRight;
-                @Right.performed += instance.OnRight;
-                @Right.canceled += instance.OnRight;
-                @Left.started += instance.OnLeft;
-                @Left.performed += instance.OnLeft;
-                @Left.canceled += instance.OnLeft;
-                @Forward.started += instance.OnForward;
-                @Forward.performed += instance.OnForward;
-                @Forward.canceled += instance.OnForward;
-                @Backward.started += instance.OnBackward;
-                @Backward.performed += instance.OnBackward;
-                @Backward.canceled += instance.OnBackward;
+                @Move.started += instance.OnMove;
+                @Move.performed += instance.OnMove;
+                @Move.canceled += instance.OnMove;
+                @Jump.started += instance.OnJump;
+                @Jump.performed += instance.OnJump;
+                @Jump.canceled += instance.OnJump;
+                @Sprint.started += instance.OnSprint;
+                @Sprint.performed += instance.OnSprint;
+                @Sprint.canceled += instance.OnSprint;
             }
 
             /// <summary>
@@ -400,18 +415,15 @@ namespace InputUtil
             /// <seealso cref="MovementActions" />
             private void UnregisterCallbacks(IMovementActions instance)
             {
-                @Right.started -= instance.OnRight;
-                @Right.performed -= instance.OnRight;
-                @Right.canceled -= instance.OnRight;
-                @Left.started -= instance.OnLeft;
-                @Left.performed -= instance.OnLeft;
-                @Left.canceled -= instance.OnLeft;
-                @Forward.started -= instance.OnForward;
-                @Forward.performed -= instance.OnForward;
-                @Forward.canceled -= instance.OnForward;
-                @Backward.started -= instance.OnBackward;
-                @Backward.performed -= instance.OnBackward;
-                @Backward.canceled -= instance.OnBackward;
+                @Move.started -= instance.OnMove;
+                @Move.performed -= instance.OnMove;
+                @Move.canceled -= instance.OnMove;
+                @Jump.started -= instance.OnJump;
+                @Jump.performed -= instance.OnJump;
+                @Jump.canceled -= instance.OnJump;
+                @Sprint.started -= instance.OnSprint;
+                @Sprint.performed -= instance.OnSprint;
+                @Sprint.canceled -= instance.OnSprint;
             }
 
             /// <summary>
@@ -456,12 +468,12 @@ namespace InputUtil
         /// </summary>
         public struct AttackActions
         {
-            private @InputSystem m_Wrapper;
+            private @InputBind m_Wrapper;
 
             /// <summary>
             /// Construct a new instance of the input action map wrapper class.
             /// </summary>
-            public AttackActions(@InputSystem wrapper) { m_Wrapper = wrapper; }
+            public AttackActions(@InputBind wrapper) { m_Wrapper = wrapper; }
             /// <summary>
             /// Provides access to the underlying input action "Attack/Primary".
             /// </summary>
@@ -560,33 +572,26 @@ namespace InputUtil
         public interface IMovementActions
         {
             /// <summary>
-            /// Method invoked when associated input action "Right" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// Method invoked when associated input action "Move" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>
             /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-            void OnRight(InputAction.CallbackContext context);
+            void OnMove(InputAction.CallbackContext context);
             /// <summary>
-            /// Method invoked when associated input action "Left" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// Method invoked when associated input action "Jump" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>
             /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-            void OnLeft(InputAction.CallbackContext context);
+            void OnJump(InputAction.CallbackContext context);
             /// <summary>
-            /// Method invoked when associated input action "Forward" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// Method invoked when associated input action "Sprint" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>
             /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-            void OnForward(InputAction.CallbackContext context);
-            /// <summary>
-            /// Method invoked when associated input action "Backward" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-            /// </summary>
-            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-            void OnBackward(InputAction.CallbackContext context);
+            void OnSprint(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Attack" which allows adding and removing callbacks.

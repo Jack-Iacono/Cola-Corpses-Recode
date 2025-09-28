@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+using InputUtil;
+using UnityEngine.InputSystem;
+
+public class PlayerController : MonoBehaviour, InputBind.IMovementActions
 {
     public static LayerMask playerLayerMask;
 
@@ -36,7 +39,9 @@ public class PlayerController : MonoBehaviour
     [Header("Interaction Variables")]
     public LayerMask environmentLayers;
 
-    private Vector3 currentInput = Vector3.zero;
+    private Vector2 currentMoveInput = Vector2.zero;
+    private bool currentJumpInput = false;
+    private bool currentSprintInput = false;
     private Vector3 currentMove = Vector3.zero;
 
     private Vector3 previousFramePosition = Vector3.zero;
@@ -44,8 +49,8 @@ public class PlayerController : MonoBehaviour
 
     private CharacterController charCont;
 
-    private KeyCode keySprint = KeyCode.LeftShift;
-    private bool isSprinting = false;
+    InputBind inputSys;
+    InputBind.MovementActions moveActions;
 
     private void Awake()
     {
@@ -54,6 +59,11 @@ public class PlayerController : MonoBehaviour
 
         // Get the player's layer from the editor
         playerLayerMask = gameObject.layer;
+
+        // Set up the input system
+        inputSys = new InputBind();
+        moveActions = inputSys.Movement;
+        moveActions.AddCallbacks(this);
     }
 
     public void Warp(Vector3 pos)
@@ -69,12 +79,8 @@ public class PlayerController : MonoBehaviour
     {
         if (!GameController.isPaused)
         {
-            GetInput();
-            if (!isLocked)
-            {
-                CalculateNormalMove();
-                Move();
-            }
+            CalculateNormalMove();
+            Move();
         }
     }
     private void FixedUpdate()
@@ -83,23 +89,13 @@ public class PlayerController : MonoBehaviour
         previousFramePosition = transform.position;
     }
 
-    private void GetInput()
-    {
-        currentInput = new Vector3
-            (
-                Input.GetAxis("Horizontal"),
-                Input.GetButtonDown("Jump") ? 1 : 0,
-                Input.GetAxis("Vertical")
-            );
-        isSprinting = Input.GetKey(keySprint);
-    }
     private void CalculateNormalMove()
     {
-        float moveX = currentInput.x * transform.right.x * moveSpeed + currentInput.z * transform.forward.x * moveSpeed;
-        float moveZ = currentInput.x * transform.right.z * moveSpeed + currentInput.z * transform.forward.z * moveSpeed;
+        float moveX = currentMoveInput.x * transform.right.x * moveSpeed + currentMoveInput.y * transform.forward.x * moveSpeed;
+        float moveZ = currentMoveInput.x * transform.right.z * moveSpeed + currentMoveInput.y * transform.forward.z * moveSpeed;
 
         // TEMPORARY
-        if (isSprinting)
+        if (currentSprintInput)
         {
             moveX *= 2f;
             moveZ *= 2f;
@@ -107,7 +103,8 @@ public class PlayerController : MonoBehaviour
 
         if (charCont.isGrounded)
         {
-            if (currentInput.y != 0)
+            // Check whether jump is held or not
+            if (currentJumpInput)
             {
                 currentMove.y = jumpHeight;
             }
@@ -140,5 +137,35 @@ public class PlayerController : MonoBehaviour
     private void Move()
     {
         charCont.Move(currentMove * Time.deltaTime);
+    }
+
+    public void OnMove(InputAction.CallbackContext context)
+    {
+        currentMoveInput = moveActions.Move.ReadValue<Vector2>();
+    }
+    public void OnSprint(InputAction.CallbackContext context)
+    {
+        if(!currentSprintInput && context.phase == InputActionPhase.Started)
+            currentSprintInput = true;
+        else if(currentSprintInput && context.phase == InputActionPhase.Canceled)
+            currentSprintInput = false;
+    }
+    public void OnJump(InputAction.CallbackContext context)
+    {
+        currentJumpInput = context.phase == InputActionPhase.Started || context.phase == InputActionPhase.Performed;
+    }
+
+    void OnEnable()
+    {
+        moveActions.Enable();
+    }
+    void OnDisable()
+    {
+        moveActions.Disable();
+    }
+    private void OnDestroy()
+    {
+        moveActions.RemoveCallbacks(this);
+        inputSys.Dispose();
     }
 }
