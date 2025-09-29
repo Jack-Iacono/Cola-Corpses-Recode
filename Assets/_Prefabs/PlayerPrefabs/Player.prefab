@@ -222,7 +222,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerCont: {fileID: 5951778806157536533}
   cam: {fileID: 1999457111391285552}
-  sensitivity: 500
+  sensitivity: 0.05
   collideLayers:
     serializedVersion: 2
     m_Bits: 0

@@ -21,4 +21,5 @@ EditorBuildSettings:
     path: Assets/Scenes/scn_GameTest.unity
     guid: 8e5193e0a0085264aa4c7346f94a6fdf
   m_configObjects:
+    com.unity.input.settings: {fileID: 11400000, guid: 5df487896430f4a428dadc681f32e96a, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 6209c4cd54ed8124293bd182c1bd5075, type: 3}

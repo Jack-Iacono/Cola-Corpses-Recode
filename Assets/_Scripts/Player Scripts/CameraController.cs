@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+using InputUtil;
+using UnityEngine.InputSystem;
+using static InputUtil.InputBind;
+
+public class CameraController : MonoBehaviour, InputBind.ICameraActions
 {
     [Header("GameObjects")]
     public PlayerController playerCont;
@@ -22,14 +26,18 @@ public class CameraController : MonoBehaviour
     private float xRotation = 0;
     private float yRotation = 0;
 
-    private Vector3 normalPosition = Vector3.zero;
+    private float mouseInputX = 0;
+    private float mouseInputY = 0;
 
-    private bool isLocked = false;
+    InputBind inputActions;
+    InputBind.CameraActions cameraActions;
 
     private void Awake()
     {
-        // Sets the normal position that the camera should be in
-        normalPosition = transform.localPosition;
+        // Setting up key bindings
+        inputActions = new InputBind();
+        cameraActions = inputActions.Camera;
+        cameraActions.AddCallbacks(this);
     }
 
     // Start is called before the first frame update
@@ -48,22 +56,24 @@ public class CameraController : MonoBehaviour
 
     private void MoveCamera()
     {
-        //Taking in the input from the mouse
-        float mouseX = Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * sensitivity * Time.deltaTime;
-
         //Gets the real rotation of the camera
-        xRotation = xRotation - mouseY;
+        xRotation = xRotation - mouseInputY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
         //Getting the horizontal rotations from mouse inputs
-        yRotation = yRotation + mouseX;
+        yRotation = yRotation + mouseInputX;
 
         //Moves the camera around the player
         transform.localRotation = Quaternion.Euler(Mathf.Clamp(xRotation, -90, 90), 0f, 0f);
 
         //Rotates the player to always be facing the direction of the camera
         playerCont.transform.localRotation = Quaternion.Euler(0f, yRotation, 0f);
+    }
+    public void OnRotate(InputAction.CallbackContext context)
+    {
+        Vector2 input = cameraActions.Rotate.ReadValue<Vector2>();
+        mouseInputX = input.x * sensitivity;
+        mouseInputY = input.y * sensitivity;
     }
 
     #region Get Methods
@@ -97,4 +107,20 @@ public class CameraController : MonoBehaviour
     }
 
     #endregion
+
+    void OnEnable()
+    {
+        cameraActions.Enable();
+    }
+    void OnDisable()
+    {
+        cameraActions.Disable();
+    }
+
+    private void OnDestroy()
+    {
+        cameraActions.RemoveCallbacks(this);
+        inputActions.Dispose();
+    }
+
 }
