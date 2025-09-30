@@ -105,6 +105,10 @@ public class CameraController : MonoBehaviour, InputBind.ICameraActions
     {
         return new Ray(transform.position, transform.forward);
     }
+    public Vector3 GetCameraSightVector()
+    {
+        return transform.forward;
+    }
 
     #endregion
 

@@ -7,11 +7,13 @@ public abstract class WeaponAction
     public string name = string.Empty;
     public string description = string.Empty;
 
-    private Weapon weapon;
+    protected Weapon weapon;
+    protected PlayerController player;
 
-    public WeaponAction(Weapon weapon)
+    public WeaponAction(Weapon weapon, PlayerController player)
     {
         this.weapon = weapon;
+        this.player = player;
     }
 
     public abstract void Update(float dt, ActionState state);

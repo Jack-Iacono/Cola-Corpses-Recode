@@ -33,20 +33,28 @@ public static class ObjectPool
     /// </summary>
     /// <param name="obj">The GameObject to add</param>
     /// <param name="count">The amount that is needed</param>
-    public static void AddToPool(GameObject obj, int count = 1)
+    public static GameObject AddToPool(GameObject obj, int count = 1)
     {
         // If there is no pool for this GameObject yet, just make it and end there
         if(!pooledObjects.ContainsKey(obj))
         {
             PoolObject(obj, count);
-            return;
+            return GetObject(obj);
         }
+
+        GameObject firstInstance = null;
 
         // Add the new items to the pooledItems dictionary
         for(int i = 0;i < count; i++)
         {
-            pooledObjects[obj].Add(CreateObject(obj));
+            GameObject newObj = CreateObject(obj);
+            pooledObjects[obj].Add(newObj);
+
+            if(i==0)
+                firstInstance = newObj;
         }
+
+        return firstInstance;
     }
     /// <summary>
     /// Creates a new GameObject to be pooled
@@ -77,13 +85,17 @@ public static class ObjectPool
         for(int i = 0; i < pooledObjects[obj].Count; i++)
         {
             // If the GameObject is not being used, return that
-            if(!pooledObjects[obj][i].activeInHierarchy)
-                return pooledObjects[obj][i];
+            if (!pooledObjects[obj][i].activeInHierarchy)
+            {
+                GameObject o = pooledObjects[obj][i];
+                ResetTransform(o);
+                return o;
+            }
         }
 
-
-
-        return null;
+        // Create a new object in the pool and return it
+        // No need to reset the transform here since the object was just created
+        return AddToPool(obj);
     }
 
     /// <summary>
@@ -94,5 +106,12 @@ public static class ObjectPool
     {
         if(pooledObjects.ContainsKey(obj))
             pooledObjects.Remove(obj);
+    }
+
+    private static void ResetTransform(GameObject obj)
+    {
+        obj.transform.position = Vector3.zero;
+        obj.transform.rotation = Quaternion.identity;
+        obj.transform.localScale = Vector3.one;
     }
 }

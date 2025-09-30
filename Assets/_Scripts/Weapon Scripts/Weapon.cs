@@ -20,15 +20,20 @@ public class Weapon
     private WeaponAction primaryAction;
     private WeaponAction secondaryAction;
 
-    public Weapon()
+    private PlayerController player;
+
+    public Weapon(PlayerController player)
     {
-        primaryAction = new WeaponAction_CanThrow(this);
-        secondaryAction = new WeaponAction_CanThrow(this);
+        useTime = 0.2f;
+
+        primaryAction = new WeaponAction_CanThrow(this, player);
+        secondaryAction = new WeaponAction_Drink(this, player);
+        this.player = player;
     }
 
     public void Update(float dt, ActionState primaryState, ActionState secondaryState)
     {
         primaryAction.Update(dt, primaryState);
-        //secondaryAction.Update(dt, secondaryState);
+        secondaryAction.Update(dt, secondaryState);
     }
 }

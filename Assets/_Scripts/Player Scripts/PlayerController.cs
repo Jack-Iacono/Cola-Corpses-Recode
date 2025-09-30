@@ -155,6 +155,11 @@ public class PlayerController : MonoBehaviour, InputBind.IMovementActions
         currentJumpInput = context.phase == InputActionPhase.Started || context.phase == InputActionPhase.Performed;
     }
 
+    public CameraController GetCameraController()
+    {
+        return camCont;
+    }
+
     void OnEnable()
     {
         moveActions.Enable();
