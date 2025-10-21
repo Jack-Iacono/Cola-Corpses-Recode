@@ -11,10 +11,10 @@ public class Weapon
 {
     public string name;
 
-    public float damage;
-    public float radius;
-    public float range;
-    public float useTime;
+    public float damage { get; private set; }
+    public float radius { get; private set; }
+    public float range { get; private set; }
+    public float useTime { get; private set; }
 
     // Add other stats later, just need this skeleton class for now
     private WeaponAction primaryAction;
@@ -22,10 +22,14 @@ public class Weapon
 
     private PlayerController player;
 
-    public Weapon(PlayerController player)
+    public Weapon(PlayerController player, float damage, float radius, float range, float useTime)
     {
-        useTime = 0.2f;
+        this.damage = damage;
+        this.range = range;
+        this.radius = radius;
+        this.useTime = useTime;
 
+        // TEMPORARY!!! testing purposes only
         primaryAction = new WeaponAction_CanThrow(this, player);
         secondaryAction = new WeaponAction_Drink(this, player);
         this.player = player;
@@ -33,7 +37,7 @@ public class Weapon
 
     public void Update(float dt, ActionState primaryState, ActionState secondaryState)
     {
-        primaryAction.Update(dt, primaryState);
-        secondaryAction.Update(dt, secondaryState);
+        primaryAction.Update(dt, primaryState, secondaryState);
+        secondaryAction.Update(dt, secondaryState, primaryState);
     }
 }

@@ -13,7 +13,7 @@ public class WeaponAction_Drink : WeaponAction
         drinkTime = weapon.useTime * 5;
     }
 
-    public override void Update(float dt, ActionState state)
+    public override void Update(float dt, ActionState state, ActionState otherState)
     {
         if (state == ActionState.DOWN)
         {
@@ -26,17 +26,25 @@ public class WeaponAction_Drink : WeaponAction
 
         if (isDrinking)
         {
-            if (drinkTimer > 0)
-                drinkTimer -= dt;
-            else
+            if(otherState == ActionState.DOWN)
             {
                 isDrinking = false;
-                Use();
+                drinkTimer = drinkTime;
+            }
+            else
+            {
+                if (drinkTimer > 0)
+                    drinkTimer -= dt;
+                else
+                {
+                    isDrinking = false;
+                    Use();
+                }
             }
         }
     }
     public override void Use()
     {
-        Debug.Log("done");
+        Debug.Log("Finish Drinking");
     }
 }

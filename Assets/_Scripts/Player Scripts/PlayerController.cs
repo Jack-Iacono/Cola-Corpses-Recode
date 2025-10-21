@@ -8,6 +8,8 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour, InputBind.IMovementActions
 {
+    public static PlayerController Instance { get; private set; }
+
     public static LayerMask playerLayerMask;
 
     private const int playerLayer = 6;
@@ -54,16 +56,24 @@ public class PlayerController : MonoBehaviour, InputBind.IMovementActions
 
     private void Awake()
     {
-        // Get components on the player
-        charCont = GetComponent<CharacterController>();
+        // Set the player instance for referencing later
+        if (Instance == null)
+        {
+            Instance = this;
 
-        // Get the player's layer from the editor
-        playerLayerMask = gameObject.layer;
+            // Get components on the player
+            charCont = GetComponent<CharacterController>();
 
-        // Set up the input system
-        inputSys = new InputBind();
-        moveActions = inputSys.Movement;
-        moveActions.AddCallbacks(this);
+            // Get the player's layer from the editor
+            playerLayerMask = gameObject.layer;
+
+            // Set up the input system
+            inputSys = new InputBind();
+            moveActions = inputSys.Movement;
+            moveActions.AddCallbacks(this);
+        }
+        else
+            Destroy(gameObject);
     }
 
     public void Warp(Vector3 pos)
@@ -172,5 +182,8 @@ public class PlayerController : MonoBehaviour, InputBind.IMovementActions
     {
         moveActions.RemoveCallbacks(this);
         inputSys.Dispose();
+
+        if (Instance == this)
+            Instance = null;
     }
 }

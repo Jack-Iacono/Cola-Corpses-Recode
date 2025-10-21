@@ -13,6 +13,8 @@ public abstract class ProjectileController : MonoBehaviour
     protected float currentLifetime = 0;
     protected bool isAlive = false;
 
+    protected Weapon weapon;
+
     protected virtual void Awake()
     {
         ProjectileInstances.Add(gameObject, this);
@@ -28,11 +30,12 @@ public abstract class ProjectileController : MonoBehaviour
         }
     }
 
-    public virtual void Activate()
+    public virtual void Activate(Weapon sourceWeapon)
     {
         currentLifetime = lifetime;
         isAlive = true;
         gameObject.SetActive(true);
+        this.weapon = sourceWeapon;
     }
     public virtual void Deactivate()
     {

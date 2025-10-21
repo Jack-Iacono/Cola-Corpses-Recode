@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7227202545673625997}
   - component: {fileID: 7057961456603772914}
   - component: {fileID: 6232520880597987187}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: BodyMesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   - component: {fileID: 3781404253409645960}
   - component: {fileID: 1999457111391285552}
   - component: {fileID: 5908049528637868636}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -185,7 +185,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3902369721970263403}
   - component: {fileID: 1131664790727878984}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Camera Holder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -241,7 +241,7 @@ GameObject:
   - component: {fileID: 288697584563510079}
   - component: {fileID: 5951778806157536533}
   - component: {fileID: 3932640542070400760}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -338,7 +338,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5555752872551610031}
   - component: {fileID: 3506345735260804214}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Collider
   m_TagString: Untagged
   m_Icon: {fileID: 0}

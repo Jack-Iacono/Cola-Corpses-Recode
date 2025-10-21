@@ -16,6 +16,6 @@ public abstract class WeaponAction
         this.player = player;
     }
 
-    public abstract void Update(float dt, ActionState state);
+    public abstract void Update(float dt, ActionState state, ActionState otherState);
     public abstract void Use();
 }

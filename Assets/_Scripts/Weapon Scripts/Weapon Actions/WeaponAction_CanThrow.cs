@@ -19,7 +19,7 @@ public class WeaponAction_CanThrow : WeaponAction
         useTime = weapon.useTime;
     }
 
-    public override void Update(float dt, ActionState state)
+    public override void Update(float dt, ActionState state, ActionState otherState)
     {
         if(state == ActionState.HELD)
         {
@@ -41,7 +41,7 @@ public class WeaponAction_CanThrow : WeaponAction
 
         // Ready the can to be thrown
         Vector3 camSightVec = cameraController.GetCameraSightVector();
-        can.transform.position = player.transform.position + camSightVec;
-        projectile.Activate(camSightVec * 10);
+        can.transform.position = player.transform.position + Vector3.up * 0.25f + camSightVec;
+        projectile.Activate(weapon, camSightVec * weapon.range);
     }
 }
