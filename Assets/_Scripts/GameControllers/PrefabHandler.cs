@@ -16,6 +16,9 @@ public class PrefabHandler : MonoBehaviour
     [Header("Projectiles")]
     public GameObject thrownCan;
 
+    [Header("UI Elements")]
+    public GameObject damagePopup;
+
     private void Awake()
     {
         if (Instance == null)

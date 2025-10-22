@@ -32,6 +32,9 @@ public class GameController : MonoBehaviour
         }
         else
             player.GetComponent<PlayerController>().Warp(Vector3.up);
+
+        // Use this to initialize any objects that need to be pooled after map loading
+        ObjectPool.PoolObject(PrefabHandler.Instance.damagePopup, 10);
     }
 
     private void OnMapLoaded(string mapName)
