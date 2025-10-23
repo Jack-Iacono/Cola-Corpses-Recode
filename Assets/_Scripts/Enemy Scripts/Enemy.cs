@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static IDamageable;
 
-public class Enemy : MonoBehaviour, IDamageable
+public abstract class Enemy : MonoBehaviour, IDamageable
 {
     protected float health = 100;
+    protected bool invincible = false;
 
     protected virtual void Awake()
     {
@@ -15,22 +17,26 @@ public class Enemy : MonoBehaviour, IDamageable
     // Methods to react to damage from different sources
     public void DamageArea(float damage)
     {
-        ChangeHealth(-damage);
+        ApplyDamage(damage);
+    }
+    public void DamageContact(float damage)
+    {
+        ApplyDamage(damage);
+    }
+
+    // Health related methods
+    public void ApplyDamage(float damage, DamageType type = DamageType.NEUTRAL)
+    {
+        if (!invincible)
+            ChangeHealth(-damage);
 
         GameObject g = ObjectPool.GetObject(PrefabHandler.Instance.damagePopup);
         PopupController p = PopupController.Instances[g];
         p.Activate(transform.position + Vector3.up, damage.ToString());
     }
-    public void DamageContact(float damage)
-    {
-        ChangeHealth(-damage);
-    }
-
-    // Health related methods
     public void ChangeHealth(float change)
     {
-        health += change;
-        CheckHealth();
+        SetHealth(health + change);
     }
     public void SetHealth(float health)
     {
@@ -44,8 +50,8 @@ public class Enemy : MonoBehaviour, IDamageable
     }
     protected void Kill()
     {
-        Debug.Log("Killed");
-        //gameObject.SetActive(false);
+        if(!invincible)
+            gameObject.SetActive(false);
     }
 
     private void OnDestroy()

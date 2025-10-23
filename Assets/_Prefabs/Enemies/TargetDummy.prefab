@@ -93,7 +93,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1479246314121939444}
   - component: {fileID: 2065859520209604582}
-  - component: {fileID: 4274433776467139780}
+  - component: {fileID: 9219042553342096697}
   m_Layer: 7
   m_Name: TargetDummy
   m_TagString: Untagged
@@ -140,7 +140,7 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
---- !u!114 &4274433776467139780
+--- !u!114 &9219042553342096697
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -149,6 +149,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 6018585255333297307}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ba02b3f041b55141bf63ce028ef0a47, type: 3}
+  m_Script: {fileID: 11500000, guid: e726657bb6b2e174a82aa2465161c1bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

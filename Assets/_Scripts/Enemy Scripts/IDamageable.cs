@@ -4,6 +4,8 @@ using UnityEngine;
 
 public interface IDamageable
 {
+    public enum DamageType { NEUTRAL, CONTACT, AREA }
+
     public static Dictionary<GameObject, IDamageable> Instances = new Dictionary<GameObject, IDamageable>();
 
     public void DamageContact(float damage);

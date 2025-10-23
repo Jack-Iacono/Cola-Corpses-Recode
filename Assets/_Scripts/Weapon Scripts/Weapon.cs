@@ -1,9 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public enum Flavor { }
-public enum Attributes { }
+using static ModifierUtil;
 
 public enum ActionState { DOWN, UP, HELD, NONE };
 
@@ -20,6 +19,10 @@ public class Weapon
     private WeaponAction primaryAction;
     private WeaponAction secondaryAction;
 
+    // Create arrays with enough spaces for each level for the flavors and modifiers
+    public int[] flavors = new int[Enum.GetValues(typeof(Flavor)).Length];
+    public int[] modifiers = new int[Enum.GetValues(typeof(Modifier)).Length];
+
     private PlayerController player;
 
     public Weapon(PlayerController player, float damage, float radius, float range, float useTime)
@@ -32,6 +35,10 @@ public class Weapon
         // TEMPORARY!!! testing purposes only
         primaryAction = new WeaponAction_CanThrow(this, player);
         secondaryAction = new WeaponAction_Drink(this, player);
+
+        flavors[0] = 1;
+        modifiers[0] = 1;
+
         this.player = player;
     }
 
