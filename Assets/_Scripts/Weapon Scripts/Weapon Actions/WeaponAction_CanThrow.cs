@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class WeaponAction_CanThrow : WeaponAction
+public class WeaponAction_CanThrow : PrimaryWeaponAction
 {
     private GameObject canPrefab;
     private CameraController cameraController;
@@ -19,29 +19,57 @@ public class WeaponAction_CanThrow : WeaponAction
         useTime = weapon.useTime;
     }
 
-    public override void Update(float dt, ActionState state, ActionState otherState)
+    public override void Update(float dt)
     {
-        if(state == ActionState.HELD)
-        {
-            if(useTimer <= 0)
-            {
-                Use();
-                useTimer = useTime;
-            }
-        }
-
+        // Increment the 
         if (useTimer > 0)
             useTimer -= dt;
     }
-    public override void Use()
+    public override void Use(ActionState state)
     {
-        // Get the can gameobject as well as the associated script
-        GameObject can = ObjectPool.GetObject(canPrefab);
-        CanProjectileController projectile = (CanProjectileController)ProjectileController.ProjectileInstances[can];
+        // Check if this is ready to use
+        if(state != ActionState.UP && useTimer <= 0)
+        {
+            // Get the can gameobject as well as the associated script
+            GameObject can = ObjectPool.GetObject(canPrefab);
+            CanProjectileController projectile = (CanProjectileController)ProjectileController.ProjectileInstances[can];
 
-        // Ready the can to be thrown
-        Vector3 camSightVec = cameraController.GetCameraSightVector();
-        can.transform.position = player.transform.position + Vector3.up * 0.25f + camSightVec;
-        projectile.Activate(weapon, camSightVec * weapon.range);
+            // Ready the can to be thrown
+            Vector3 camSightVec = cameraController.GetCameraSightVector();
+            can.transform.position = player.transform.position + Vector3.up * 0.25f + camSightVec;
+            projectile.Activate(camSightVec * weapon.range, weapon.radius);
+
+            // Register projectile events
+            projectile.OnImpactCollide += ProjectileImpact;
+            projectile.OnSplashCollide += ProjectileSplash;
+            projectile.OnExpire += ProjectileExpire;
+
+            // Reset the use speed timer
+            useTimer = useTime;
+        }
+    }
+
+    protected override void ProjectileImpact(IDamageable hit)
+    {
+        hit.DamageContact(weapon.damage, weapon.traits);
+    }
+    protected override void ProjectileSplash(IDamageable[] hits)
+    {
+        foreach(IDamageable hit in hits)
+        {
+            hit.DamageArea(weapon.damage, weapon.traits);
+        }
+    }
+    protected override void ProjectileExpire(ProjectileController sender)
+    {
+        // Unregister from the projectile events
+        sender.OnImpactCollide -= ProjectileImpact;
+        sender.OnSplashCollide -= ProjectileSplash;
+        sender.OnExpire -= ProjectileExpire;
+    }
+
+    public override void OtherUse()
+    {
+        // Do Nothing for now
     }
 }

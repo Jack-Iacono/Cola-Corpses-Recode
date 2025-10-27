@@ -6,6 +6,7 @@ using UnityEngine;
 public class CanProjectileController : ProjectileController
 {
     private Rigidbody rb;
+    private float radius;
 
     protected override void Awake()
     {
@@ -13,9 +14,9 @@ public class CanProjectileController : ProjectileController
         rb = GetComponent<Rigidbody>();
     }
 
-    public void Activate(Weapon weaponSource, Vector3 force)
+    public void Activate(Vector3 force, float explodeRadius)
     {
-        rb.velocity = force;
+        rb.linearVelocity = force;
         // Apply a random rotational force to the can for flair
         rb.angularVelocity = new Vector3
             (
@@ -23,8 +24,9 @@ public class CanProjectileController : ProjectileController
                 Random.Range(0, 10),
                 Random.Range(0, 10)
             );
+        radius = explodeRadius;
 
-        base.Activate(weaponSource);
+        base.Activate();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -32,17 +34,22 @@ public class CanProjectileController : ProjectileController
         // Do damage to the collided object when colliding with it
         if (IDamageable.Instances.ContainsKey(collision.collider.gameObject))
         {
-            IDamageable.Instances[collision.collider.gameObject].DamageContact(weapon.damage);
+            ImpactCollide(IDamageable.Instances[collision.collider.gameObject]);
         }
 
-        Collider[] cols = Physics.OverlapSphere(transform.position, weapon.radius);
+        // Get every object hit by the area explosion
+        Collider[] cols = Physics.OverlapSphere(transform.position, radius);
+        List<IDamageable> hits = new List<IDamageable>();
         foreach(Collider col in cols)
         {
             if (IDamageable.Instances.ContainsKey(col.gameObject))
             {
-                IDamageable.Instances[col.gameObject].DamageArea(weapon.damage);
+                hits.Add(IDamageable.Instances[col.gameObject]);
             }
         }
+        SplashCollide(hits.ToArray());
+
+        // For now, may add bounces later
         Deactivate();
     }
 }

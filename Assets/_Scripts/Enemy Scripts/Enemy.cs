@@ -15,13 +15,15 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     }
 
     // Methods to react to damage from different sources
-    public void DamageArea(float damage)
+    public void DamageArea(float damage, Dictionary<ModifierUtil.Trait, int> traits = null)
     {
         ApplyDamage(damage);
+        TraitCheck(traits);
     }
-    public void DamageContact(float damage)
+    public void DamageContact(float damage, Dictionary<ModifierUtil.Trait, int> traits = null)
     {
         ApplyDamage(damage);
+        TraitCheck(traits);
     }
 
     // Health related methods
@@ -52,6 +54,12 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     {
         if(!invincible)
             gameObject.SetActive(false);
+    }
+
+    // Trait Application Methods
+    public void TraitCheck(Dictionary<ModifierUtil.Trait, int> traits)
+    {
+
     }
 
     private void OnDestroy()

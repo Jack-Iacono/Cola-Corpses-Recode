@@ -8,8 +8,8 @@ public interface IDamageable
 
     public static Dictionary<GameObject, IDamageable> Instances = new Dictionary<GameObject, IDamageable>();
 
-    public void DamageContact(float damage);
-    public void DamageArea(float damage);
+    public void DamageContact(float damage, Dictionary<ModifierUtil.Trait, int> traits = null);
+    public void DamageArea(float damage, Dictionary<ModifierUtil.Trait, int> traits = null);
 
     public static void Register(GameObject obj, IDamageable damageable)
     {

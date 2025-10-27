@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static ModifierUtil;
 
-public class WeaponAction_Drink : WeaponAction
+public class WeaponAction_Drink : SecondaryWeaponAction
 {
     private float drinkTime = 0f;
     private float drinkTimer = 0f;
@@ -13,38 +14,32 @@ public class WeaponAction_Drink : WeaponAction
         drinkTime = weapon.useTime * 5;
     }
 
-    public override void Update(float dt, ActionState state, ActionState otherState)
+    public override void Update(float dt)
     {
-        if (state == ActionState.DOWN)
-        {
-            if(!isDrinking)
-            {
-                isDrinking = true;
-                drinkTimer = drinkTime;
-            }
-        }
-
         if (isDrinking)
         {
-            if(otherState == ActionState.DOWN)
-            {
-                isDrinking = false;
-                drinkTimer = drinkTime;
-            }
+            if (drinkTimer > 0)
+                drinkTimer -= dt;
             else
             {
-                if (drinkTimer > 0)
-                    drinkTimer -= dt;
-                else
-                {
-                    isDrinking = false;
-                    Use();
-                }
+                isDrinking = false;
+                Debug.Log("Done Drinking");
             }
         }
     }
-    public override void Use()
+
+    public override void Use(ActionState state)
     {
-        Debug.Log("Finish Drinking");
+        if (state == ActionState.DOWN && !isDrinking)
+        {
+            isDrinking = true;
+            drinkTimer = drinkTime;
+        }
+    }
+    public override void OtherUse()
+    {
+        isDrinking = false;
+        drinkTimer = drinkTime;
+        Debug.Log("Interupt");
     }
 }

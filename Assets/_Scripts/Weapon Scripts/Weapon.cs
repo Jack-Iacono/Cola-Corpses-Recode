@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 using static ModifierUtil;
 
 public enum ActionState { DOWN, UP, HELD, NONE };
@@ -20,13 +21,23 @@ public class Weapon
     private WeaponAction secondaryAction;
 
     // Create arrays with enough spaces for each level for the flavors and modifiers
-    public int[] flavors = new int[Enum.GetValues(typeof(Flavor)).Length];
-    public int[] modifiers = new int[Enum.GetValues(typeof(Modifier)).Length];
+    public Dictionary<Flavor, int> flavors = new Dictionary<Flavor, int>();
+    public Dictionary<Trait, int> traits = new Dictionary<Trait, int>();
 
     private PlayerController player;
 
     public Weapon(PlayerController player, float damage, float radius, float range, float useTime)
     {
+        // Initialize the flavor dictionary with the correct keys for usage later
+        foreach (Flavor flavor in Enum.GetValues(typeof(Flavor)))
+        {
+            flavors.Add(flavor, 0);
+        }
+        foreach (Trait trait in Enum.GetValues(typeof(Trait)))
+        {
+            traits.Add(trait, 0);
+        }
+
         this.damage = damage;
         this.range = range;
         this.radius = radius;
@@ -36,15 +47,26 @@ public class Weapon
         primaryAction = new WeaponAction_CanThrow(this, player);
         secondaryAction = new WeaponAction_Drink(this, player);
 
-        flavors[0] = 1;
-        modifiers[0] = 1;
+        flavors[Flavor.COLA] = 1;
+        traits[Trait.SOUR] = 1;
 
         this.player = player;
     }
 
     public void Update(float dt, ActionState primaryState, ActionState secondaryState)
     {
-        primaryAction.Update(dt, primaryState, secondaryState);
-        secondaryAction.Update(dt, secondaryState, primaryState);
+        if (primaryState != ActionState.NONE)
+        {
+            primaryAction.Use(primaryState);
+            secondaryAction.OtherUse();
+        }
+        if (secondaryState != ActionState.NONE)
+        {
+            secondaryAction.Use(secondaryState);
+            primaryAction.OtherUse();
+        }
+
+        primaryAction.Update(dt);
+        secondaryAction.Update(dt);
     }
 }

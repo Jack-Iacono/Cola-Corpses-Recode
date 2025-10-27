@@ -8,13 +8,13 @@ public static class ModifierUtil
     {
         COLA, ROOTBEER, ORANGE, GRAPE, CHERRY, CREAM, BANANA, RASPBERRY
     }
-    public enum Modifier
+    public enum Trait
     {
         SOUR, SWEET, SPICY, SALTY, UMAMI, STICKY, FIZZY, CHILLED, HOT
     }
 
     // Dictionary to hold all stats for each flavor level
-    public static Dictionary<Flavor, FlavorStats[]> flavorStatReference = new Dictionary<Flavor, FlavorStats[]>()
+    private static  readonly Dictionary<Flavor, FlavorStats[]> flavorStatReference = new Dictionary<Flavor, FlavorStats[]>()
     {
         { Flavor.COLA, new FlavorStats[]
             {
@@ -22,16 +22,39 @@ public static class ModifierUtil
             } 
         }
     };
-    public static Dictionary<Modifier, ModifierStats[]> attributeStatReference = new Dictionary<Modifier, ModifierStats[]>()
+    private static readonly Dictionary<Trait, TraitStats[]> traitStatReference = new Dictionary<Trait, TraitStats[]>()
     {
-        { Modifier.SOUR, new ModifierStats[]
+        { Trait.SOUR, new TraitStats[]
             {
-                new ModifierStats(10,1,4, 0.5f)
+                new TraitStats(10,1,4, 0.5f)
             }
         }
     };
 
-    public struct ModifierStats
+    /// <summary>
+    /// Gets the flavor's stats for the given flavor at the given level
+    /// </summary>
+    /// <param name="flavor">The flavor whose stats you want to get</param>
+    /// <param name="level">The level of the flavor</param>
+    /// <returns>The flavor stats for the given flavor</returns>
+    public static FlavorStats GetFlavorStat(Flavor flavor, int level)
+    {
+        // Subtract 1 from the level since the stat reference uses indices instead of starting at 1
+        return flavorStatReference[flavor][level - 1];
+    }
+    /// <summary>
+    /// Gets the trait's stats for the given trait at the given level
+    /// </summary>
+    /// <param name="trait">The trait whose stats you want to get</param>
+    /// <param name="level">The level of the trait</param>
+    /// <returns>The flavor stats for the given trait</returns>
+    public static TraitStats GetTraitStats(Trait trait, int level)
+    {
+        // Subtract 1 from the level since the stat reference uses indices instead of starting at 1
+        return traitStatReference[trait][level - 1];
+    }
+
+    public struct TraitStats
     {
         public float potency;
         public float tickCount;
@@ -42,12 +65,17 @@ public static class ModifierUtil
         /// </summary>
         public float procChance;
 
-        public ModifierStats(float potency, float tickCount, float tickSpeed, float procChance)
+        public TraitStats(float potency, float tickCount, float tickSpeed, float procChance)
         {
             this.potency = potency;
             this.tickCount = tickCount;
             this.tickSpeed = tickSpeed;
             this.procChance = procChance;
+        }
+
+        public override string ToString()
+        {
+            return "Potency: " + potency.ToString() + "\nTick Count: " + tickCount.ToString() + "\nTick Speed: " + tickSpeed.ToString() + "\nProc Chance: " + procChance.ToString();
         }
     }
     public struct  FlavorStats
@@ -61,6 +89,11 @@ public static class ModifierUtil
             this.potency = potency;
             this.tickCount = tickCount;
             this.tickSpeed = tickSpeed;
+        }
+
+        public override string ToString()
+        {
+            return "Potency: " + potency.ToString() + "\nTick Count: " + tickCount.ToString() + "\nTick Speed: " + tickSpeed.ToString();
         }
     }
 }

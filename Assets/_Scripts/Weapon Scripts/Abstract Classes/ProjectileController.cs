@@ -13,7 +13,13 @@ public abstract class ProjectileController : MonoBehaviour
     protected float currentLifetime = 0;
     protected bool isAlive = false;
 
-    protected Weapon weapon;
+    public delegate void ImpactDelegate(IDamageable hit);
+    public delegate void SplashDelegate(IDamageable[] hits);
+    public delegate void ExpireDelegate(ProjectileController sender);
+
+    public event ImpactDelegate OnImpactCollide;
+    public event SplashDelegate OnSplashCollide;
+    public event ExpireDelegate OnExpire;
 
     protected virtual void Awake()
     {
@@ -30,17 +36,17 @@ public abstract class ProjectileController : MonoBehaviour
         }
     }
 
-    public virtual void Activate(Weapon sourceWeapon)
+    public virtual void Activate()
     {
         currentLifetime = lifetime;
         isAlive = true;
         gameObject.SetActive(true);
-        this.weapon = sourceWeapon;
     }
     public virtual void Deactivate()
     {
         isAlive = false;
         gameObject.SetActive(false);
+        OnExpire?.Invoke(this);
     }
 
     protected virtual void IncrementLifetime()
@@ -51,6 +57,15 @@ public abstract class ProjectileController : MonoBehaviour
             Deactivate();
     }
     protected virtual void UpdateAction() { }
+
+    protected void ImpactCollide(IDamageable hit)
+    {
+        OnImpactCollide?.Invoke(hit);
+    }
+    protected void SplashCollide(IDamageable[] hits)
+    {
+        OnSplashCollide?.Invoke(hits);
+    }
 
     private void OnDestroy()
     {
