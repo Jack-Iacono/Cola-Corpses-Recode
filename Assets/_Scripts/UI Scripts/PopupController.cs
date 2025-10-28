@@ -44,12 +44,13 @@ public class PopupController : MonoBehaviour
         }
     }
 
-    public void Activate(Vector3 pos, string text)
+    public void Activate(Vector3 pos, string text, Color color)
     {
         this.image.gameObject.SetActive(false);
         this.text.gameObject.SetActive(true);
 
         this.text.text = text;
+        this.text.color = color;
 
         Activate(pos);
     }

@@ -39,33 +39,12 @@ public class WeaponAction_CanThrow : PrimaryWeaponAction
             can.transform.position = player.transform.position + Vector3.up * 0.25f + camSightVec;
             projectile.Activate(camSightVec * weapon.range, weapon.radius);
 
-            // Register projectile events
-            projectile.OnImpactCollide += ProjectileImpact;
-            projectile.OnSplashCollide += ProjectileSplash;
-            projectile.OnExpire += ProjectileExpire;
+            // Register projectile events for callbacks
+            RegisterProjectile(projectile);
 
             // Reset the use speed timer
             useTimer = useTime;
         }
-    }
-
-    protected override void ProjectileImpact(IDamageable hit)
-    {
-        hit.DamageContact(weapon.damage, weapon.traits);
-    }
-    protected override void ProjectileSplash(IDamageable[] hits)
-    {
-        foreach(IDamageable hit in hits)
-        {
-            hit.DamageArea(weapon.damage, weapon.traits);
-        }
-    }
-    protected override void ProjectileExpire(ProjectileController sender)
-    {
-        // Unregister from the projectile events
-        sender.OnImpactCollide -= ProjectileImpact;
-        sender.OnSplashCollide -= ProjectileSplash;
-        sender.OnExpire -= ProjectileExpire;
     }
 
     public override void OtherUse()

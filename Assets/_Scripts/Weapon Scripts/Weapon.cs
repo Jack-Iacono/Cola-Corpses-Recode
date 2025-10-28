@@ -48,7 +48,9 @@ public class Weapon
         secondaryAction = new WeaponAction_Drink(this, player);
 
         flavors[Flavor.COLA] = 1;
+
         traits[Trait.SOUR] = 1;
+        traits[Trait.SPICY] = 1;
 
         this.player = player;
     }

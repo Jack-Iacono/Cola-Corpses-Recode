@@ -15,9 +15,4 @@ public class BasicEnemy : Enemy
         base.Awake();
         agent = GetComponent<NavMeshAgent>();
     }
-
-    private void Update()
-    {
-        
-    }
 }
