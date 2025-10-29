@@ -10,7 +10,7 @@ using static InputUtil.InputBind;
 public class CameraController : MonoBehaviour, InputBind.ICameraActions
 {
     [Header("GameObjects")]
-    public PlayerController playerCont;
+    public PlayerMovementController playerCont;
 
     // Using 2 different camera for post processing effects later on, could change to layermasks
     public Camera cam;

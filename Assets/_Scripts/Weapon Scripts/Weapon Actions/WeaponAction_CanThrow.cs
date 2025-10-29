@@ -10,7 +10,7 @@ public class WeaponAction_CanThrow : PrimaryWeaponAction
     private float useTime = 0f;
     private float useTimer = 0f;
 
-    public WeaponAction_CanThrow(Weapon weapon, PlayerController player) : base(weapon, player)
+    public WeaponAction_CanThrow(Weapon weapon, PlayerMovementController player) : base(weapon, player)
     {
         canPrefab = PrefabHandler.Instance.thrownCan;
         ObjectPool.PoolObject(canPrefab, 10);

@@ -6,9 +6,9 @@ using UnityEngine;
 using InputUtil;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour, InputBind.IMovementActions
+public class PlayerMovementController : MonoBehaviour, InputBind.IMovementActions
 {
-    public static PlayerController Instance { get; private set; }
+    public static PlayerMovementController Instance { get; private set; }
 
     public static LayerMask playerLayerMask;
 

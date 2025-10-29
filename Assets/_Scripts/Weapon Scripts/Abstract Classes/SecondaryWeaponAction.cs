@@ -2,7 +2,7 @@ using UnityEngine;
 
 public abstract class SecondaryWeaponAction : WeaponAction
 {
-    protected SecondaryWeaponAction(Weapon weapon, PlayerController player) : base(weapon, player)
+    protected SecondaryWeaponAction(Weapon weapon, PlayerMovementController player) : base(weapon, player)
     {
 
     }

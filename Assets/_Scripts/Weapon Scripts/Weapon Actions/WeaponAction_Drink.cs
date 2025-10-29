@@ -9,7 +9,7 @@ public class WeaponAction_Drink : SecondaryWeaponAction
     private float drinkTimer = 0f;
     private bool isDrinking = false;
 
-    public WeaponAction_Drink(Weapon weapon, PlayerController player) : base(weapon, player)
+    public WeaponAction_Drink(Weapon weapon, PlayerMovementController player) : base(weapon, player)
     {
         drinkTime = weapon.useTime * 5;
     }
@@ -40,6 +40,5 @@ public class WeaponAction_Drink : SecondaryWeaponAction
     {
         isDrinking = false;
         drinkTimer = drinkTime;
-        Debug.Log("Interupt");
     }
 }

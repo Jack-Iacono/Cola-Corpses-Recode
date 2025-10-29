@@ -18,7 +18,7 @@ public class PlayerWeaponController : MonoBehaviour, InputBind.IAttackActions
     private ActionState primaryState;
     private ActionState secondaryState;
 
-    private PlayerController ownerPlayer;
+    private PlayerMovementController ownerPlayer;
 
     private void Awake()
     {
@@ -29,7 +29,7 @@ public class PlayerWeaponController : MonoBehaviour, InputBind.IAttackActions
         primaryState = ActionState.NONE;
         secondaryState = ActionState.NONE;
         
-        ownerPlayer = GetComponent<PlayerController>();
+        ownerPlayer = GetComponent<PlayerMovementController>();
     }
 
     private void Start()

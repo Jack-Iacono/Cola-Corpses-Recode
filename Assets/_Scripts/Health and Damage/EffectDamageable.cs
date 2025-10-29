@@ -1,16 +1,25 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 using static IDamageable;
 using static ModifierUtil;
 using static UnityEngine.ParticleSystem;
 
-public abstract class Enemy : MonoBehaviour, IDamageable
+public abstract class EffectDamageable : HealthSystem, IDamageable
 {
-    protected float health = 100;
-    protected bool invincible = false;
+    // The damage that this EffectDamagable can do
+    protected float damage = 10;
 
+    [SerializeField]
+    protected float saltyWeakenModifier = 1;
+    [SerializeField]
+    protected float bitterWeakenModifier = 1;
+    [SerializeField]
+    protected float umamiProcMultiplier = 1;
+
+    // Holds info for debuffs
     protected Dictionary<Trait, Timer> traitTimers = new Dictionary<Trait, Timer>();
     protected Dictionary<Trait, TraitStats> currentTraitStats = new Dictionary<Trait, TraitStats>();
 
@@ -26,8 +35,12 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         }
 
         // Initialize the trait timer dict for use later
-        traitTimers.Add(Trait.SOUR, new Timer(SourTick));
-        traitTimers.Add(Trait.SPICY, new Timer(SpicyTick));
+        traitTimers.Add(Trait.SOUR, new Timer(null, SourTick, null));
+        traitTimers.Add(Trait.SPICY, new Timer(null, SpicyTick, null));
+        traitTimers.Add(Trait.SWEET, new Timer(SweetProc, null, null));
+        traitTimers.Add(Trait.SALTY, new Timer(SaltyApply, null, SaltyRemove));
+        traitTimers.Add(Trait.BITTER, new Timer(BitterApply, null, BitterRemove));
+        traitTimers.Add(Trait.UMAMI, new Timer(UmamiApply, null, UmamiRemove));
     }
 
     protected virtual void Update()
@@ -38,6 +51,8 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             traitTimers[t].Update(Time.deltaTime);
         }
     }
+
+    #region Damage Methods
 
     // Methods to react to damage from different sources
     public void DamageSplash(float damage, Dictionary<ModifierUtil.Trait, int> traits = null)
@@ -61,27 +76,17 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
         CreatePopup(damage.ToString(), Color.white);
     }
-    public void ChangeHealth(float change)
-    {
-        SetHealth(health + change);
-    }
-    public void SetHealth(float health)
-    {
-        this.health = health;
-        CheckHealth();
-    }
-    protected void CheckHealth()
-    {
-        if(health < 0)
-            Kill();
-    }
-    protected void Kill()
+
+    protected override void HealthEmpty()
     {
         if(!invincible)
             gameObject.SetActive(false);
     }
 
-    // Trait Application Methods
+    #endregion
+
+    #region Trait Methods
+
     protected void TraitCheck(Dictionary<Trait, int> traits)
     {
         foreach(Trait t in traits.Keys)
@@ -93,11 +98,11 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             {
                 TraitStats stats = ModifierUtil.GetTraitStats(t, level);
 
-                if (ModifierUtil.CheckTraitProc(stats))
+                if (ModifierUtil.CheckTraitProc(stats.procChance * umamiProcMultiplier))
                 {
                     CreatePopup(t.ToString(), ModifierUtil.traitColorReference[t]);
                     // The - 1 for tick count due to the first tick already happening in the timer, without this would go tickCount + 1 times
-                    traitTimers[t].Start(stats.tickSpeed, stats.tickCount - 1);
+                    traitTimers[t].Start(stats.tickSpeed, stats.tickCount - 1, ModifierUtil.traitTimerOverrideReference[t]);
                     currentTraitStats[t] = stats;
                 } 
             }
@@ -114,6 +119,49 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         TraitStats stats = currentTraitStats[Trait.SPICY];
         CreatePopup(stats.potency.ToString(), ModifierUtil.traitColorReference[Trait.SPICY]);
     }
+
+    protected void SweetProc()
+    {
+        // Heal the player
+    }
+
+    protected void SaltyApply()
+    {
+        // Yes, I know I'm gonna have to adjust this later to account for other sources. I'm just lazy right now
+        TraitStats stats = currentTraitStats[Trait.SALTY];
+        saltyWeakenModifier = stats.potency;
+    }
+    protected void SaltyRemove()
+    {
+        saltyWeakenModifier = 1;
+        CreatePopup("Unsalted", ModifierUtil.traitColorReference[Trait.SALTY]);
+    }
+
+    protected void BitterApply()
+    {
+        // Yes, I know I'm gonna have to adjust this later to account for other sources. I'm just lazy right now
+        TraitStats stats = currentTraitStats[Trait.BITTER];
+        bitterWeakenModifier = stats.potency;
+    }
+    protected void BitterRemove()
+    {
+        bitterWeakenModifier = 1;
+        CreatePopup("Sweetened", ModifierUtil.traitColorReference[Trait.BITTER]);
+    }
+
+    protected void UmamiApply()
+    {
+        // Yes, I know I'm gonna have to adjust this later to account for other sources. I'm just lazy right now
+        TraitStats stats = currentTraitStats[Trait.UMAMI];
+        umamiProcMultiplier = stats.potency;
+    }
+    protected void UmamiRemove()
+    {
+        umamiProcMultiplier = 1;
+        CreatePopup("Un-Umamied??", ModifierUtil.traitColorReference[Trait.UMAMI]);
+    }
+
+    #endregion
 
     protected void CreatePopup(string text, Color color)
     {

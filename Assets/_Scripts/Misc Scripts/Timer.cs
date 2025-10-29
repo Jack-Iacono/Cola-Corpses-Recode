@@ -15,11 +15,13 @@ public class Timer
 
     // Callbacks that can trigger methods in other classes
     public delegate void CallbackDelegate();
+    private CallbackDelegate beginCallback;
     private CallbackDelegate endCallback;
     private CallbackDelegate tickCallback;
     
-    public Timer(CallbackDelegate tickCallback = null, CallbackDelegate endCallback = null)
+    public Timer(CallbackDelegate beginCallback = null, CallbackDelegate tickCallback = null, CallbackDelegate endCallback = null)
     {
+        this.beginCallback = beginCallback;
         this.tickCallback = tickCallback;
         this.endCallback = endCallback;
     }
@@ -50,15 +52,30 @@ public class Timer
         }
     }
 
-    public void Start(float time, int repeats)
+    public void Start(float time, int repeats, bool overrideTimer = false)
     {
-        // Start the timer fresh with new inputs
-        resetTime = time;
-        currentTime = resetTime;
-        this.repeats = repeats;
-        repeatCount = repeats;
+        // Check to see if the timer should be overriden to restart
+        if(!isRunning || overrideTimer)
+        {
+            // Start the timer fresh with new inputs
+            resetTime = time;
+            currentTime = resetTime;
+            this.repeats = repeats;
+            repeatCount = repeats;
 
-        isRunning = true;
+            isRunning = true;
+        }
+        else
+        {
+            // This will add the next timer to the current one to avoid skipping the proc time
+            resetTime = time;
+            this.repeats = repeats;
+
+            // This accounts for the one that is currently running
+            repeatCount = repeats + 1;
+        }
+
+        beginCallback?.Invoke();
     }
     public void Stop()
     {

@@ -28,10 +28,10 @@ public class GameController : MonoBehaviour
         {
             spawnedMap = MapBuilder.Instance.GetNewMap();
             MapBuilder.Instance.BuildMap(spawnedMap);
-            player.GetComponent<PlayerController>().Warp(spawnedMap.originTile + Vector3.up);
+            player.GetComponent<PlayerMovementController>().Warp(spawnedMap.originTile + Vector3.up);
         }
         else
-            player.GetComponent<PlayerController>().Warp(Vector3.up);
+            player.GetComponent<PlayerMovementController>().Warp(Vector3.up);
 
         // Use this to initialize any objects that need to be pooled after map loading
         ObjectPool.PoolObject(PrefabHandler.Instance.damagePopup, 10);

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 
 public static class ModifierUtil
@@ -10,9 +11,9 @@ public static class ModifierUtil
     }
     public enum Trait
     {
-        SOUR, SWEET, SPICY, SALTY, UMAMI, STICKY, FIZZY, CHILLED, HOT
+        SOUR, SWEET, SPICY, SALTY, UMAMI, BITTER
     }
-    // Hey Jack, consider adding Bitter later, idiot
+    // Planning to add Fizzy, Flat, Hot and Iced later on
 
     // Dictionary to hold all stats for each flavor level
     private static  readonly Dictionary<Flavor, FlavorStats[]> flavorStatReference = new Dictionary<Flavor, FlavorStats[]>()
@@ -77,32 +78,17 @@ public static class ModifierUtil
         },
         { Trait.SALTY, new TraitStats[]
             {
-                new TraitStats(10,10,0.5f, 0.5f)
+                new TraitStats(10,1,10, 0.5f)
+            }
+        },
+        { Trait.BITTER, new TraitStats[]
+            {
+                new TraitStats(10,1,15, 0.5f)
             }
         },
         { Trait.UMAMI, new TraitStats[]
             {
-                new TraitStats(10,10,0.5f, 0.5f)
-            }
-        },
-        { Trait.STICKY, new TraitStats[]
-            {
-                new TraitStats(10,10,0.5f, 0.5f)
-            }
-        },
-        { Trait.FIZZY, new TraitStats[]
-            {
-                new TraitStats(10,10,0.5f, 0.5f)
-            }
-        },
-        { Trait.CHILLED, new TraitStats[]
-            {
-                new TraitStats(10,10,0.5f, 0.5f)
-            }
-        },
-        { Trait.HOT, new TraitStats[]
-            {
-                new TraitStats(10,10,0.5f, 0.5f)
+                new TraitStats(10,1, 20, 0.5f)
             }
         }
     };
@@ -113,12 +99,20 @@ public static class ModifierUtil
         { Trait.SOUR, Color.green },
         { Trait.SWEET, Color.magenta },
         { Trait.SPICY, Color.red },
-        { Trait.SALTY, Color.yellow },
-        { Trait.UMAMI, Color.white },
-        { Trait.STICKY, Color.gray },
-        { Trait.FIZZY, Color.green },
-        { Trait.CHILLED, Color.green },
-        { Trait.HOT, Color.green }
+        { Trait.SALTY, Color.grey },
+        { Trait.UMAMI, Color.blue },
+        { Trait.BITTER, Color.yellow }
+    };
+
+    // Used to decide what action timers should take with each trait's debuff timers
+    public static readonly Dictionary<Trait, bool> traitTimerOverrideReference = new Dictionary<Trait, bool>()
+    {
+        { Trait.SPICY, false },
+        { Trait.SOUR, false },
+        { Trait.SWEET, false },
+        { Trait.SALTY, true },
+        { Trait.BITTER, true },
+        { Trait.UMAMI, true },
     };
 
     /// <summary>
@@ -144,13 +138,15 @@ public static class ModifierUtil
         return traitStatReference[trait][level - 1];
     }
 
-    public static bool CheckTraitProc(TraitStats stats, float chanceOverride = -1)
+    // Use these to check whether a trait should proc or not
+    public static bool CheckTraitProc(TraitStats stats)
     {
         // Making this into a method in case proc chance needs to be more precise later
-        if(chanceOverride != -1)
-            return Random.Range(0, 1f) < chanceOverride;
-        else
-            return Random.Range(0, 1f) < stats.procChance;
+        return CheckTraitProc(stats.procChance);
+    }
+    public static bool CheckTraitProc(float chance)
+    {
+        return Random.Range(0, 1f) < chance;
     }
 
     public struct TraitStats

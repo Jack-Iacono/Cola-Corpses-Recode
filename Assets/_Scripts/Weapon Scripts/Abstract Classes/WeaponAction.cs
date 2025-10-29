@@ -9,9 +9,9 @@ public abstract class WeaponAction
     public string description = string.Empty;
 
     protected Weapon weapon;
-    protected PlayerController player;
+    protected PlayerMovementController player;
 
-    public WeaponAction(Weapon weapon, PlayerController player)
+    public WeaponAction(Weapon weapon, PlayerMovementController player)
     {
         this.weapon = weapon;
         this.player = player;

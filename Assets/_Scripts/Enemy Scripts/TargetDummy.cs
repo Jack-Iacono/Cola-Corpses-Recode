@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TargetDummy : Enemy
+public class TargetDummy : EffectDamageable
 {
     protected override void Awake()
     {

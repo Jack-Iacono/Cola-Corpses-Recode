@@ -24,9 +24,9 @@ public class Weapon
     public Dictionary<Flavor, int> flavors = new Dictionary<Flavor, int>();
     public Dictionary<Trait, int> traits = new Dictionary<Trait, int>();
 
-    private PlayerController player;
+    private PlayerMovementController player;
 
-    public Weapon(PlayerController player, float damage, float radius, float range, float useTime)
+    public Weapon(PlayerMovementController player, float damage, float radius, float range, float useTime)
     {
         // Initialize the flavor dictionary with the correct keys for usage later
         foreach (Flavor flavor in Enum.GetValues(typeof(Flavor)))
@@ -51,6 +51,10 @@ public class Weapon
 
         traits[Trait.SOUR] = 1;
         traits[Trait.SPICY] = 1;
+        traits[Trait.SWEET] = 1;
+        traits[Trait.SALTY] = 1;
+        traits[Trait.BITTER] = 1;
+        traits[Trait.UMAMI] = 1;
 
         this.player = player;
     }
