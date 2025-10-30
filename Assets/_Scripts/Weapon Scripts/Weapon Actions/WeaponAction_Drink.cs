@@ -23,7 +23,7 @@ public class WeaponAction_Drink : SecondaryWeaponAction
             else
             {
                 isDrinking = false;
-                Debug.Log("Done Drinking");
+                PlayerStatusController.Instance.ApplyBuffs(weapon.flavors);
             }
         }
     }

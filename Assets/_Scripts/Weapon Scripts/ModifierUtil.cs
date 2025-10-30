@@ -105,6 +105,7 @@ public static class ModifierUtil
     };
 
     // Used to decide what action timers should take with each trait's debuff timers
+    // Some buffs/debuffs benefit from having the timer reset itself, while others benefit from running the current tick and extending
     public static readonly Dictionary<Trait, bool> traitTimerOverrideReference = new Dictionary<Trait, bool>()
     {
         { Trait.SPICY, false },
@@ -113,6 +114,17 @@ public static class ModifierUtil
         { Trait.SALTY, true },
         { Trait.BITTER, true },
         { Trait.UMAMI, true },
+    };
+    public static readonly Dictionary<Flavor, bool> flavorTimerOverrideReference = new Dictionary<Flavor, bool>()
+    {
+        { Flavor.COLA, false },
+        { Flavor.ROOTBEER, false },
+        { Flavor.ORANGE, false },
+        { Flavor.GRAPE, false },
+        { Flavor.CHERRY, false },
+        { Flavor.CREAM, false },
+        { Flavor.BANANA, false },
+        { Flavor.RASPBERRY, false },
     };
 
     /// <summary>

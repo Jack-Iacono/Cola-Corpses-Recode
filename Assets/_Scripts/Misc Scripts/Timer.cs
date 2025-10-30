@@ -3,7 +3,7 @@ using UnityEngine;
 public class Timer
 {
     // The time that each repeat should last
-    private float currentTime;
+    public float currentTime { get; private set; }
     private float resetTime;
 
     // The amount of times the timer should repeat

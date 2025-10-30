@@ -10,9 +10,24 @@ public class BasicEnemy : EffectDamageable
 
     private float moveSpeed;
 
+    Transform target;
+
     protected override void Awake()
     {
         base.Awake();
         agent = GetComponent<NavMeshAgent>();
+    }
+
+    private void Start()
+    {
+        
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+
+        if(PlayerMovementController.Instance != null)
+            agent.SetDestination(PlayerMovementController.Instance.transform.position);
     }
 }
