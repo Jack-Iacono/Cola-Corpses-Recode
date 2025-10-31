@@ -8,6 +8,10 @@ public abstract class HealthSystem : MonoBehaviour
     // Should this EffectDamageable take damage?
     protected bool invincible = false;
 
+    public void ResetHealth()
+    {
+        SetHealth(maxHealth);
+    }
     public virtual void ChangeHealth(float change)
     {
         SetHealth(health + change);

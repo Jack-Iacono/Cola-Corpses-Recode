@@ -36,7 +36,8 @@ public class Timer
             else
             {
                 // Check if this timer should repeat itself, and if so, do that
-                if(repeatCount > 0)
+                // Works like this to allow -1 to make timer run infinitely
+                if(repeatCount != 0)
                 {
                     currentTime = resetTime;
                     repeatCount--;

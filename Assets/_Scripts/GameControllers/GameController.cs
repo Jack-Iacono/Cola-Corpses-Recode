@@ -12,8 +12,8 @@ public class GameController : MonoBehaviour
     public static bool isPaused = false;
     public static event EventHandler<bool> OnPlayerAliveChanged;
 
-    [SerializeField]
-    private bool testMode = false;
+    // Used for quick shifting into test mode
+    public static readonly bool testMode = true;
 
     private void Awake()
     {
@@ -35,6 +35,7 @@ public class GameController : MonoBehaviour
 
         // Use this to initialize any objects that need to be pooled after map loading
         ObjectPool.PoolObject(PrefabHandler.Instance.damagePopup, 10);
+        ObjectPool.PoolObject(PrefabHandler.Instance.enemy, 10);
     }
 
     private void OnMapLoaded(string mapName)

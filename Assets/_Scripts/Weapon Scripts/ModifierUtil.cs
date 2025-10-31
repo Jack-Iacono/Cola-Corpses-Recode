@@ -63,7 +63,7 @@ public static class ModifierUtil
     {
         { Trait.SOUR, new TraitStats[]
             {
-                new TraitStats(10,10,0.5f, 0.5f)
+                new TraitStats(0.3f,10,0.5f, 0.5f)
             }
         },
         { Trait.SWEET, new TraitStats[]
@@ -73,7 +73,7 @@ public static class ModifierUtil
         },
         { Trait.SPICY, new TraitStats[]
             {
-                new TraitStats(10,15,0.3f, 0.5f)
+                new TraitStats(0.1f,15,0.3f, 0.5f)
             }
         },
         { Trait.SALTY, new TraitStats[]

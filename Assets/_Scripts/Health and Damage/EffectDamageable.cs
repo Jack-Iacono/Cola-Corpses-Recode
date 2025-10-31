@@ -74,7 +74,16 @@ public abstract class EffectDamageable : HealthSystem, IDamageable
         if (!invincible)
             ChangeHealth(-damage);
 
-        CreatePopup(damage.ToString(), Color.white);
+        switch (type)
+        {
+            case DamageType.CONTACT:
+                CreatePopup(damage.ToString(), Color.white);
+                break;
+            case DamageType.SPLASH:
+                CreatePopup(damage.ToString(), Color.white);
+                break;
+        }
+        
     }
 
     protected override void HealthEmpty()
@@ -109,15 +118,28 @@ public abstract class EffectDamageable : HealthSystem, IDamageable
         }
     }
 
+    protected void ResetTraitTimers()
+    {
+        // Run through each timer in the trait timers dictionary and stop them
+        foreach(Timer timer in traitTimers.Values)
+        {
+            timer.Stop();
+        }
+    }
+
     protected void SourTick()
     {
         TraitStats stats = currentTraitStats[Trait.SOUR];
-        CreatePopup(stats.potency.ToString(), ModifierUtil.traitColorReference[Trait.SOUR]);
+        float d = health * stats.potency;
+        CreatePopup(Mathf.FloorToInt(d).ToString(), ModifierUtil.traitColorReference[Trait.SOUR]);
+        ApplyDamage(d);
     }
     protected void SpicyTick()
     {
         TraitStats stats = currentTraitStats[Trait.SPICY];
-        CreatePopup(stats.potency.ToString(), ModifierUtil.traitColorReference[Trait.SPICY]);
+        float d = maxHealth * stats.potency;
+        CreatePopup(Mathf.FloorToInt(d).ToString(), ModifierUtil.traitColorReference[Trait.SPICY]);
+        ApplyDamage(d);
     }
 
     protected void SweetProc()

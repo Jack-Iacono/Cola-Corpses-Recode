@@ -57,7 +57,10 @@ public class SceneController : MonoBehaviour
     private void Start()
     {
         // Load a scene when the game is started
-        LoadGameTestScene();
+        if (GameController.testMode)
+            SceneController.LoadGameTestScene();
+        else
+            SceneController.LoadGameScene();
     }
 
     private void OnSceneLoaded(Scene s, LoadSceneMode loadMode)
