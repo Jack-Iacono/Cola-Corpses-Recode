@@ -38,6 +38,7 @@ public class BasicEnemy : EffectDamageable
     public void Spawn(Vector3 pos)
     {
         // Spawn on ground
+        Debug.Log("Spawn At");
         transform.position = pos + Vector3.up;
         agent.enabled = true;
     }

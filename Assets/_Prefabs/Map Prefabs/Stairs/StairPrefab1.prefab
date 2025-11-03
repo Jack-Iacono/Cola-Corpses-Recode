@@ -99,13 +99,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9079726621233202266}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.3420201, y: 0, z: 0, w: 0.9396927}
-  m_LocalPosition: {x: 0, y: 0.755, z: 1.717}
+  m_LocalRotation: {x: -0.2376859, y: 0, z: 0, w: 0.97134215}
+  m_LocalPosition: {x: 0, y: 0.488, z: 1.616}
   m_LocalScale: {x: 1, y: 0.02703533, z: 2.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8919077549923429470}
-  m_LocalEulerAnglesHint: {x: -40, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -27.5, y: 0, z: 0}
 --- !u!33 &1498385880016793939
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -131,6 +131,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -186,10 +189,6 @@ PrefabInstance:
     m_TransformParent: {fileID: 8919077549923429470}
     m_Modifications:
     - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -229,13 +228,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2888801954764060802, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_Name
-      value: Tile 0,1,0
+      value: pfb_PresetTile (2)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -260,10 +255,6 @@ PrefabInstance:
     m_TransformParent: {fileID: 8919077549923429470}
     m_Modifications:
     - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -303,13 +294,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2888801954764060802, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_Name
-      value: Tile 0,1,2
+      value: pfb_PresetTile (3)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -334,10 +321,6 @@ PrefabInstance:
     m_TransformParent: {fileID: 8919077549923429470}
     m_Modifications:
     - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -377,13 +360,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2888801954764060802, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_Name
-      value: Tile 0,0,2
+      value: pfb_PresetTile (1)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -408,16 +387,12 @@ PrefabInstance:
     m_TransformParent: {fileID: 8919077549923429470}
     m_Modifications:
     - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -451,13 +426,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2888801954764060802, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_Name
-      value: Tile 0,1,4
+      value: pfb_PresetTile (4)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -481,10 +452,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8919077549923429470}
     m_Modifications:
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -525,13 +492,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2888801954764060802, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}
       propertyPath: m_Name
-      value: Tile 0,0,0
+      value: pfb_PresetTile
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:

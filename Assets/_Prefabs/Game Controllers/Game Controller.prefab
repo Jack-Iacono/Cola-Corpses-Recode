@@ -45,7 +45,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd06a6ee58b8a5d48a08f30cbdadc586, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  testMode: 1
 --- !u!114 &7870636543849431023
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -62,3 +61,4 @@ MonoBehaviour:
   enemy: {fileID: 0}
   thrownCan: {fileID: 3658109776480023044, guid: 6bf76402744487b49841827f8a9734fa, type: 3}
   damagePopup: {fileID: 8307493046229039167, guid: 4329724deab86884ca3f66fa5e7e056d, type: 3}
+  spawner: {fileID: 8449376765102633652, guid: 1ad8bb49153e11542a6d70695fdec900, type: 3}

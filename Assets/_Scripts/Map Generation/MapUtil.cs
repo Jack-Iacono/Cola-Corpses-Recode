@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
-using UnityEditor.Presets;
 using UnityEngine;
 
 using static MapPreset;
-using static UnityEditor.PlayerSettings;
 
 namespace MapUtil
 {
-    public enum TileType { NORMAL, CUSTOM, EMPTY }
+    public enum TileType { NORMAL, CUSTOM, EMPTY}
     public enum WallType { NORMAL, CUSTOM, EMPTY, DOOR }
 
     public class Map
@@ -168,6 +165,8 @@ namespace MapUtil
         public Wall[] walls = new Wall[6];
         public Ceiling ceiling = null;
 
+        public bool hasSpawner = false;
+
         public GameObject obj = null;
 
         public TileType type { get; private set; } = TileType.NORMAL;
@@ -322,6 +321,7 @@ namespace MapUtil
             // Orgainze the preset indices based on their function
             List<int> stairPresetIndices = new List<int>();
             List<int> normalPresetIndices = new List<int>();
+
             for(int i = 0; i < roomPresets.Count; i++)
             {
                 if (roomPresets[i].isStair)
@@ -443,6 +443,12 @@ namespace MapUtil
 
                         // create a new tile at this location
                         Tile newTile = new Tile(currentLocation, newRoom);
+
+                        // Decide if this tile should have a spawner or not
+                        // This is very basic for now, but should work
+                        if (UnityEngine.Random.Range(0, 1f) < 0.1f)
+                            newTile.hasSpawner = true;
+
                         newRoom.AddTile(newTile);
                     }
 

@@ -310,7 +310,7 @@ MonoBehaviour:
   camCont: {fileID: 1131664790727878984}
   moveSpeed: 10
   jumpHeight: 10
-  gravity: -0.98
+  gravity: -20
   groundAcceleration: 1
   airAcceleration: 1
   groundDeceleration: 1

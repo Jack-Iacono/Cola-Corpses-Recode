@@ -9,17 +9,19 @@ public class EnemySpawner : MonoBehaviour
     private float spawnTime = 5;
     private Timer spawnTimer;
 
+    // This is used to ensure that spawners work in testing modes
+    [SerializeField]
+    private bool autoInitialize = false;
+
     private bool initialized = false;
 
     private void Awake()
     {
-        if (SceneController.loadedMap != null)
-            OnMapLoaded(String.Empty);
-        else
-            SceneController.OnMapLoaded += OnMapLoaded;
+        if (autoInitialize)
+            Initialize();
     }
 
-    private void OnMapLoaded(string mapName)
+    public void Initialize()
     {
         // Find the closest point on the nav mesh to spawn enemies
         NavMeshHit hit;

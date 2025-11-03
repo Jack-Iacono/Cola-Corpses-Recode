@@ -13,7 +13,7 @@ public class GameController : MonoBehaviour
     public static event EventHandler<bool> OnPlayerAliveChanged;
 
     // Used for quick shifting into test mode
-    public static readonly bool testMode = true;
+    public static readonly bool testMode = false;
 
     private void Awake()
     {

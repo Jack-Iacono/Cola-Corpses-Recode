@@ -5,18 +5,22 @@ using UnityEngine;
 
 using MapUtil;
 using System;
-using UnityEngine.UIElements;
-using UnityEditor.Presets;
+using Unity.AI.Navigation;
 
 public class MapBuilder : MonoBehaviour
 {
     // This class would be static if not for the prefabs that need to be given in the editor
     public static MapBuilder Instance;
 
+    [Header("Foundation Prefabs")]
     public GameObject floorPrefabNormal;
     public GameObject wallPrefabNormal;
     public GameObject ceilingPrefab;
 
+    [Header("Accessory Prefabs")]
+    public GameObject spawnerPrefab;
+
+    [Header("Meshes")]
     public Mesh hexMesh;
     public Mesh wallMesh;
 
@@ -64,6 +68,13 @@ public class MapBuilder : MonoBehaviour
 
         // Create an empty gameobject to store all of the instantiate things
         GameObject mapParent = new GameObject("Map");
+        
+        // Store the necessary nav mesh builder for use after the map is finished being made
+        NavMeshSurface navMesh = mapParent.AddComponent<NavMeshSurface>();
+        navMesh.collectObjects = CollectObjects.Children;
+
+        // Used to keep track of all spawners that are placed so that they can be initialized after the nav mesh is done
+        List<EnemySpawner> spawners = new List<EnemySpawner>();
         
         // This stores walls that have already been placed since the walls link between multiple tiles
         List<Wall> placedWalls = new List<Wall>();
@@ -130,6 +141,15 @@ public class MapBuilder : MonoBehaviour
 
         mapParent.transform.localScale *= MAP_SCALE;
 
+        // Create the nav mesh for the map
+        navMesh.BuildNavMesh();
+
+        // Activate all spawners
+        foreach(EnemySpawner s in spawners)
+        {
+            s.Initialize();
+        }
+
         void BuildTile(Tile tile, GameObject roomParent)
         {
             // Check the type of the given tile
@@ -162,6 +182,17 @@ public class MapBuilder : MonoBehaviour
                 tileObject.name = "Tile " + tileGridPosition.ToString();
 
                 tile.obj = tileObject;
+
+                // Place the spawner prefab onto the tile
+                if(tile.hasSpawner)
+                {
+                    GameObject spawner = Instantiate(spawnerPrefab);
+                    spawner.transform.parent = tileObject.transform;
+                    spawner.transform.localPosition = Vector3.one;
+
+                    // Add this to the list of spawners to be initialized
+                    spawners.Add(spawner.GetComponent<EnemySpawner>());
+                }
             }
             else if(tile.type == TileType.EMPTY)
             {
@@ -334,8 +365,8 @@ public class MapBuilder : MonoBehaviour
 
             filter.mesh = combinedMesh;
             rend.materials = roomThemes[room.themeIndex].wallMaterials.ToArray();
-            //rend.receiveShadows = false;
-            //rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            rend.receiveShadows = false;
+            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }
@@ -398,8 +429,8 @@ public class MapBuilder : MonoBehaviour
 
             filter.mesh = combinedMesh;
             rend.materials = roomThemes[room.themeIndex].floorMaterials.ToArray();
-            //rend.receiveShadows = false;
-            //rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            rend.receiveShadows = false;
+            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }
@@ -469,8 +500,8 @@ public class MapBuilder : MonoBehaviour
 
             filter.mesh = combinedMesh;
             rend.materials = roomThemes[room.themeIndex].ceilingMaterials.ToArray();
-            //rend.receiveShadows = false;
-            //rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            rend.receiveShadows = false;
+            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
         }
