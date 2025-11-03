@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
-using UnityEditor.Presets;
 using UnityEngine;
 
 using static MapPreset;
-using static UnityEditor.PlayerSettings;
 
 namespace MapUtil
 {
-    public enum TileType { NORMAL, CUSTOM, EMPTY }
+    public enum TileType { NORMAL, CUSTOM, EMPTY}
     public enum WallType { NORMAL, CUSTOM, EMPTY, DOOR }
 
     public class Map
@@ -24,9 +21,11 @@ namespace MapUtil
         public Vector3 originTile = new Vector3(0, 0, 0);
 
         // These are the parameters for what a normal map's proportions look like
-        public const float TILE_RADIUS = 2f;
-        public const float FLOOR_HEIGHT = 3;
+        public const float TILE_RADIUS = 4f;
+        public const float FLOOR_HEIGHT = 4;
+        // Relative to 1, treat as a percentage of the entire platform
         public const float WALL_THICKNESS = 0.05f;
+        // I believe this is a global measurement
         public const float FLOOR_THICKNESS = 0.05f;
 
         // The length from the center of the hexagon to the middle of any side
@@ -166,6 +165,8 @@ namespace MapUtil
         public Wall[] walls = new Wall[6];
         public Ceiling ceiling = null;
 
+        public bool hasSpawner = false;
+
         public GameObject obj = null;
 
         public TileType type { get; private set; } = TileType.NORMAL;
@@ -283,10 +284,15 @@ namespace MapUtil
         // This can be lights or various other elements
 
         public int materialIndex { get; private set; } = -1;
+        public bool hasCollider { get; private set; } = false;
 
         public void SetMaterialIndex(int index)
         {
             materialIndex = index;
+        }
+        public void SetHasCollider(bool hasCollider)
+        {
+            this.hasCollider = hasCollider;
         }
     }
 
@@ -315,6 +321,7 @@ namespace MapUtil
             // Orgainze the preset indices based on their function
             List<int> stairPresetIndices = new List<int>();
             List<int> normalPresetIndices = new List<int>();
+
             for(int i = 0; i < roomPresets.Count; i++)
             {
                 if (roomPresets[i].isStair)
@@ -436,6 +443,12 @@ namespace MapUtil
 
                         // create a new tile at this location
                         Tile newTile = new Tile(currentLocation, newRoom);
+
+                        // Decide if this tile should have a spawner or not
+                        // This is very basic for now, but should work
+                        if (UnityEngine.Random.Range(0, 1f) < 0.1f)
+                            newTile.hasSpawner = true;
+
                         newRoom.AddTile(newTile);
                     }
 
@@ -718,6 +731,7 @@ namespace MapUtil
                         // Create the ceiling and assign it to the tile
                         Ceiling ceil = new Ceiling();
                         ceil.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[room.themeIndex].ceilingMaterials.Count));
+                        ceil.SetHasCollider(aboveTile == null);
                         tile.SetCeiling(ceil);
                     }
                 }
