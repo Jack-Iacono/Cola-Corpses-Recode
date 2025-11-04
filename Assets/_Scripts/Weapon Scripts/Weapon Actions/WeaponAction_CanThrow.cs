@@ -5,7 +5,7 @@ using UnityEngine;
 public class WeaponAction_CanThrow : PrimaryWeaponAction
 {
     private GameObject canPrefab;
-    private CameraController cameraController;
+    private PlayerCameraController cameraController;
 
     private float useTime = 0f;
     private float useTimer = 0f;

@@ -27,6 +27,8 @@ public class PrefabHandler : MonoBehaviour
             Destroy(this);
     }
 
+
+
     private void OnDestroy()
     {
         if(Instance == this)

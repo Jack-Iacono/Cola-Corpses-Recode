@@ -22,16 +22,14 @@ public class GameController : MonoBehaviour
 
     private void Initialize()
     {
-        GameObject player = Instantiate(PrefabHandler.Instance.player);
-
         if (!testMode)
         {
             spawnedMap = MapBuilder.Instance.GetNewMap();
             MapBuilder.Instance.BuildMap(spawnedMap);
-            player.GetComponent<PlayerMovementController>().Warp(spawnedMap.originTile + Vector3.up);
+            PlayerController.movementController.Warp(spawnedMap.originTile + Vector3.up);
         }
         else
-            player.GetComponent<PlayerMovementController>().Warp(Vector3.up);
+            PlayerController.movementController.Warp(Vector3.up);
 
         // Use this to initialize any objects that need to be pooled after map loading
         ObjectPool.PoolObject(PrefabHandler.Instance.damagePopup, 10);

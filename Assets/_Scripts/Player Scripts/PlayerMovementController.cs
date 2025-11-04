@@ -8,14 +8,12 @@ using UnityEngine.InputSystem;
 
 public class PlayerMovementController : MonoBehaviour, InputBind.IMovementActions
 {
-    public static PlayerMovementController Instance { get; private set; }
-
     public static LayerMask playerLayerMask;
 
     private const int playerLayer = 6;
     private const int ghostLayer = 14;
 
-    public CameraController camCont;
+    public PlayerCameraController camCont;
 
     [Header("Movement Variables")]
     [SerializeField]
@@ -56,24 +54,16 @@ public class PlayerMovementController : MonoBehaviour, InputBind.IMovementAction
 
     private void Awake()
     {
-        // Set the player instance for referencing later
-        if (Instance == null)
-        {
-            Instance = this;
+        // Get components on the player
+        charCont = GetComponent<CharacterController>();
 
-            // Get components on the player
-            charCont = GetComponent<CharacterController>();
+        // Get the player's layer from the editor
+        playerLayerMask = gameObject.layer;
 
-            // Get the player's layer from the editor
-            playerLayerMask = gameObject.layer;
-
-            // Set up the input system
-            inputSys = new InputBind();
-            moveActions = inputSys.Movement;
-            moveActions.AddCallbacks(this);
-        }
-        else
-            Destroy(gameObject);
+        // Set up the input system
+        inputSys = new InputBind();
+        moveActions = inputSys.Movement;
+        moveActions.AddCallbacks(this);
     }
 
     public void Warp(Vector3 pos)
@@ -165,7 +155,7 @@ public class PlayerMovementController : MonoBehaviour, InputBind.IMovementAction
         currentJumpInput = context.phase == InputActionPhase.Started || context.phase == InputActionPhase.Performed;
     }
 
-    public CameraController GetCameraController()
+    public PlayerCameraController GetCameraController()
     {
         return camCont;
     }
@@ -182,8 +172,5 @@ public class PlayerMovementController : MonoBehaviour, InputBind.IMovementAction
     {
         moveActions.RemoveCallbacks(this);
         inputSys.Dispose();
-
-        if (Instance == this)
-            Instance = null;
     }
 }

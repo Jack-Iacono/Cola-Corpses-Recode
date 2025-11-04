@@ -14,10 +14,10 @@ public class SceneController : MonoBehaviour
     private static List<m_Scene> sceneTarget = new List<m_Scene>();
     public static bool loading { get; private set; } = false;
 
-    public enum m_Scene { MAIN_MENU, GAME, GAME_TEST, UNIVERSAL, GAME_SYS };
+    public enum m_Scene { LOBBY, GAME, GAME_TEST, UNIVERSAL, GAME_SYS };
     public readonly static Dictionary<m_Scene, SceneData> scenes = new Dictionary<m_Scene, SceneData>
         {
-            { m_Scene.MAIN_MENU, new SceneData("scn_MainMenu", SceneData.Type.MAP) },
+            { m_Scene.LOBBY, new SceneData("scn_Lobby", SceneData.Type.MAP) },
             { m_Scene.GAME, new SceneData("scn_Game", SceneData.Type.MAP) },
             { m_Scene.GAME_TEST, new SceneData("scn_GameTest", SceneData.Type.MAP) },
             { m_Scene.UNIVERSAL, new SceneData("scn_UniversalFunction", SceneData.Type.UTIL) },
@@ -56,11 +56,8 @@ public class SceneController : MonoBehaviour
 
     private void Start()
     {
-        // Load a scene when the game is started
-        if (GameController.testMode)
-            SceneController.LoadGameTestScene();
-        else
-            SceneController.LoadGameScene();
+        // Load the lobby at beginning
+        LoadLobbyScene();
     }
 
     private void OnSceneLoaded(Scene s, LoadSceneMode loadMode)
@@ -192,11 +189,12 @@ public class SceneController : MonoBehaviour
             LoadScene(lScene);
         }
     }
-    public static void LoadMainMenuScene()
+    public static void LoadLobbyScene()
     {
         SceneController.SetScenes(new List<SceneController.m_Scene>()
         {
-            SceneController.m_Scene.MAIN_MENU,
+            SceneController.m_Scene.LOBBY,
+            SceneController.m_Scene.UNIVERSAL
         });
     }
     public static void LoadGameScene()

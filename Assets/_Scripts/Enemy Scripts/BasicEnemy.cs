@@ -32,7 +32,7 @@ public class BasicEnemy : EffectDamageable
         base.Update();
 
         if(agent.enabled)
-            agent.SetDestination(PlayerMovementController.Instance.transform.position);
+            agent.SetDestination(PlayerController.movementController.transform.position);
     }
 
     public void Spawn(Vector3 pos)

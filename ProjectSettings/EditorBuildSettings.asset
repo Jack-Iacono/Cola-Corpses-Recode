@@ -12,7 +12,7 @@ EditorBuildSettings:
     path: Assets/Scenes/scn_GameSystems.unity
     guid: 23a04b80db90c1b4f84c69c61cc99e58
   - enabled: 1
-    path: Assets/Scenes/scn_MainMenu.unity
+    path: Assets/Scenes/scn_Lobby.unity
     guid: 19a0a95c5bf9eb148b48156b5750e1af
   - enabled: 1
     path: Assets/Scenes/scn_Game.unity
@@ -23,3 +23,4 @@ EditorBuildSettings:
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 5df487896430f4a428dadc681f32e96a, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 6209c4cd54ed8124293bd182c1bd5075, type: 3}
+  m_UseUCBPForAssetBundles: 0

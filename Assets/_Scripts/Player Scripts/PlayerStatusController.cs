@@ -6,35 +6,26 @@ using static UnityEngine.ParticleSystem;
 
 public class PlayerStatusController : HealthSystem
 {
-    public static PlayerStatusController Instance;
-
     // Holds stats nad timers for buffs
     protected Dictionary<Flavor, Timer> flavorTimers = new Dictionary<Flavor, Timer>();
     protected Dictionary<Flavor, FlavorStats> currentFlavorStats = new Dictionary<Flavor, FlavorStats>();
 
     private void Awake()
     {
-        if (Instance != null)
-            Destroy(this);
-        else
+        // Set up the stats for each flavor for when they need to be used
+        foreach (Flavor flavor in Enum.GetValues(typeof(Flavor)))
         {
-            Instance = this;
-
-            // Set up the stats for each flavor for when they need to be used
-            foreach (Flavor flavor in Enum.GetValues(typeof(Flavor)))
-            {
-                currentFlavorStats.Add(flavor, ModifierUtil.GetFlavorStat(flavor, 1));
-            }
-
-            flavorTimers.Add(Flavor.COLA, new Timer(ApplyCola, null, RemoveCola));
-            flavorTimers.Add(Flavor.ORANGE, new Timer(ApplyOrange, null, RemoveOrange));
-            flavorTimers.Add(Flavor.CHERRY, new Timer(ApplyCherry, null, RemoveCherry));
-            flavorTimers.Add(Flavor.GRAPE, new Timer(ApplyGrape, null, RemoveGrape));
-            flavorTimers.Add(Flavor.BANANA, new Timer(ApplyBanana, null, RemoveBanana));
-            flavorTimers.Add(Flavor.RASPBERRY, new Timer(ApplyRaspberry, null, RemoveRaspberry));
-            flavorTimers.Add(Flavor.ROOTBEER, new Timer(null, TickRootbeer, null));
-            flavorTimers.Add(Flavor.CREAM, new Timer(null, TickCream, null));
+            currentFlavorStats.Add(flavor, ModifierUtil.GetFlavorStat(flavor, 1));
         }
+
+        flavorTimers.Add(Flavor.COLA, new Timer(ApplyCola, null, RemoveCola));
+        flavorTimers.Add(Flavor.ORANGE, new Timer(ApplyOrange, null, RemoveOrange));
+        flavorTimers.Add(Flavor.CHERRY, new Timer(ApplyCherry, null, RemoveCherry));
+        flavorTimers.Add(Flavor.GRAPE, new Timer(ApplyGrape, null, RemoveGrape));
+        flavorTimers.Add(Flavor.BANANA, new Timer(ApplyBanana, null, RemoveBanana));
+        flavorTimers.Add(Flavor.RASPBERRY, new Timer(ApplyRaspberry, null, RemoveRaspberry));
+        flavorTimers.Add(Flavor.ROOTBEER, new Timer(null, TickRootbeer, null));
+        flavorTimers.Add(Flavor.CREAM, new Timer(null, TickCream, null));
     }
 
     private void Update()

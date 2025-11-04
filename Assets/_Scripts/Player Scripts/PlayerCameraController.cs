@@ -7,10 +7,11 @@ using InputUtil;
 using UnityEngine.InputSystem;
 using static InputUtil.InputBind;
 
-public class CameraController : MonoBehaviour, InputBind.ICameraActions
+public class PlayerCameraController : MonoBehaviour, InputBind.ICameraActions
 {
     [Header("GameObjects")]
-    public PlayerMovementController playerCont;
+    [SerializeField]
+    private PlayerMovementController playerCont;
 
     // Using 2 different camera for post processing effects later on, could change to layermasks
     public Camera cam;
