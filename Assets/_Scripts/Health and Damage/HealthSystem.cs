@@ -8,6 +8,9 @@ public abstract class HealthSystem : MonoBehaviour
     // Should this EffectDamageable take damage?
     protected bool invincible = false;
 
+    public delegate void OnHealthEmptyDelegate();
+    public event OnHealthEmptyDelegate OnHealthEmpty;
+
     public void ResetHealth()
     {
         SetHealth(maxHealth);
@@ -27,4 +30,9 @@ public abstract class HealthSystem : MonoBehaviour
             HealthEmpty();
     }
     protected abstract void HealthEmpty();
+
+    protected void TriggerHealthEmpty()
+    {
+        OnHealthEmpty?.Invoke();
+    }
 }

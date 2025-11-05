@@ -123,6 +123,7 @@ public class PlayerStatusController : HealthSystem
 
     protected override void HealthEmpty()
     {
-        Debug.Log("Player Die");
+        Debug.Log("Health Empty");
+        TriggerHealthEmpty();
     }
 }

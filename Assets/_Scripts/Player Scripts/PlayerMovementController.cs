@@ -24,8 +24,6 @@ public class PlayerMovementController : MonoBehaviour, InputBind.IMovementAction
     [Tooltip("Negative values will pull player downward, Positive value will push them up")]
     private float gravity = -0.98f;
 
-    private bool isLocked = false;
-
     [Header("Acceleration Variables", order = 2)]
     [SerializeField]
     private float groundAcceleration = 1;

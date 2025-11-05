@@ -256,6 +256,21 @@ public class SceneController : MonoBehaviour
             SceneManager.SetActiveScene(SceneManager.GetSceneByName(scenes[scene].name));
     }
 
+    // Returns the enum for the loaded map scene
+    public static m_Scene GetMapScene()
+    {
+        if (!loading)
+        {
+            foreach (m_Scene m in sceneTarget)
+            {
+                if (scenes[m].type == SceneData.Type.MAP)
+                    return m;
+            }
+        }
+
+        return m_Scene.UNIVERSAL;
+    }
+
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;

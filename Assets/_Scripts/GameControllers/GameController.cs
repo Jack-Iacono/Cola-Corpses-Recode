@@ -10,10 +10,6 @@ public class GameController : MonoBehaviour
     private Map spawnedMap = null;
 
     public static bool isPaused = false;
-    public static event EventHandler<bool> OnPlayerAliveChanged;
-
-    // Used for quick shifting into test mode
-    public static readonly bool testMode = false;
 
     private void Awake()
     {
@@ -22,7 +18,8 @@ public class GameController : MonoBehaviour
 
     private void Initialize()
     {
-        if (!testMode)
+        // Check to see if the game scene is loaded
+        if(SceneController.GetMapScene() == SceneController.m_Scene.GAME)
         {
             spawnedMap = MapBuilder.Instance.GetNewMap();
             MapBuilder.Instance.BuildMap(spawnedMap);
@@ -31,9 +28,18 @@ public class GameController : MonoBehaviour
         else
             PlayerController.movementController.Warp(Vector3.up);
 
-        // Use this to initialize any objects that need to be pooled after map loading
-        ObjectPool.PoolObject(PrefabHandler.Instance.damagePopup, 10);
+        // Subsribe to the event that triggers when the player dies
+        PlayerController.statusController.ResetHealth();
+        PlayerController.statusController.OnHealthEmpty += OnPlayerHealthEmpty;
+
+        // Use this to initialize any objects that need to be pooled ONLY DURING THE GAME
         ObjectPool.PoolObject(PrefabHandler.Instance.enemy, 10);
+    }
+
+    private void OnPlayerHealthEmpty()
+    {
+        // Sends the player back to the lobby
+        SceneController.LoadLobbyScene();
     }
 
     private void OnMapLoaded(string mapName)

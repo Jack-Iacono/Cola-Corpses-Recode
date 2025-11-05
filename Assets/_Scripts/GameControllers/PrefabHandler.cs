@@ -25,9 +25,10 @@ public class PrefabHandler : MonoBehaviour
             Instance = this;
         else
             Destroy(this);
+        
+        // Initialize the prefabs that willbe used across many scenes
+        ObjectPool.PoolObject(damagePopup, 10);
     }
-
-
 
     private void OnDestroy()
     {

@@ -4,7 +4,8 @@ public class LobbyController : MonoBehaviour
 {
     private void Start()
     {
-        PlayerController.movementController.Warp(Vector3.up * 1000);
+        PlayerController.movementController.Warp(Vector3.up);
+        PlayerController.statusController.ResetHealth();
     }
 
     public void StartTestGame()

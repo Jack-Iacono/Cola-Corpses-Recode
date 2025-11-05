@@ -363,7 +363,7 @@ namespace InputUtil
                     ""name"": """",
                     ""id"": ""f121d57d-b7d7-4eb6-95b1-13898960392a"",
                     ""path"": ""<Keyboard>/e"",
-                    ""interactions"": ""MultiTap"",
+                    ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Interact"",
