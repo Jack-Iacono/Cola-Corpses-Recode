@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6621893295237187980}
   - component: {fileID: 2934155878907052911}
   - component: {fileID: 8432950766445846358}
-  - component: {fileID: 5718365009970680460}
+  - component: {fileID: 4047190797856928345}
   m_Layer: 7
   m_Name: BasicEnemy
   m_TagString: Untagged
@@ -48,7 +48,7 @@ NavMeshAgent:
   m_AgentTypeID: 0
   m_Radius: 0.5
   m_Speed: 3.5
-  m_Acceleration: 8
+  m_Acceleration: 1000
   avoidancePriority: 50
   m_AngularSpeed: 360
   m_StoppingDistance: 2
@@ -58,7 +58,7 @@ NavMeshAgent:
   m_Height: 2
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 2
 --- !u!114 &2934155878907052911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -97,7 +97,7 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!208 &5718365009970680460
+--- !u!208 &4047190797856928345
 NavMeshObstacle:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -107,8 +107,8 @@ NavMeshObstacle:
   m_Enabled: 0
   serializedVersion: 3
   m_Shape: 1
-  m_Extents: {x: 0.5, y: 1, z: 0.5}
-  m_MoveThreshold: 0.1
+  m_Extents: {x: 0.125, y: 0.5, z: 0.125}
+  m_MoveThreshold: 0.01
   m_Carve: 1
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}

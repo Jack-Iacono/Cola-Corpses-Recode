@@ -10,9 +10,11 @@ public class BasicEnemy : EffectDamageable
 
     private NavMeshAgent agent;
     private NavMeshObstacle obstacle;
-    private bool agentActive = false;
 
-    private float moveSpeed;
+    private bool agentActive = false;
+    private bool obstacleActive = false;
+
+    private float moveSpeed = 8;
 
     private float attackSpeed = 2;
     private Timer attackTimer;
@@ -25,8 +27,11 @@ public class BasicEnemy : EffectDamageable
     protected override void Awake()
     {
         base.Awake();
-        agent = GetComponent<NavMeshAgent>();
+
         obstacle = GetComponent<NavMeshObstacle>();
+        agent = GetComponent<NavMeshAgent>();
+        agent.stoppingDistance = attackRange;
+        agent.speed = moveSpeed;
 
         Instances.Add(gameObject, this);
 
@@ -46,21 +51,17 @@ public class BasicEnemy : EffectDamageable
         }
 
         // Check if the player is in attack range
-        if(Vector3.SqrMagnitude(target.position - transform.position) < attackRange * attackRange)
+        if (Vector3.SqrMagnitude(target.position - transform.position) < attackRange * attackRange)
         {
             if (attackReady)
                 AttackPlayer();
 
-            agent.enabled = false;
-            obstacle.enabled = true;
+            if (!obstacleActive)
+                SetObstacleActive(true);
         }
-        else
-        {
-            agent.enabled = agentActive;
-            obstacle.enabled = false;
-        }
+        else if (obstacleActive)
+            SetObstacleActive(false);
         
-
         attackTimer.Update(Time.deltaTime);
     }
 
@@ -91,10 +92,40 @@ public class BasicEnemy : EffectDamageable
         attackReady = true;
     }
 
+    // These methods are used to control what portions of the nav agent is active
     protected void SetAgentActive(bool active)
     {
         agentActive = active;
-        agent.enabled = agentActive;
+        CheckNavAgent();
+    }
+    protected void SetObstacleActive(bool active)
+    {
+        obstacleActive = active;
+        CheckNavAgent();
+    }
+    protected void CheckNavAgent()
+    {
+        if (agentActive)
+        {
+            if (obstacleActive)
+            {
+                agent.isStopped = true;
+                agent.enabled = false;
+                obstacle.enabled = true;
+            }
+            else
+            {
+                obstacle.enabled = false;
+                agent.enabled = true;
+                if (agent.isOnNavMesh)
+                    agent.isStopped = false;
+            }
+        }
+        else
+        {
+            agent.enabled = false;
+            obstacle.enabled = false;
+        }
     }
 
     private void OnDestroy()
