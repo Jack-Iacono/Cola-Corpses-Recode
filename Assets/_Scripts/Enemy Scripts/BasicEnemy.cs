@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -109,16 +110,15 @@ public class BasicEnemy : EffectDamageable
         {
             if (obstacleActive)
             {
-                agent.isStopped = true;
+                if (agent.isOnNavMesh)
+                    agent.isStopped = true;
                 agent.enabled = false;
                 obstacle.enabled = true;
             }
             else
             {
                 obstacle.enabled = false;
-                agent.enabled = true;
-                if (agent.isOnNavMesh)
-                    agent.isStopped = false;
+                WaitEnable();
             }
         }
         else
@@ -126,6 +126,14 @@ public class BasicEnemy : EffectDamageable
             agent.enabled = false;
             obstacle.enabled = false;
         }
+    }
+    protected async void WaitEnable()
+    {
+        // Waits for 1 frame to see if the agent is back on the mesh
+        await Awaitable.NextFrameAsync();
+        agent.enabled = true;
+        if (agent.isOnNavMesh)
+            agent.isStopped = false;
     }
 
     private void OnDestroy()
