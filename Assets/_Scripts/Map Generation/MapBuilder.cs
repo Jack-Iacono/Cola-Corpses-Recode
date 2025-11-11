@@ -289,7 +289,7 @@ public class MapBuilder : MonoBehaviour
         Mesh GenerateWallMesh(Room room)
         {
             // Create a 2D list of combine instances that
-            List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].wallMaterials.Count];
+            List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].GetWallMaterialArray().Length];
 
             // Loop through all tiles within the given room
             foreach (Tile tile in room.GetTiles())
@@ -364,7 +364,7 @@ public class MapBuilder : MonoBehaviour
             MeshRenderer rend = testObj.AddComponent<MeshRenderer>();
 
             filter.mesh = combinedMesh;
-            rend.materials = roomThemes[room.themeIndex].wallMaterials.ToArray();
+            rend.materials = roomThemes[room.themeIndex].GetWallMaterialArray();
             rend.receiveShadows = false;
             rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
@@ -373,7 +373,7 @@ public class MapBuilder : MonoBehaviour
         Mesh GenerateFloorMesh(Room room)
         {
             // Create a 2D list of combine instances that
-            List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].floorMaterials.Count];
+            List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].GetFloorMaterialArray().Length];
 
             // Loop through all tiles within the given room
             foreach (Tile tile in room.GetTiles())
@@ -428,7 +428,7 @@ public class MapBuilder : MonoBehaviour
             MeshRenderer rend = testObj.AddComponent<MeshRenderer>();
 
             filter.mesh = combinedMesh;
-            rend.materials = roomThemes[room.themeIndex].floorMaterials.ToArray();
+            rend.materials = roomThemes[room.themeIndex].GetFloorMaterialArray();
             rend.receiveShadows = false;
             rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
@@ -437,7 +437,7 @@ public class MapBuilder : MonoBehaviour
         Mesh GenerateCeilingMesh(Room room)
         {
             // Create a 2D list of combine instances that
-            List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].ceilingMaterials.Count];
+            List<CombineInstance>[] materialGroups = new List<CombineInstance>[roomThemes[room.themeIndex].GetCeilingMaterialArray().Length];
 
             // Loop through all tiles within the given room
             foreach (Tile tile in room.GetTiles())
@@ -499,11 +499,20 @@ public class MapBuilder : MonoBehaviour
             MeshRenderer rend = testObj.AddComponent<MeshRenderer>();
 
             filter.mesh = combinedMesh;
-            rend.materials = roomThemes[room.themeIndex].ceilingMaterials.ToArray();
+            rend.materials = roomThemes[room.themeIndex].GetCeilingMaterialArray();
             rend.receiveShadows = false;
             rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             return combinedMesh;
+        }
+    }
+
+    private void OnValidate()
+    {
+        // Run through the room themes and calculate their totals for weighting
+        foreach(RoomTheme r in roomThemes)
+        {
+            r.CalculateMaterialWeightTotals();
         }
     }
 }
@@ -512,9 +521,107 @@ public class MapBuilder : MonoBehaviour
 public class RoomTheme
 {
     [SerializeField]
-    public List<Material> floorMaterials = new List<Material>();
+    private List<MaterialInfo> floorMaterials = new List<MaterialInfo>();
     [SerializeField]
-    public List<Material> wallMaterials = new List<Material>();
+    private List<MaterialInfo> wallMaterials = new List<MaterialInfo>();
     [SerializeField]
-    public List<Material> ceilingMaterials = new List<Material>();
+    private List<MaterialInfo> ceilingMaterials = new List<MaterialInfo>();
+
+    private int floorTotal = 0;
+    private int wallTotal = 0;
+    private int ceilingTotal = 0;
+
+
+    /// <summary>
+    /// Get a random floor material from this room theme
+    /// </summary>
+    /// <returns>A random floor material index</returns>
+    public int GetRandomFloorMaterial()
+    {
+        return GetRandomMaterial(floorMaterials, floorTotal);
+    }
+    /// <summary>
+    /// Get a random wall material from this room theme
+    /// </summary>
+    /// <returns>A random wall material index</returns>
+    public int GetRandomWallMaterial()
+    {
+        return GetRandomMaterial(wallMaterials, wallTotal);
+    }
+    /// <summary>
+    /// Get a random ceiling material from this room theme
+    /// </summary>
+    /// <returns>A random ceiling material index</returns>
+    public int GetRandomCeilingMaterial()
+    {
+        return GetRandomMaterial(ceilingMaterials, ceilingTotal);
+    }
+    private int GetRandomMaterial(List<MaterialInfo> list, int total)
+    {
+        // Generate a random number for deciding which material to choose
+        int rand = UnityEngine.Random.Range(0, total);
+        int currentTotal = 0;
+
+        // Run through list until desired material is chosen
+        for(int i = 0; i < list.Count; i++)
+        {
+            if (rand < list[i].weight + currentTotal)
+                return i;
+            currentTotal += list[i].weight;
+        }
+
+        return -1;
+    }
+
+    public Material[] GetFloorMaterialArray()
+    {
+        return GetMaterialArray(floorMaterials);
+    }
+    public Material[] GetWallMaterialArray()
+    {
+        return GetMaterialArray(wallMaterials);
+    }
+    public Material[] GetCeilingMaterialArray()
+    {
+        return GetMaterialArray(ceilingMaterials);
+    }
+    private Material[] GetMaterialArray(List<MaterialInfo> list)
+    {
+        Material[] result = new Material[list.Count];
+        for(int i = 0; i < list.Count; i++)
+        {
+            result[i] = list[i].material;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Go through Floor, Wall and Ceiling materials and calculate the total weights that they need to be drawn from
+    /// </summary>
+    public void CalculateMaterialWeightTotals()
+    {
+        floorTotal = 0;
+        wallTotal = 0;
+        ceilingTotal = 0;
+
+        for(int i = 0; i < floorMaterials.Count; i++)
+        {
+            floorTotal += floorMaterials[i].weight;
+        }
+        for (int i = 0; i < wallMaterials.Count; i++)
+        {
+            wallTotal += wallMaterials[i].weight;
+        }
+        for (int i = 0; i < ceilingMaterials.Count; i++)
+        {
+            ceilingTotal += ceilingMaterials[i].weight;
+        }
+    }
+
+    [Serializable]
+    public class MaterialInfo
+    {
+        public Material material;
+        public int weight;
+    }
 }

@@ -346,7 +346,7 @@ namespace MapUtil
                     {
                         Vector3 pos = t.gridPosition;
                         // Change this to uninclude presets later
-                        t.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[newRoom.themeIndex].floorMaterials.Count));
+                        t.SetMaterialIndex(roomThemes[newRoom.themeIndex].GetRandomFloorMaterial());
                         genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
                     }
                 }
@@ -730,7 +730,7 @@ namespace MapUtil
                     {
                         // Create the ceiling and assign it to the tile
                         Ceiling ceil = new Ceiling();
-                        ceil.SetMaterialIndex(UnityEngine.Random.Range(0, roomThemes[room.themeIndex].ceilingMaterials.Count));
+                        ceil.SetMaterialIndex(roomThemes[room.themeIndex].GetRandomCeilingMaterial());
                         ceil.SetHasCollider(aboveTile == null);
                         tile.SetCeiling(ceil);
                     }
@@ -775,8 +775,8 @@ namespace MapUtil
                                 neighbor.AddWall((i + 3) % 6, newWall);
 
                                 // Assign a random material from the list to the wall
-                                newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
-                                newWall.SetMaterialIndex(neighbor, UnityEngine.Random.Range(0, roomThemes[neighbor.room.themeIndex].wallMaterials.Count));
+                                newWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
+                                newWall.SetMaterialIndex(neighbor, roomThemes[neighbor.room.themeIndex].GetRandomWallMaterial());
 
                                 // Add this wall to the list of potential doors
                                 if(!tile.modificationLocked && !neighbor.modificationLocked && !neighbor.presetContained)
@@ -788,7 +788,7 @@ namespace MapUtil
                                 tile.AddWall(i, neighborWall);
 
                                 // Assign the wall a random material index
-                                neighborWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                                neighborWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
 
                                 // Add this wall to the list of potential doors
                                 if (!tile.modificationLocked && !neighbor.modificationLocked && !neighbor.presetContained)
@@ -801,7 +801,7 @@ namespace MapUtil
                             tile.AddWall(i, newWall);
 
                             // Assign a random material from the list to the wall
-                            newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                            newWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
                         }
                     }
                 }
@@ -840,8 +840,8 @@ namespace MapUtil
                                         neighbor.AddWall((i + 3) % 6, newWall);
 
                                         // Assign a random material from the list to the wall
-                                        newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
-                                        newWall.SetMaterialIndex(neighbor, UnityEngine.Random.Range(0, roomThemes[neighbor.room.themeIndex].wallMaterials.Count));
+                                        newWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
+                                        newWall.SetMaterialIndex(neighbor, roomThemes[neighbor.room.themeIndex].GetRandomWallMaterial());
 
                                         // Check for several conditions
                                         // Is the tile NOT contained within a preset
@@ -864,7 +864,7 @@ namespace MapUtil
                                     tile.AddWall(i, newWall);
 
                                     // Assign a random material from the list to the wall
-                                    newWall.SetMaterialIndex(tile, UnityEngine.Random.Range(0, roomThemes[room.themeIndex].wallMaterials.Count));
+                                    newWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
                                 }
                             }
                         }
