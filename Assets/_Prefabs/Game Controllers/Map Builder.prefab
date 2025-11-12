@@ -61,8 +61,6 @@ MonoBehaviour:
     wallMaterials:
     - material: {fileID: 2100000, guid: 17e12896471f5524695cca6d304471cc, type: 2}
       weight: 1
-    - material: {fileID: 2100000, guid: ff1a5e8b36c6d5c4bbe517bcb74dda50, type: 2}
-      weight: 1
     ceilingMaterials:
     - material: {fileID: 2100000, guid: 0cf6884d745f3d142a45042a6f981504, type: 2}
       weight: 1
