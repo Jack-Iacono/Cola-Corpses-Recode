@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4862106433401191634}
   - component: {fileID: 4302301515793492761}
   - component: {fileID: 3736246666889159911}
+  - component: {fileID: 6665064971191777675}
   m_Layer: 0
   m_Name: Universal Function Controller
   m_TagString: Untagged
@@ -61,3 +62,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbc719a36522de54498035f35edeb185, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  prefabHandler: {fileID: 0}
+--- !u!114 &6665064971191777675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6629598920650802991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57df880b3b5ed8f4892472ef66f8d53a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioSourceObject: {fileID: 0}
+  sounds:
+  - name: p_Jump
+    type: 0
+    sounds: []
+    sourceCount: 0
+  - name: p_Hurt
+    type: 1
+    sounds: []
+    sourceCount: 0
+  - name: w_CanThrow
+    type: 2
+    sounds: []
+    sourceCount: 0
+  - name: w_CanExplode
+    type: 3
+    sounds: []
+    sourceCount: 0
+  - name: w_Drink
+    type: 4
+    sounds: []
+    sourceCount: 0

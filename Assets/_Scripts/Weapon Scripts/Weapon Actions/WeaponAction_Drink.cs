@@ -22,6 +22,9 @@ public class WeaponAction_Drink : SecondaryWeaponAction
                 drinkTimer -= dt;
             else
             {
+                // Play the throw sound
+                AudioManager.Play(AudioManager.SoundType.w_Drink);
+
                 isDrinking = false;
                 PlayerController.statusController.ApplyBuffs(weapon.flavors);
             }

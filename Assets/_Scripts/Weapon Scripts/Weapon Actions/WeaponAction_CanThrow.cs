@@ -42,6 +42,9 @@ public class WeaponAction_CanThrow : PrimaryWeaponAction
             // Register projectile events for callbacks
             RegisterProjectile(projectile);
 
+            // Play thr throw sound
+            AudioManager.Play(AudioManager.SoundType.w_CanThrow);
+
             // Reset the use speed timer
             useTimer = useTime;
         }

@@ -10,7 +10,7 @@ using static UnityEngine.ParticleSystem;
 public abstract class EffectDamageable : HealthSystem, IDamageable
 {
     // The damage that this EffectDamagable can do
-    protected float damage = 0;
+    protected float damage = 10;
 
     [SerializeField]
     protected float saltyWeakenModifier = 1;

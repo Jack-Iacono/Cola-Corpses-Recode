@@ -105,6 +105,7 @@ public class PlayerMovementController : MonoBehaviour, InputBind.IMovementAction
             if (currentJumpInput)
             {
                 currentMove.y = jumpHeight;
+                AudioManager.Play(AudioManager.SoundType.p_Jump);
             }
 
             // Decide whether to use the accel or decel for the player given the presence of input

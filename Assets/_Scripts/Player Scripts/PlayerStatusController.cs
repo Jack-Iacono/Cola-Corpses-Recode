@@ -121,6 +121,15 @@ public class PlayerStatusController : HealthSystem
 
     #endregion
 
+    public override void ChangeHealth(float change)
+    {
+        base.ChangeHealth(change);
+        if(change < 0)
+        {
+            // Play the hurt sound
+            AudioManager.Play(AudioManager.SoundType.p_Hurt);
+        }
+    }
     protected override void HealthEmpty()
     {
         Debug.Log("Health Empty");
