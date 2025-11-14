@@ -23,14 +23,14 @@ public class GameController : MonoBehaviour
         {
             spawnedMap = MapBuilder.Instance.GetNewMap();
             MapBuilder.Instance.BuildMap(spawnedMap);
-            PlayerController.movementController.Warp(spawnedMap.originTile + Vector3.up);
+            PlayerController.Instance.movementController.Warp(spawnedMap.originTile + Vector3.up);
         }
         else
-            PlayerController.movementController.Warp(Vector3.up);
+            PlayerController.Instance.movementController.Warp(Vector3.up);
 
         // Subsribe to the event that triggers when the player dies
-        PlayerController.statusController.ResetHealth();
-        PlayerController.statusController.OnHealthEmpty += OnPlayerHealthEmpty;
+        PlayerController.Instance.statusController.ResetHealth();
+        PlayerController.Instance.statusController.OnHealthEmpty += OnPlayerHealthEmpty;
 
         // Use this to initialize any objects that need to be pooled ONLY DURING THE GAME
         ObjectPool.PoolObject(PrefabHandler.Instance.enemy, 10);

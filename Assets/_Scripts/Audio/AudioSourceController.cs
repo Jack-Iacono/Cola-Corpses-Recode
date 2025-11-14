@@ -32,6 +32,11 @@ public class AudioSourceController : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    public float GetTimeRemaining()
+    {
+        return playTimer.GetRemainingTime();
+    }
+
     private void Update()
     {
         playTimer.Update(Time.deltaTime);
@@ -46,8 +51,11 @@ public class AudioSourceController : MonoBehaviour
         audioSource.loop = sound.loop;
 
         audioSource.priority = sound.priority;
-        audioSource.volume = sound.volume;
-        audioSource.pitch = sound.pitch;
+
+        // Allows subtle variation in these sounds to keep them sounding nice
+        audioSource.volume = Random.Range(sound.volume - sound.volumeVariance, sound.volume + sound.volumeVariance);
+        audioSource.pitch = Random.Range(sound.pitch - sound.pitchVariance, sound.pitch + sound.pitchVariance);
+
         audioSource.panStereo = sound.stereoPan;
         audioSource.spatialBlend = sound.spatialBlend;
         audioSource.reverbZoneMix = sound.reverbZoneMix;

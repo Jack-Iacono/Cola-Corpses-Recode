@@ -18,8 +18,6 @@ public class PlayerWeaponController : MonoBehaviour, InputBind.IAttackActions
     private ActionState primaryState;
     private ActionState secondaryState;
 
-    private PlayerMovementController ownerPlayer;
-
     private void Awake()
     {
         inputActions = new InputBind();
@@ -28,14 +26,12 @@ public class PlayerWeaponController : MonoBehaviour, InputBind.IAttackActions
 
         primaryState = ActionState.NONE;
         secondaryState = ActionState.NONE;
-        
-        ownerPlayer = GetComponent<PlayerMovementController>();
     }
 
     private void Start()
     {
         // Run this here so sinletons have a chance to be created
-        currentWeapon = new Weapon(ownerPlayer, 10, 10, 50, 0.3f);
+        currentWeapon = new Weapon(10, 10, 50, 0.1f);
     }
 
     private void Update()

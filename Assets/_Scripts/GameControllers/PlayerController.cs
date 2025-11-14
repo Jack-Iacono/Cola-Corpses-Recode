@@ -3,17 +3,16 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public static PlayerController Instance;
-
-    private static GameObject currentPlayer;
+    private GameObject currentPlayer;
 
     [SerializeField]
     private PrefabHandler prefabHandler;
 
-    public static PlayerMovementController movementController { get; private set; }
-    public static PlayerWeaponController weaponController { get; private set; }
-    public static PlayerStatusController statusController { get; private set; }
-    public static PlayerCameraController cameraController { get; private set; }
-    public static PlayerInteractionController interactionController { get; private set; }
+    public PlayerMovementController movementController { get; private set; }
+    public PlayerWeaponController weaponController { get; private set; }
+    public PlayerStatusController statusController { get; private set; }
+    public PlayerCameraController cameraController { get; private set; }
+    public PlayerInteractionController interactionController { get; private set; }
 
     private void Awake()
     {

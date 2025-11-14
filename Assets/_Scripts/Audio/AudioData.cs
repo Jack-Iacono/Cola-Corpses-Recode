@@ -39,6 +39,10 @@ public class AudioData : ScriptableObject
     public float maxDistance = 20;
     public AnimationCurve rollOffCurve = new AnimationCurve();
 
+    [Header("Extra Settings")]
+    public float pitchVariance = 0;
+    public float volumeVariance = 0;
+
 #if UNITY_EDITOR
     private void OnValidate()
     {

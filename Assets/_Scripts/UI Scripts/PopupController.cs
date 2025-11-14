@@ -21,9 +21,15 @@ public class PopupController : MonoBehaviour
 
     private Vector2 movementVector = Vector2.zero;
 
+    private Transform playerTransform;
+
     private void Awake()
     {
         Instances.Add(gameObject, this);
+    }
+    private void Start()
+    {
+        playerTransform = PlayerController.Instance.movementController.transform;
     }
 
     private void Update()
@@ -37,7 +43,7 @@ public class PopupController : MonoBehaviour
                 Deactivate();
             }
 
-            transform.LookAt(PlayerController.movementController.transform);
+            transform.LookAt(playerTransform);
             transform.position += ((transform.right * movementVector.x) + (Vector3.up * movementVector.y)) * Time.deltaTime;
             movementVector.y -= 20 * Time.deltaTime;
         }
@@ -69,7 +75,7 @@ public class PopupController : MonoBehaviour
         transform.position = pos;
         isAlive = true;
 
-        transform.LookAt(PlayerController.movementController.transform);
+        transform.LookAt(playerTransform);
 
         movementVector = new Vector2
             (

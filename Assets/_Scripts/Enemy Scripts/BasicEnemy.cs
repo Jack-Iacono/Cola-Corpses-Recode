@@ -39,7 +39,7 @@ public class BasicEnemy : EffectDamageable
         attackTimer = new Timer(null, null, OnAttackReady);
         attackTimer.Start(attackSpeed, 0);
 
-        target = PlayerController.movementController.transform;
+        target = PlayerController.Instance.movementController.transform;
     }
 
     protected override void Update()
@@ -48,7 +48,7 @@ public class BasicEnemy : EffectDamageable
 
         if (agent.enabled)
         {
-            agent.SetDestination(PlayerController.movementController.transform.position);
+            agent.SetDestination(target.transform.position);
         }
 
         // Check if the player is in attack range
@@ -85,7 +85,7 @@ public class BasicEnemy : EffectDamageable
     protected void AttackPlayer()
     {
         attackReady = false;
-        PlayerController.statusController.ChangeHealth(-damage);
+        PlayerController.Instance.statusController.ChangeHealth(-damage);
         attackTimer.Restart();
     }
     protected void OnAttackReady()

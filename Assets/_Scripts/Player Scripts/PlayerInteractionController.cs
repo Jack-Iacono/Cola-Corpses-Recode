@@ -27,7 +27,7 @@ public class PlayerInteractionController : MonoBehaviour, IInteractionActions
 
     private void Start()
     {
-        camCont = PlayerController.cameraController;
+        camCont = PlayerController.Instance.cameraController;
     }
 
     public void OnInteract(InputAction.CallbackContext context)

@@ -75,25 +75,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57df880b3b5ed8f4892472ef66f8d53a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioSourceObject: {fileID: 0}
+  audioSourceObject: {fileID: 2839621048089443723, guid: b108f8739129198409559425b5f2397a, type: 3}
   sounds:
   - name: p_Jump
     type: 0
-    sounds: []
+    sounds:
+    - {fileID: 11400000, guid: a4a29411871daf94b8006c0b2a8644c2, type: 2}
     sourceCount: 0
   - name: p_Hurt
     type: 1
-    sounds: []
+    sounds:
+    - {fileID: 11400000, guid: 7baa0a9ecc6f51649b58ce53dd05511e, type: 2}
     sourceCount: 0
   - name: w_CanThrow
     type: 2
-    sounds: []
-    sourceCount: 0
+    sounds:
+    - {fileID: 11400000, guid: dd78d28a41bb3b645beb317f4aa8c714, type: 2}
+    sourceCount: 3
   - name: w_CanExplode
     type: 3
-    sounds: []
-    sourceCount: 0
+    sounds:
+    - {fileID: 11400000, guid: d0b7ec1ec5946f940b1aace0d82ea599, type: 2}
+    sourceCount: 3
   - name: w_Drink
     type: 4
-    sounds: []
-    sourceCount: 0
+    sounds:
+    - {fileID: 11400000, guid: ae5d62615a376124b9d3682ac9055524, type: 2}
+    sourceCount: 3

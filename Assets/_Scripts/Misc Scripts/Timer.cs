@@ -3,12 +3,12 @@ using UnityEngine;
 public class Timer
 {
     // The time that each repeat should last
-    public float currentTime { get; private set; }
+    private float currentTime;
     private float resetTime;
 
     // The amount of times the timer should repeat
-    private float repeatCount;
-    private float repeats;
+    private float currentRepeats;
+    private float resetRepeats;
 
     // Is the timer currently running
     public bool isRunning { get; private set; }
@@ -37,10 +37,10 @@ public class Timer
             {
                 // Check if this timer should repeat itself, and if so, do that
                 // Works like this to allow -1 to make timer run infinitely
-                if(repeatCount != 0)
+                if(currentRepeats != 0)
                 {
                     currentTime = resetTime;
-                    repeatCount--;
+                    currentRepeats--;
                     tickCallback?.Invoke();
                 }
                 else
@@ -61,8 +61,8 @@ public class Timer
             // Start the timer fresh with new inputs
             resetTime = time;
             currentTime = resetTime;
-            this.repeats = repeats;
-            repeatCount = repeats;
+            this.resetRepeats = repeats;
+            currentRepeats = repeats;
 
             isRunning = true;
         }
@@ -70,10 +70,10 @@ public class Timer
         {
             // This will add the next timer to the current one to avoid skipping the proc time
             resetTime = time;
-            this.repeats = repeats;
+            this.resetRepeats = repeats;
 
             // This accounts for the one that is currently running
-            repeatCount = repeats + 1;
+            currentRepeats = repeats + 1;
         }
 
         beginCallback?.Invoke();
@@ -81,14 +81,14 @@ public class Timer
     public void Stop()
     {
         currentTime = 0;
-        repeatCount = 0;
+        currentRepeats = 0;
         isRunning = false;
     }
     public void Restart()
     {
         // Restart the timer from where it was started
         currentTime = resetTime;
-        repeatCount = repeats;
+        currentRepeats = resetRepeats;
         isRunning = true;
     }
 
@@ -99,5 +99,19 @@ public class Timer
     public void Resume()
     {
         isRunning = true;
+    }
+
+    /// <summary>
+    /// Gets the amount of time remaining on this timer including all ticks
+    /// </summary>
+    /// <returns>The amount of time remaining</returns>
+    public float GetRemainingTime()
+    {
+        // If this source is set to infinite loop, return infinity
+        if (resetRepeats == -1)
+            return float.PositiveInfinity;
+
+        // Otherwise, return the current tick's remaining time plus all additional ticks' times
+        return currentTime + (currentRepeats * resetTime);
     }
 }

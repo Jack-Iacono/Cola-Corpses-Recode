@@ -9,7 +9,7 @@ public class WeaponAction_Drink : SecondaryWeaponAction
     private float drinkTimer = 0f;
     private bool isDrinking = false;
 
-    public WeaponAction_Drink(Weapon weapon, PlayerMovementController player) : base(weapon, player)
+    public WeaponAction_Drink(Weapon weapon) : base(weapon)
     {
         drinkTime = weapon.useTime * 5;
     }
@@ -24,9 +24,8 @@ public class WeaponAction_Drink : SecondaryWeaponAction
             {
                 // Play the throw sound
                 AudioManager.Play(AudioManager.SoundType.w_Drink);
-
+                playerStatusController.ApplyBuffs(weapon.flavors);
                 isDrinking = false;
-                PlayerController.statusController.ApplyBuffs(weapon.flavors);
             }
         }
     }

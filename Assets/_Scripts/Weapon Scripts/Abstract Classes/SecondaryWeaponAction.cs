@@ -2,10 +2,10 @@ using UnityEngine;
 
 public abstract class SecondaryWeaponAction : WeaponAction
 {
-    protected SecondaryWeaponAction(Weapon weapon, PlayerMovementController player) : base(weapon, player)
+    protected PlayerStatusController playerStatusController;
+
+    protected SecondaryWeaponAction(Weapon weapon) : base(weapon)
     {
-
+        playerStatusController = PlayerController.Instance.statusController;
     }
-
-
 }

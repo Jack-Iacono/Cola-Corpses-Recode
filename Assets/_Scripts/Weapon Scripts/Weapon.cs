@@ -26,7 +26,7 @@ public class Weapon
 
     private PlayerMovementController player;
 
-    public Weapon(PlayerMovementController player, float damage, float radius, float range, float useTime)
+    public Weapon(float damage, float radius, float range, float useTime)
     {
         // Initialize the flavor dictionary with the correct keys for usage later
         foreach (Flavor flavor in Enum.GetValues(typeof(Flavor)))
@@ -44,8 +44,8 @@ public class Weapon
         this.useTime = useTime;
 
         // TEMPORARY!!! testing purposes only
-        primaryAction = new WeaponAction_CanThrow(this, player);
-        secondaryAction = new WeaponAction_Drink(this, player);
+        primaryAction = new WeaponAction_CanThrow(this);
+        secondaryAction = new WeaponAction_Drink(this);
 
         flavors[Flavor.COLA] = 1;
 
@@ -55,8 +55,6 @@ public class Weapon
         traits[Trait.SALTY] = 1;
         traits[Trait.BITTER] = 1;
         traits[Trait.UMAMI] = 1;
-
-        this.player = player;
     }
 
     public void Update(float dt, ActionState primaryState, ActionState secondaryState)

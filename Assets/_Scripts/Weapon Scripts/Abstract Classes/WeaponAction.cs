@@ -9,12 +9,10 @@ public abstract class WeaponAction
     public string description = string.Empty;
 
     protected Weapon weapon;
-    protected PlayerMovementController player;
 
-    public WeaponAction(Weapon weapon, PlayerMovementController player)
+    public WeaponAction(Weapon weapon)
     {
         this.weapon = weapon;
-        this.player = player;
     }
 
     public abstract void Update(float dt);

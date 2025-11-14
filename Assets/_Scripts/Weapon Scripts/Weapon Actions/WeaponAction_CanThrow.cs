@@ -10,13 +10,15 @@ public class WeaponAction_CanThrow : PrimaryWeaponAction
     private float useTime = 0f;
     private float useTimer = 0f;
 
-    public WeaponAction_CanThrow(Weapon weapon, PlayerMovementController player) : base(weapon, player)
+    public WeaponAction_CanThrow(Weapon weapon) : base(weapon)
     {
         canPrefab = PrefabHandler.Instance.thrownCan;
         ObjectPool.PoolObject(canPrefab, 10);
-        cameraController = player.GetCameraController();
+        cameraController = PlayerController.Instance.cameraController;
 
         useTime = weapon.useTime;
+
+        AudioManager.AddAudioSources(AudioManager.SoundType.w_CanThrow, 3, cameraController.transform);
     }
 
     public override void Update(float dt)
@@ -36,7 +38,7 @@ public class WeaponAction_CanThrow : PrimaryWeaponAction
 
             // Ready the can to be thrown
             Vector3 camSightVec = cameraController.GetCameraSightVector();
-            can.transform.position = player.transform.position + Vector3.up * 0.25f + camSightVec;
+            can.transform.position = cameraController.transform.position + camSightVec;
             projectile.Activate(camSightVec * weapon.range, weapon.radius);
 
             // Register projectile events for callbacks

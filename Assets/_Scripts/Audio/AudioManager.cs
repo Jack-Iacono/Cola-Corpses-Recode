@@ -21,39 +21,74 @@ public class AudioManager : MonoBehaviour
     public SoundList[] sounds = new SoundList[0];
 
     // A reference to all created audio source objects
-    private Dictionary<SoundType, List<AudioSourceController>> audioSourceReference = new Dictionary<SoundType, List<AudioSourceController>>();
+    private static Dictionary<SoundType, List<AudioSourceController>> audioSourceReference = new Dictionary<SoundType, List<AudioSourceController>>();
 
     private void Awake()
     {
         // Singleton
         if(Instance != null)
             Destroy(Instance);
-        Instance = this;
-
-        // Create the audio sources for each sound type
-        foreach(SoundList s in sounds)
+        else
         {
-            // Initialize the dictionary
-            audioSourceReference.Add(s.type, new List<AudioSourceController>());
+            Instance = this;
 
-            // Run through the sources needed for that type and create them
-            for(int i = 0; i < s.sourceCount; i++)
+            // Create the audio sources for each sound type
+            foreach (SoundList s in sounds)
             {
-                GameObject g = Instantiate(audioSourceObject, transform);
-                g.name = s.name + " Audio Source";
-                g.SetActive(false);
-                audioSourceReference[s.type].Add(g.GetComponent<AudioSourceController>());
+                // Initialize the dictionary
+                audioSourceReference.Add(s.type, new List<AudioSourceController>());
+
+                // Run through the sources needed for that type and create them
+                for (int i = 0; i < s.sourceCount; i++)
+                {
+                    GameObject g = Instantiate(audioSourceObject, transform);
+                    g.name = s.name + " Audio Source";
+                    g.SetActive(false);
+                    audioSourceReference[s.type].Add(g.GetComponent<AudioSourceController>());
+                }
             }
         }
     }
 
-    public static void Play(SoundType type)
+    public static void Play(SoundType type, Vector3 pos = default)
     {
-        Play(GetAudioData(type), type);
+        Play(GetAudioData(type), type, pos);
     }
-    public static void Play(AudioData audioData, SoundType type)
+    public static void Play(AudioData audioData, SoundType type, Vector3 pos = default)
     {
-        Instance.audioSourceReference[type][0].Play(audioData);
+        AudioSourceController source = null;
+
+        int lowestTimeIndex = 0;
+        float lowestTime = float.PositiveInfinity;
+
+        // Increment through all sources of the chosen type
+        for(int i = 0; i < audioSourceReference[type].Count; i++)
+        {
+            // Check if the current source is playing or not, if not, check the time remaining on it for use as backup
+            if (!audioSourceReference[type][i].isPlaying)
+            {
+                source = audioSourceReference[type][i];
+                break;
+            }
+            else
+            {
+                // Tracks the source with the least time remaining and will use that if no inactive source is found
+                float timeRemaining = audioSourceReference[type][i].GetTimeRemaining();
+                if(timeRemaining < lowestTime)
+                {
+                    lowestTime = timeRemaining;
+                    lowestTimeIndex = i;
+                }
+            }
+        }
+
+        // If no source was found, use the one with the lowest time left for it's playing
+        if(source == null)
+            source = audioSourceReference[type][lowestTimeIndex];
+
+        if(pos != Vector3.zero)
+            source.transform.position = pos;
+        source.Play(audioData);
     }
 
     /// <summary>
@@ -75,6 +110,23 @@ public class AudioManager : MonoBehaviour
     public static AudioData GetAudioData(int i, int j)
     {
         return Instance.sounds[i].sounds[j];
+    }
+
+    // Enables adding of audio sources from other scripts
+    public static void AddAudioSources(SoundType type, int count, Transform trans = null)
+    {
+        // If this sound has not been added to the dictionary yet, somehow, add it
+        if (!audioSourceReference.ContainsKey(type))
+            audioSourceReference.Add(type, new List<AudioSourceController>());
+
+        // Run through the sources needed for that type and create them
+        for (int i = 0; i < count; i++)
+        {
+            GameObject g = Instantiate(Instance.audioSourceObject, trans == null ? Instance.transform : trans);
+            g.name = type.ToString() + " Audio Source";
+            g.SetActive(false);
+            audioSourceReference[type].Add(g.GetComponent<AudioSourceController>());
+        }
     }
 
     private void OnDestroy()
@@ -104,6 +156,7 @@ public struct SoundList
 {
     [HideInInspector] public string name;
     [HideInInspector] public SoundType type;
+    [Tooltip("If you are going to attach sources to the transform of another object, put 0 here")]
     [SerializeField] public AudioData[] sounds;
     [SerializeField] public int sourceCount;
 }

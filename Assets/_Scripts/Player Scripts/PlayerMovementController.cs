@@ -63,6 +63,12 @@ public class PlayerMovementController : MonoBehaviour, InputBind.IMovementAction
         moveActions = inputSys.Movement;
         moveActions.AddCallbacks(this);
     }
+    private void Start()
+    {
+        // Add the necessary audio sources to this object from the audio manager
+        AudioManager.AddAudioSources(AudioManager.SoundType.p_Jump, 1, transform);
+        AudioManager.AddAudioSources(AudioManager.SoundType.p_Hurt, 2, transform);
+    }
 
     public void Warp(Vector3 pos)
     {

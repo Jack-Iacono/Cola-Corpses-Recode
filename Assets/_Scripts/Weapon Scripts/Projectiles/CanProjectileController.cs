@@ -50,7 +50,7 @@ public class CanProjectileController : ProjectileController
         SplashCollide(hits.ToArray());
 
         // Play the explosion sound
-        AudioManager.Play(AudioManager.SoundType.w_CanExplode);
+        AudioManager.Play(AudioManager.SoundType.w_CanExplode, transform.position);
 
         // For now, may add bounces later
         Deactivate();
