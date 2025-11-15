@@ -66,8 +66,7 @@ public class PlayerMovementController : MonoBehaviour, InputBind.IMovementAction
     private void Start()
     {
         // Add the necessary audio sources to this object from the audio manager
-        AudioManager.AddAudioSources(AudioManager.SoundType.p_Jump, 1, transform);
-        AudioManager.AddAudioSources(AudioManager.SoundType.p_Hurt, 2, transform);
+        AudioManager.AddAudioSources(AudioManager.SoundType.p_Jump, 1, gameObject);
     }
 
     public void Warp(Vector3 pos)
@@ -111,7 +110,7 @@ public class PlayerMovementController : MonoBehaviour, InputBind.IMovementAction
             if (currentJumpInput)
             {
                 currentMove.y = jumpHeight;
-                AudioManager.Play(AudioManager.SoundType.p_Jump);
+                AudioManager.Play(AudioManager.SoundType.p_Jump, gameObject);
             }
 
             // Decide whether to use the accel or decel for the player given the presence of input

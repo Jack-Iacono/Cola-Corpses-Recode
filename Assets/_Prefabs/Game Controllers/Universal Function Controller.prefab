@@ -91,7 +91,7 @@ MonoBehaviour:
     type: 2
     sounds:
     - {fileID: 11400000, guid: dd78d28a41bb3b645beb317f4aa8c714, type: 2}
-    sourceCount: 3
+    sourceCount: 0
   - name: w_CanExplode
     type: 3
     sounds:
@@ -101,4 +101,4 @@ MonoBehaviour:
     type: 4
     sounds:
     - {fileID: 11400000, guid: ae5d62615a376124b9d3682ac9055524, type: 2}
-    sourceCount: 3
+    sourceCount: 0

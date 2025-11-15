@@ -6,6 +6,7 @@ public class WeaponAction_CanThrow : PrimaryWeaponAction
 {
     private GameObject canPrefab;
     private PlayerCameraController cameraController;
+    private GameObject playerObject;
 
     private float useTime = 0f;
     private float useTimer = 0f;
@@ -15,10 +16,11 @@ public class WeaponAction_CanThrow : PrimaryWeaponAction
         canPrefab = PrefabHandler.Instance.thrownCan;
         ObjectPool.PoolObject(canPrefab, 10);
         cameraController = PlayerController.Instance.cameraController;
+        playerObject = PlayerController.Instance.movementController.gameObject;
 
         useTime = weapon.useTime;
 
-        AudioManager.AddAudioSources(AudioManager.SoundType.w_CanThrow, 3, cameraController.transform);
+        AudioManager.AddAudioSources(AudioManager.SoundType.w_CanThrow, 3, playerObject);
     }
 
     public override void Update(float dt)
@@ -45,7 +47,7 @@ public class WeaponAction_CanThrow : PrimaryWeaponAction
             RegisterProjectile(projectile);
 
             // Play thr throw sound
-            AudioManager.Play(AudioManager.SoundType.w_CanThrow);
+            AudioManager.Play(AudioManager.SoundType.w_CanThrow, playerObject);
 
             // Reset the use speed timer
             useTimer = useTime;

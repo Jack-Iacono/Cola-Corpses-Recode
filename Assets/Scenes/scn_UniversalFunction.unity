@@ -790,10 +790,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Universal Function Controller
       objectReference: {fileID: 0}
-    - target: {fileID: 6665064971191777675, guid: a249a942bbf32204a936845aad4df901, type: 3}
-      propertyPath: sounds.Array.data[2].sourceCount
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

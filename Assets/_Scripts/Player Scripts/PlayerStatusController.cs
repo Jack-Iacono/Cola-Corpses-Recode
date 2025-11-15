@@ -26,6 +26,9 @@ public class PlayerStatusController : HealthSystem
         flavorTimers.Add(Flavor.RASPBERRY, new Timer(ApplyRaspberry, null, RemoveRaspberry));
         flavorTimers.Add(Flavor.ROOTBEER, new Timer(null, TickRootbeer, null));
         flavorTimers.Add(Flavor.CREAM, new Timer(null, TickCream, null));
+
+        // Add in the necessary hurt sounds onto the player
+        AudioManager.AddAudioSources(AudioManager.SoundType.p_Hurt, 5, gameObject);
     }
 
     private void Update()
@@ -127,7 +130,7 @@ public class PlayerStatusController : HealthSystem
         if(change < 0)
         {
             // Play the hurt sound
-            AudioManager.Play(AudioManager.SoundType.p_Hurt);
+            AudioManager.Play(AudioManager.SoundType.p_Hurt, gameObject);
         }
     }
     protected override void HealthEmpty()

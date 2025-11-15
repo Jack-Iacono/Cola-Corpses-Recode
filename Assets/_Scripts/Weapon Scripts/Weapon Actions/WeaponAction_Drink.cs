@@ -9,9 +9,14 @@ public class WeaponAction_Drink : SecondaryWeaponAction
     private float drinkTimer = 0f;
     private bool isDrinking = false;
 
+    private GameObject playerObject;
+
     public WeaponAction_Drink(Weapon weapon) : base(weapon)
     {
         drinkTime = weapon.useTime * 5;
+        playerObject = PlayerController.Instance.movementController.gameObject;
+
+        AudioManager.AddAudioSources(AudioManager.SoundType.w_Drink, 2, playerObject);
     }
 
     public override void Update(float dt)
@@ -23,7 +28,7 @@ public class WeaponAction_Drink : SecondaryWeaponAction
             else
             {
                 // Play the throw sound
-                AudioManager.Play(AudioManager.SoundType.w_Drink);
+                AudioManager.Play(AudioManager.SoundType.w_Drink, playerObject);
                 playerStatusController.ApplyBuffs(weapon.flavors);
                 isDrinking = false;
             }
