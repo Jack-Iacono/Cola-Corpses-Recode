@@ -123,6 +123,7 @@ namespace MapUtil
         public GameObject obj;
 
         public int themeIndex = 0;
+        public int index = -1;
 
         public List<PresetData> presets = new List<PresetData>();
 
@@ -370,6 +371,7 @@ namespace MapUtil
             {
                 // Create the new Room to hold the data needed
                 Room newRoom = new Room();
+                newRoom.index = roomIndex;
 
                 // Assign a theme to the room randomly from the list of themes
                 newRoom.themeIndex = UnityEngine.Random.Range(0, roomThemes.Count);
@@ -763,7 +765,15 @@ namespace MapUtil
                             // These walls should be stored as candidates for doors between rooms
                             Wall neighborWall = neighbor.walls[(i + 3) % 6];
 
-                            RoomPair connectedRooms = new RoomPair(room, neighbor.room);
+                            // Create a pair of rooms and add it to the potential doors array if not already present
+                            // Order the rooms so that the room with the lowest index is always first. This allows hashcode and equals to work
+                            RoomPair connectedRooms;
+                            if (room.index < neighbor.room.index)
+                                connectedRooms = new RoomPair(room, neighbor.room);
+                            else
+                                connectedRooms = new RoomPair(neighbor.room, room);
+
+                            // Add the new room pair if it is not already present
                             if (!potentialDoors.ContainsKey(connectedRooms))
                                 potentialDoors.Add(connectedRooms, new List<Wall>());
 
@@ -878,13 +888,27 @@ namespace MapUtil
                 {
                     // Door spots can sometimes yield no doors
                     if(doorSpots.Count > 0)
-                        doorSpots[UnityEngine.Random.Range(0, doorSpots.Count)].SetType(WallType.DOOR);
+                    {
+                        Wall newDoor = doorSpots[UnityEngine.Random.Range(0, doorSpots.Count)];
+                        newDoor.SetType(WallType.DOOR);
+
+                        foreach(Tile t in newDoor.GetConnectedTiles())
+                        {
+                            newDoor.SetMaterialIndex(t, roomThemes[t.room.themeIndex].GetRandomDoorMaterial());
+                        }
+                    } 
                 }
 
                 // Go through all preset exits and add doors
                 foreach (List<Wall> walls in containedPresetWalls.Values)
                 {
-                    walls[UnityEngine.Random.Range(0, walls.Count)].SetType(WallType.DOOR);
+                    Wall newDoor = walls[UnityEngine.Random.Range(0, walls.Count)];
+                    newDoor.SetType(WallType.DOOR);
+
+                    foreach (Tile t in newDoor.GetConnectedTiles())
+                    {
+                        newDoor.SetMaterialIndex(t, roomThemes[t.room.themeIndex].GetRandomDoorMaterial());
+                    }
                 }
             }
 
@@ -927,11 +951,11 @@ namespace MapUtil
             public override bool Equals(object obj)
             {
                 RoomPair other = (RoomPair)obj;
-                return (room1 == other.room2 && room2 == other.room1) || (room1 == other.room1 && room2 == other.room2);
+                return (room1.index == other.room2.index && room2.index == other.room1.index) || (room1.index == other.room1.index && room2.index == other.room2.index);
             }
             public override int GetHashCode()
             {
-                return HashCode.Combine(room1,room2);
+                return HashCode.Combine(room1, room2);
             }
         }
     }

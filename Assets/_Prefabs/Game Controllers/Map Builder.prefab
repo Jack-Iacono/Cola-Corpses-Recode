@@ -47,16 +47,13 @@ MonoBehaviour:
   floorPrefabNormal: {fileID: 4686199875529075276, guid: b21183efd62e86b4b98acf262210aa46, type: 3}
   wallPrefabNormal: {fileID: 2278421077726955728, guid: 735eef81471f57b4e8d84c0a41b3f555, type: 3}
   ceilingPrefab: {fileID: 4686199875529075276, guid: 4e941fb59268ee246ae4b96b2eec37b7, type: 3}
+  doorPrefab: {fileID: 1372991828674008161, guid: 666949ec41e482b4289fa4305c3273b7, type: 3}
   spawnerPrefab: {fileID: 8449376765102633652, guid: 1ad8bb49153e11542a6d70695fdec900, type: 3}
   hexMesh: {fileID: 7549645591732606959, guid: 8dd96bfb6eb834348920b551ec98f957, type: 3}
   wallMesh: {fileID: 5295183640014958613, guid: 45f5ebdba84924c459d8e88304db75d4, type: 3}
   roomThemes:
   - floorMaterials:
-    - material: {fileID: 2100000, guid: 7de8420f0c8e0464594971247a2719d1, type: 2}
-      weight: 10
-    - material: {fileID: 2100000, guid: 0ba30ad8e1697e047bdbcb850b7ee3de, type: 2}
-      weight: 10
-    - material: {fileID: 2100000, guid: e9a43c1823dc83b45bfa297e19c862a1, type: 2}
+    - material: {fileID: 2100000, guid: d22ec972520f8e64a94e3a1b3e8365bd, type: 2}
       weight: 10
     wallMaterials:
     - material: {fileID: 2100000, guid: 17e12896471f5524695cca6d304471cc, type: 2}
@@ -64,5 +61,8 @@ MonoBehaviour:
     ceilingMaterials:
     - material: {fileID: 2100000, guid: 0cf6884d745f3d142a45042a6f981504, type: 2}
       weight: 1
+    doorMaterials:
+    - material: {fileID: 2100000, guid: 5c864d2f8cb41af4eb8f541b5649660c, type: 2}
+      weight: 10
   presets:
   - {fileID: 6051904046834266543, guid: 73a1a7ded6d9dae49b07d0bf990dd0bb, type: 3}

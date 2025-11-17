@@ -6,6 +6,7 @@ using UnityEngine;
 using MapUtil;
 using System;
 using Unity.AI.Navigation;
+using System.Linq;
 
 public class MapBuilder : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class MapBuilder : MonoBehaviour
     public GameObject floorPrefabNormal;
     public GameObject wallPrefabNormal;
     public GameObject ceilingPrefab;
+    public GameObject doorPrefab;
 
     [Header("Accessory Prefabs")]
     public GameObject spawnerPrefab;
@@ -33,8 +35,8 @@ public class MapBuilder : MonoBehaviour
     // Double the Z that you want, the way hex grids works takes out half of the Z positions
     // Yes, I know what I'm doing, don't question me
     private readonly Vector3 mapDim = new Vector3(100, 5, 200);
-    private Vector2 roomTileRange = new Vector2(100, 100);
-    private int roomCount = 1;
+    private Vector2 roomTileRange = new Vector2(50, 50);
+    private int roomCount = 3;
 
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
     private const float MAP_SCALE = 1f;
@@ -255,37 +257,79 @@ public class MapBuilder : MonoBehaviour
                 {
                     Wall wall = tile.walls[k];
 
-                    // Make sure the wall is normal
-                    if (wall != null && wall.type == WallType.NORMAL)
+                    // Make sure that there is actually a wall at this position
+                    if(wall != null)
                     {
-                        // Create the wall object
-                        GameObject wallObject = Instantiate(wallPrefabNormal, tileObject.transform);
-                        wallObject.name = "Wall " + k;
+                        if (wall.type == WallType.NORMAL)
+                        {
+                            // Create the wall object
+                            GameObject wallObject = Instantiate(wallPrefabNormal, tileObject.transform);
+                            wallObject.name = "Wall " + k;
 
-                        // This size mod will adjust the size of the walls on the preset to account for the change in size of the preset
-                        float sizeMod = tile.type == TileType.CUSTOM ? Map.TILE_RADIUS : 1;
+                            // This size mod will adjust the size of the walls on the preset to account for the change in size of the preset
+                            float sizeMod = tile.type == TileType.CUSTOM ? Map.TILE_RADIUS : 1;
 
-                        // Set the transform of the wall
-                        wallObject.GetComponentInChildren<Collider>().transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS) / sizeMod;
-                        wallObject.transform.position = new Vector3
-                        (
-                            map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,
-                            tile.obj.transform.position.y + Map.FLOOR_HEIGHT / 2,
-                            map.hexagonExteriorSidePositions[k].y + tile.obj.transform.position.z
-                        );
-                        wallObject.transform.rotation = Quaternion.Euler(new Vector3(0, k * 60, 0));
+                            // Set the transform of the wall
+                            wallObject.GetComponentInChildren<Collider>().transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS) / sizeMod;
+                            wallObject.transform.position = new Vector3
+                            (
+                                map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,
+                                tile.obj.transform.position.y + Map.FLOOR_HEIGHT / 2,
+                                map.hexagonExteriorSidePositions[k].y + tile.obj.transform.position.z
+                            );
+                            wallObject.transform.rotation = Quaternion.Euler(new Vector3(0, k * 60, 0));
 
-                        // Assign this object to the wall data type
-                        tile.walls[k].obj = wallObject;
+                            // Assign this object to the wall data type
+                            tile.walls[k].obj = wallObject;
 
-                        // Add this wall to the list of placed walls
-                        placedWalls.Add(wall);
+                            // Add this wall to the list of placed walls
+                            placedWalls.Add(wall);
+                        }
+                        else if (wall.type == WallType.DOOR)
+                        {
+                            // Create the wall object
+                            GameObject doorObject = Instantiate(doorPrefab, tileObject.transform);
+                            doorObject.name = "Door " + k;
+
+                            // This size mod will adjust the size of the walls on the preset to account for the change in size of the preset
+                            float sizeMod = tile.type == TileType.CUSTOM ? Map.TILE_RADIUS : 1;
+
+                            // Set the transform of the wall
+                            doorObject.transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS) / sizeMod;
+                            doorObject.transform.position = new Vector3
+                            (
+                                map.hexagonExteriorSidePositions[k].x + tile.obj.transform.position.x,
+                                tile.obj.transform.position.y + Map.FLOOR_HEIGHT / 2,
+                                map.hexagonExteriorSidePositions[k].y + tile.obj.transform.position.z
+                            );
+                            doorObject.transform.rotation = Quaternion.Euler(new Vector3(0, k * 60, 0));
+
+                            // Set the values for this door
+                            DoorController doorCont = doorObject.GetComponent<DoorController>();
+                            Material[] mats = new Material[2];
+
+                            // Get the materials for this door
+                            for (int i = 0; i < mats.Length; i++)
+                            {
+                                Tile t = wall.connectedTiles[i];
+                                mats[i] = roomThemes[t.room.themeIndex].GetDoorMaterialArray()[wall.materialIndexes[t]];
+                            }
+
+                            // Set the Door's materials
+                            doorCont.SetMaterials(mats[0], mats[1]);
+
+                            // Assign this object to the wall data type
+                            tile.walls[k].obj = doorObject;
+
+                            // Add this wall to the list of placed walls
+                            placedWalls.Add(wall);
+                        }
                     }
                 }
             }
         }
 
-        // These can probably be combined into one method, but I want to make it work before doing that
+        // Generates combined meshes for each respective part of the map
         Mesh GenerateWallMesh(Room room)
         {
             // Create a 2D list of combine instances that
@@ -526,11 +570,13 @@ public class RoomTheme
     private List<MaterialInfo> wallMaterials = new List<MaterialInfo>();
     [SerializeField]
     private List<MaterialInfo> ceilingMaterials = new List<MaterialInfo>();
+    [SerializeField]
+    private List<MaterialInfo> doorMaterials = new List<MaterialInfo>();
 
     private int floorTotal = 0;
     private int wallTotal = 0;
     private int ceilingTotal = 0;
-
+    private int doorTotal = 0;
 
     /// <summary>
     /// Get a random floor material from this room theme
@@ -555,6 +601,14 @@ public class RoomTheme
     public int GetRandomCeilingMaterial()
     {
         return GetRandomMaterial(ceilingMaterials, ceilingTotal);
+    }
+    /// <summary>
+    /// Get a random door material from this room theme
+    /// </summary>
+    /// <returns>A random door material index</returns>
+    public int GetRandomDoorMaterial()
+    {
+        return GetRandomMaterial(doorMaterials, doorTotal);
     }
     private int GetRandomMaterial(List<MaterialInfo> list, int total)
     {
@@ -584,6 +638,10 @@ public class RoomTheme
     public Material[] GetCeilingMaterialArray()
     {
         return GetMaterialArray(ceilingMaterials);
+    }
+    public Material[] GetDoorMaterialArray()
+    {
+        return GetMaterialArray(doorMaterials);
     }
     private Material[] GetMaterialArray(List<MaterialInfo> list)
     {
