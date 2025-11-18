@@ -11,7 +11,10 @@ public abstract class HealthSystem : MonoBehaviour
     public delegate void OnHealthEmptyDelegate();
     public event OnHealthEmptyDelegate OnHealthEmpty;
 
-    public void ResetHealth()
+    public delegate void OnHealthChangeDelegate(float newHealth);
+    public event OnHealthChangeDelegate OnHealthChange;
+
+    public virtual void ResetHealth()
     {
         SetHealth(maxHealth);
     }
@@ -30,9 +33,18 @@ public abstract class HealthSystem : MonoBehaviour
             HealthEmpty();
     }
     protected abstract void HealthEmpty();
+    public float GetHealth()
+    {
+        return health;
+    }
 
-    protected void TriggerHealthEmpty()
+    // These methods are not set to always trigger since enemies do not need to broadcast this necessarily, while the player does
+    protected void InvokeOnHealthEmpty()
     {
         OnHealthEmpty?.Invoke();
+    }
+    protected void InvokeOnHealthChange()
+    {
+        OnHealthChange?.Invoke(health);
     }
 }

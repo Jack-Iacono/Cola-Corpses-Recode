@@ -10,6 +10,9 @@ public class PlayerStatusController : HealthSystem
     protected Dictionary<Flavor, Timer> flavorTimers = new Dictionary<Flavor, Timer>();
     protected Dictionary<Flavor, FlavorStats> currentFlavorStats = new Dictionary<Flavor, FlavorStats>();
 
+    public delegate void OnFlavorStatusChangedDelegate();
+    public event OnFlavorStatusChangedDelegate OnFlavorStatusChanged;
+
     private void Awake()
     {
         // Set up the stats for each flavor for when they need to be used
@@ -38,6 +41,7 @@ public class PlayerStatusController : HealthSystem
         {
             flavorTimers[f].Update(Time.deltaTime);
         }
+        OnFlavorStatusChanged?.Invoke();
     }
 
     #region Buff Methods
@@ -124,6 +128,11 @@ public class PlayerStatusController : HealthSystem
 
     #endregion
 
+    public Dictionary<Flavor, Timer> GetFlavorTimers()
+    {
+        return flavorTimers;
+    }
+
     public override void ChangeHealth(float change)
     {
         base.ChangeHealth(change);
@@ -132,10 +141,16 @@ public class PlayerStatusController : HealthSystem
             // Play the hurt sound
             AudioManager.Play(AudioManager.SoundType.p_Hurt, gameObject);
         }
+        InvokeOnHealthChange();
+    }
+    public override void ResetHealth()
+    {
+        base.ResetHealth();
+        InvokeOnHealthChange();
     }
     protected override void HealthEmpty()
     {
         Debug.Log("Health Empty");
-        TriggerHealthEmpty();
+        InvokeOnHealthEmpty();
     }
 }

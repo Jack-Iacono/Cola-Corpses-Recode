@@ -11,8 +11,6 @@ public class DoorController : BasicInteractable
     private Material frontMaterial;
     private Material backMaterial;
 
-    private bool go = false;
-
     private int cost;
     private bool open = false;
 

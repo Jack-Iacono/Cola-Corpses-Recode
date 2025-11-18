@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 
 using static MapPreset;
+using static UnityEditor.PlayerSettings;
 
 namespace MapUtil
 {
@@ -404,6 +405,7 @@ namespace MapUtil
                             {
                                 // Add the new tile to the room
                                 newRoom.AddTile(tile);
+                                Debug.Log(tile.gridPosition + ": " + tile.modificationLocked.ToString());
                             }
 
                             // Check if there are any valid exit positions from this preset
@@ -658,36 +660,33 @@ namespace MapUtil
                 List<PresetData> validPresets = new List<PresetData>();
 
                 // Check every entry point
-                foreach (Vector3 pivotTile in preset.entryPoints)
+                foreach (Vector3 entryTilePosition in preset.entryPoints)
                 {
                     // Check every rotation of the room in respect to the entrypoint
                     for (int i = 0; i < 6; i++)
                     {
                         // Create an array to store all the tile gridPositions
                         Dictionary<Tile,Vector3> presetTiles = new Dictionary<Tile, Vector3>();
-                        List<Vector3> exitPositions = new List<Vector3>();
+                        List<Vector3> globalExitPositions = new List<Vector3>();
 
                         // Loop through each tile in the preset for the given rotation
                         for (int j = 0; j < tiles.Count; j++)
                         {
                             // Get the local position of the tile rotated around the origin
-                            Vector3 rotPosition = CubeCoord.GetRotatedPosition(tiles[j].gridPosition - pivotTile, Vector3.zero, i * 60);
-
-                            // Denote this space as a potential exit point for the preset so that the generation can continue through it
-                            // This can choose the same tile as the entrance and exit
-                            if (preset.entryPoints.Contains(tiles[j].gridPosition) && tiles[j].gridPosition != pivotTile)
-                            {
-                                exitPositions.Add(rotPosition + origin);
-                            }
+                            Vector3 rotPosition = CubeCoord.GetRotatedPosition(tiles[j].gridPosition - entryTilePosition, Vector3.zero, i * 60);
 
                             // Check if the global position of this tile is open and add it if it is
                             if (PositionOpen(rotPosition + origin, room))
                             {
                                 // Create the new tile
                                 Tile newTile = new Tile(rotPosition + origin, room);
-                                
+
+                                // Denote this space as a potential exit point for the preset so that the generation can continue through it
+                                if (preset.entryPoints.Contains(tiles[j].gridPosition) && tiles[j].gridPosition != entryTilePosition)
+                                    globalExitPositions.Add(rotPosition + origin);
+
                                 // Check if this tile is not an exit/entry tile, if so lock it since it is within a prefab
-                                if(tiles[j].gridPosition != pivotTile && !exitPositions.Contains(tiles[j].gridPosition))
+                                if (tiles[j].gridPosition != entryTilePosition && !preset.entryPoints.Contains(tiles[j].gridPosition))
                                     newTile.modificationLocked = true;
                                 newTile.presetContained = preset.isContained;
 
@@ -709,7 +708,7 @@ namespace MapUtil
                         // Check to see if all tiles cleared, if so, add this to the list of valid presets
                         if (presetTiles.Count == tiles.Count)
                         {
-                            validPresets.Add(new PresetData(pivotTile, origin, i*60, presetIndex, presetTiles, exitPositions, preset));
+                            validPresets.Add(new PresetData(entryTilePosition, origin, i*60, presetIndex, presetTiles, globalExitPositions, preset));
                         }
                     }
                 }
@@ -828,7 +827,7 @@ namespace MapUtil
                             Vector3 tilePosition = tile.gridPosition;
                             Vector3[] nList = genMap.neighbors;
 
-                            // Cuts out the last two neighbors (the vertical neighbors)
+                            // Go through each neighbor
                             for (int i = 0; i < nList.Length; i++)
                             {
                                 // Global neighbor shows tiles placed on the global map while local Neighbor

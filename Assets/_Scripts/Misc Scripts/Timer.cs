@@ -7,8 +7,8 @@ public class Timer
     private float resetTime;
 
     // The amount of times the timer should repeat
-    private float currentRepeats;
-    private float resetRepeats;
+    private int currentRepeats;
+    private int resetRepeats;
 
     // Is the timer currently running
     public bool isRunning { get; private set; }
@@ -113,5 +113,13 @@ public class Timer
 
         // Otherwise, return the current tick's remaining time plus all additional ticks' times
         return currentTime + (currentRepeats * resetTime);
+    }
+    public float GetCurrentTime()
+    {
+        return currentTime;
+    }
+    public int GetRepeats()
+    {
+        return currentRepeats;
     }
 }

@@ -48,6 +48,13 @@ public class Weapon
         secondaryAction = new WeaponAction_Drink(this);
 
         flavors[Flavor.COLA] = 1;
+        flavors[Flavor.GRAPE] = 1;
+        flavors[Flavor.CHERRY] = 1;
+        flavors[Flavor.RASPBERRY] = 1;
+        flavors[Flavor.BANANA] = 1;
+        flavors[Flavor.ORANGE] = 1;
+        flavors[Flavor.CREAM] = 1;
+        flavors[Flavor.ROOTBEER] = 1;
 
         traits[Trait.SOUR] = 1;
         traits[Trait.SPICY] = 1;
