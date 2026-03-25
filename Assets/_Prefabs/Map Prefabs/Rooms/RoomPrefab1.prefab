@@ -38,7 +38,6 @@ Transform:
   - {fileID: 8523072288581511907}
   - {fileID: 7230150964439926287}
   - {fileID: 1985285954646170504}
-  - {fileID: 6896713252091279828}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6051904046834266543
@@ -56,130 +55,33 @@ MonoBehaviour:
   footprint:
   - tileObject: {fileID: 4959815026623936127}
     gridPosition: {x: 0, y: 0, z: 0}
+    isEmpty: 0
   - tileObject: {fileID: 8474717092230045327}
     gridPosition: {x: 1, y: 0, z: 1}
+    isEmpty: 0
   - tileObject: {fileID: 7922573973841109859}
     gridPosition: {x: 0, y: 0, z: 2}
+    isEmpty: 0
   - tileObject: {fileID: 221856186387783476}
     gridPosition: {x: 1, y: 0, z: 3}
+    isEmpty: 0
   - tileObject: {fileID: 337098186774691719}
     gridPosition: {x: 2, y: 0, z: 2}
+    isEmpty: 0
   - tileObject: {fileID: 5987224153742399732}
     gridPosition: {x: 0, y: 0, z: 4}
+    isEmpty: 0
   - tileObject: {fileID: 4686077108772402200}
     gridPosition: {x: 1, y: 0, z: 5}
+    isEmpty: 0
   - tileObject: {fileID: 4527184963968559519}
     gridPosition: {x: 2, y: 0, z: 4}
+    isEmpty: 0
   obj: {fileID: 1881235094641870815}
   entryPoints:
   - {x: 0, y: 0, z: 0}
   isStair: 0
   isContained: 1
---- !u!1 &7424853187232873562
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6896713252091279828}
-  - component: {fileID: 2349283144741306167}
-  - component: {fileID: 6387998426366498784}
-  - component: {fileID: 3970104613112759119}
-  m_Layer: 0
-  m_Name: Ball
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6896713252091279828
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7424853187232873562}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.5, y: 1, z: 2.5980601}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8919077549923429470}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &2349283144741306167
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7424853187232873562}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &6387998426366498784
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7424853187232873562}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 4546c3121c1bc3a4399d65dbcae93706, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!135 &3970104613112759119
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7424853187232873562}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1640678811097862429
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -264,7 +166,7 @@ PrefabInstance:
     m_TransformParent: {fileID: 8919077549923429470}
     m_Modifications:
     - target: {fileID: 1782621910844350609, guid: b21183efd62e86b4b98acf262210aa46, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 4546c3121c1bc3a4399d65dbcae93706, type: 2}
     - target: {fileID: 957573065602910869, guid: 5495dcb7192d1044aa0ecfc1f508829e, type: 3}

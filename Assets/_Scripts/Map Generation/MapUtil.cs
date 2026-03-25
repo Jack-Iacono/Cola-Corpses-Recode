@@ -505,6 +505,9 @@ namespace MapUtil
                 if (nextTilePosition == NULL_VECTOR)
                 {
                     // Remove this tile from the path since it is invlaid due to not having a neighbor
+                    if (roomGenPath.Count < 1)
+                        return NULL_VECTOR;
+
                     roomGenPath.RemoveAt(roomGenPath.Count - 1);
                     return BacktrackRoom(ref roomGenPath, room);
                 }
