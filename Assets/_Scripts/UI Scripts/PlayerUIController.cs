@@ -12,7 +12,7 @@ public class PlayerUIController : MonoBehaviour
     private void Start()
     {
         PlayerController.Instance.statusController.OnHealthChange += OnPlayerHealthChange;
-        PlayerController.Instance.statusController.OnFlavorStatusChanged += OnPlayerFlavorStatusChanged;
+        //PlayerController.Instance.statusController.OnFlavorStatusChanged += OnPlayerFlavorStatusChanged;
         SetHealthText(PlayerController.Instance.statusController.GetHealth());
     }
 
