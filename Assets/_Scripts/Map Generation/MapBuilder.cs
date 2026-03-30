@@ -21,6 +21,9 @@ public class MapBuilder : MonoBehaviour
 
     [Header("Accessory Prefabs")]
     public GameObject spawnerPrefab;
+    [SerializeField]
+    private List<TileElement> tElements = new List<TileElement>();
+    private Dictionary<int, TileElement> tElementReference = new Dictionary<int, TileElement>();
 
     [Header("Meshes")]
     public Mesh hexMesh;
@@ -30,13 +33,15 @@ public class MapBuilder : MonoBehaviour
     private List<RoomTheme> roomThemes = new List<RoomTheme>();
 
     [SerializeField]
-    private List<MapPreset> presets = new List<MapPreset>();
+    private List<MapPreset> roomPresets = new List<MapPreset>();
+    
 
     // Double the Z that you want, the way hex grids works takes out half of the Z positions
     // Yes, I know what I'm doing, don't question me
     private readonly Vector3 mapDim = new Vector3(100, 5, 200);
     private Vector2 roomTileRange = new Vector2(100, 100);
     private int roomCount = 3;
+    private float prefabPlaceChance = 0.01f;
 
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
     private const float MAP_SCALE = 1f;
@@ -45,14 +50,27 @@ public class MapBuilder : MonoBehaviour
     private void Awake()
     {
         if(Instance == null)
+        {
             Instance = this;
+
+            // Initialize all tile elements for use/reference later
+            for(int i = 0; i < tElements.Count; i++)
+            {
+                tElementReference[tElements[i].id] = tElements[i];
+            }
+
+            // This is used for debugging purposes
+            int seed = UnityEngine.Random.Range(0, 9999);
+            Debug.Log(seed);
+            UnityEngine.Random.InitState(seed);
+        }
         else
             Destroy(this);
     }
 
     public Map GetNewMap()
     {
-        Map newMap = MapGenerator.Generate(mapDim, roomCount, roomTileRange, presets, roomThemes);
+        Map newMap = GenerateMap();
         newMap.originTile = new Vector3
                 (
                     newMap.originTile.x * (Map.TILE_RADIUS * 1.5f),
@@ -61,6 +79,708 @@ public class MapBuilder : MonoBehaviour
                 );
         return newMap;
     }
+    
+    public Map GenerateMap()
+    {
+        // While this is not technically null, the graph that generates the points will never have to use this position
+        Vector3 NULL_VECTOR = new Vector3(-1, -1, -1);
+
+        // The map will store all the placed tiles and rooms
+        Map genMap = new Map(mapDim);
+
+        // Dead zones and roomGenPaths allow the generator to correctly generate rooms with full exploration
+        List<Vector3> deadZones = new List<Vector3>();
+        List<List<Vector3>> roomGenPaths = new List<List<Vector3>>();
+
+        // Store the potential doors that are found from generating the map
+        Dictionary<RoomPair, List<Wall>> potentialDoors = new Dictionary<RoomPair, List<Wall>>();
+
+        // Store the doors that lead out of contained presets
+        // This is a little more complicated since each preset needs to store multiple exit tiles and their doors
+        Dictionary<Tile, List<Wall>> containedPresetWalls = new Dictionary<Tile, List<Wall>>();
+
+        // Orgainze the preset indices based on their function
+        List<int> stairPresetIndices = new List<int>();
+        List<int> normalPresetIndices = new List<int>();
+
+        for (int i = 0; i < roomPresets.Count; i++)
+        {
+            if (roomPresets[i].isStair)
+                stairPresetIndices.Add(i);
+            else
+                normalPresetIndices.Add(i);
+        }
+
+        // Get the mid point of the map bounds and set that to the origin point of the map
+        Vector3 currentLocation = new Vector3(Mathf.FloorToInt(genMap.mapBounds.x / 2), Mathf.FloorToInt(genMap.mapBounds.y / 2), Mathf.FloorToInt(genMap.mapBounds.z / 2));
+        genMap.originTile = currentLocation;
+
+        // Create the desired amount of rooms
+        for (int i = 0; i < roomCount; i++)
+        {
+            // Create a new room to hold the tiles, but don't add it to the map yet in case it doesn't generate fully
+            Room newRoom = GenerateRoom(i);
+            if (newRoom != null)
+            {
+                // Add each tile to the tile map for later access and comparison
+                foreach (Tile t in newRoom.GetTiles())
+                {
+                    Vector3 pos = t.gridPosition;
+                    // Change this to uninclude presets later
+                    t.SetMaterialIndex(roomThemes[newRoom.themeIndex].GetRandomFloorMaterial());
+                    genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] = t;
+                }
+            }
+        }
+
+        // Generate the walls for the map
+        foreach (Room room in genMap.GetRooms())
+        {
+            SetRoomWalls(room);
+            SetRoomCeilings(room);
+        }
+        // Place all the doors on the map
+        SetDoors();
+        SetTileElements();
+
+        return genMap;
+
+        // The below functions are used purely for organizational purposes -----------------------------------------------------
+
+        // You'll never guess what this does
+        Room GenerateRoom(int roomIndex)
+        {
+            // Create the new Room to hold the data needed
+            Room newRoom = new Room();
+            newRoom.index = roomIndex;
+
+            // Assign a theme to the room randomly from the list of themes
+            newRoom.themeIndex = UnityEngine.Random.Range(0, roomThemes.Count);
+
+            // Get a temporary clone of the map tiles for modification here
+            List<Vector3> genPath = new List<Vector3>();
+
+            // The amount of tiles that should be generated for this room
+            int roomTileGoal = UnityEngine.Random.Range((int)roomTileRange.x, (int)roomTileRange.y);
+
+            // Generate the tiles in the given room
+            for (int j = 0; j < roomTileGoal; j++)
+            {
+                Vector3 nextTilePosition = NULL_VECTOR;
+
+                if (UnityEngine.Random.Range(0, 1f) < prefabPlaceChance)
+                {
+                    // Get a random preset to place at thhis position
+                    PresetData preset = GetPreset(-1, currentLocation, genPath, newRoom);
+
+                    // Check if the preset is invalid
+                    if (preset != null)
+                    {
+                        // Add the preset to the room's list of presets
+                        // This allows the room to instantiate the preset later in the building phase
+                        newRoom.presets.Add(preset);
+
+                        // Loop through all preset tiles within the preset
+                        foreach (Tile tile in preset.tiles.Keys)
+                        {
+                            // Add the new tile to the room
+                            newRoom.AddTile(tile);
+                        }
+
+                        // Check if there are any valid exit positions from this preset
+                        //  If there are none: Don't do anything, the algorithm will continue from the previous position
+                        //  If there are: Continue through this prefab, this looks different for contained vs traversal presets
+                        if (preset.exitPositions.Count > 0)
+                        {
+                            // If the room had an exit point, get a random one
+                            if (!preset.isContained)
+                            {
+                                // Add the current location as well as the next location to the genPath for use later
+                                genPath.Add(currentLocation);
+                                Vector3 exitPosition = preset.exitPositions[UnityEngine.Random.Range(0, preset.exitPositions.Count)];
+                                genPath.Add(exitPosition);
+                                currentLocation = exitPosition;
+                            }
+                            else
+                            {
+                                // Pick a random exit and get a tile that could come next
+                                // This tile will likely be, but won't necessarily be, connected to the chosen exit
+                                int index = UnityEngine.Random.Range(0, preset.exitPositions.Count);
+                                Vector3 next = GetNextTile(preset.exitPositions[index], ref genPath, newRoom);
+                                genPath.Add(next);
+
+                                // Create a new tile to take the place of the next tile placed by the 
+                                Tile newTile = new Tile(next, newRoom);
+                                newRoom.AddTile(newTile);
+
+                                // Move the current location to match the changes made here
+                                currentLocation = next;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Place a normal tile here since the preset placement was failed, and otherwise no tile will be placed here
+
+                        // Add this tile to the path of generated tiles
+                        genPath.Add(currentLocation);
+
+                        // create a new tile at this location
+                        Tile newTile = new Tile(currentLocation, newRoom);
+
+                        // Decide if this tile should have a spawner or not
+                        // This is very basic for now, but should work
+                        if (UnityEngine.Random.Range(0, 1f) < 0.1f)
+                            newTile.hasSpawner = true;
+
+                        newRoom.AddTile(newTile);
+                    }
+                }
+                else
+                {
+                    // Add this tile to the path of generated tiles
+                    genPath.Add(currentLocation);
+
+                    // create a new tile at this location
+                    Tile newTile = new Tile(currentLocation, newRoom);
+
+                    // Decide if this tile should have a spawner or not
+                    // This is very basic for now, but should work
+                    if (UnityEngine.Random.Range(0, 1f) < 0.1f)
+                        newTile.hasSpawner = true;
+
+                    newRoom.AddTile(newTile);
+                }
+
+                // Get next tile in the map
+                nextTilePosition = GetNextTile(currentLocation, ref genPath, newRoom);
+                if (nextTilePosition == NULL_VECTOR)
+                    break;
+
+                // Set the current location to the next location
+                currentLocation = nextTilePosition;
+            }
+
+            // Check to see if the room fully generated
+            if (newRoom.GetTiles().Count < roomTileGoal * 0.75f)
+            {
+                // Add the room tiles to the deadzone
+                foreach (Tile t in newRoom.GetTiles())
+                {
+                    deadZones.Add(t.gridPosition);
+                }
+
+                // If this triggers, all possible neighbors are invalid and the map is basically filled
+                if (roomIndex - 1 < 0)
+                    return null;
+
+                // Loop through the whole map to find a new starting location
+                Vector3 nextLocation = BacktrackMap();
+
+                // This will run if no previous rooms have any open tiles at all, in which case the map is dead and done
+                if (nextLocation == NULL_VECTOR)
+                    return null;
+
+                // Set the current location and generate a room at the new location
+                currentLocation = nextLocation;
+                return GenerateRoom(roomIndex);
+            }
+
+            // Add the current room to the map since it generated correctly
+            genMap.rooms.Add(newRoom);
+            currentLocation = BacktrackRoom(ref genPath, newRoom);
+            roomGenPaths.Add(genPath);
+
+            return newRoom;
+        }
+
+        // These methods control the flow of the algorithm through the map
+        Vector3 GetNextTile(Vector3 current, ref List<Vector3> roomGenPath, Room room = null)
+        {
+            Vector3 nextTilePosition = GetRandomValidNeighbor(current, room);
+            if (nextTilePosition == NULL_VECTOR)
+            {
+                // Remove this tile from the path since it is invlaid due to not having a neighbor
+                if (roomGenPath.Count < 1)
+                    return NULL_VECTOR;
+
+                print("Backtrack at " + current);
+                roomGenPath.RemoveAt(roomGenPath.Count - 1);
+                return BacktrackRoom(ref roomGenPath, room);
+            }
+
+            return nextTilePosition;
+        }
+        Vector3 GetRandomValidNeighbor(Vector3 current, Room room = null)
+        {
+            List<Vector3> validHorizontalPositions = new List<Vector3>();
+            List<Vector3> validVerticalPosition = new List<Vector3>();
+            Vector3[] neighbors = genMap.neighbors;
+
+            // Go through all neighbors for the given cell
+            for (int i = 0; i < neighbors.Length; i++)
+            {
+                Vector3 neighbor = neighbors[i] + current;
+                if (PositionOpen(neighbor, room) && !deadZones.Contains(neighbor))
+                {
+                    if (neighbors[i].y == 0)
+                        validHorizontalPositions.Add(neighbor);
+                    else
+                        validVerticalPosition.Add(neighbor);
+                }
+            }
+
+            // If there is a vertical neighbor and either the cahnce to change floors happens, or there are no horizontal neighbors
+            if (validVerticalPosition.Count > 0 && (UnityEngine.Random.Range(0, 1f) < prefabPlaceChance || validHorizontalPositions.Count == 0))
+                return validVerticalPosition[UnityEngine.Random.Range(0, validVerticalPosition.Count)];
+            else if (validHorizontalPositions.Count > 0)
+                return validHorizontalPositions[UnityEngine.Random.Range(0, validHorizontalPositions.Count)];
+
+            // If no valid neighbor was found, return a null
+            return NULL_VECTOR;
+        }
+        Vector3 BacktrackRoom(ref List<Vector3> roomGenPath, Room room = null)
+        {
+            // Run through the list, removing items as you go to find one that has an open tile
+            for (int i = roomGenPath.Count - 1; i > 0; i--)
+            {
+                // Evaluate the position for neighbors and return if a neighbor with open spaces is found
+                Vector3 neighborCheck = GetRandomValidNeighbor(roomGenPath[i], room);
+                if (neighborCheck != NULL_VECTOR)
+                {
+                    print("Neighbor Found at " + neighborCheck);
+                    return neighborCheck;
+                }
+                else
+                    roomGenPath.RemoveAt(i);
+            }
+
+            return NULL_VECTOR;
+        }
+        Vector3 BacktrackMap(int startingRoom = -1)
+        {
+            // Check whether to start at the end of the map generation or at one specific room
+            int startIndex = startingRoom == -1 ? roomGenPaths.Count - 1 : startingRoom;
+
+            // Go backwards through all rooms in the map
+            for (int i = startIndex; i >= 0; i--)
+            {
+                List<Vector3> path = roomGenPaths[i];
+                Vector3 neighbor = BacktrackRoom(ref path);
+
+                // Check to see if a neighbor was found in the previous room
+                if (neighbor != NULL_VECTOR)
+                    return neighbor;
+            }
+
+            // THERE IS NOTHING AVAILABLE
+            return NULL_VECTOR;
+        }
+
+        // These methods get valid preset locations based on the current state of the map
+        PresetData GetPreset(int presetIndex, Vector3 origin, List<Vector3> path, Room room)
+        {
+            // Get the list of valid presets for the location
+            // if the user enters -1 for the preset, a random preset will be chosen
+            List<PresetData> validPresets = presetIndex != -1 ? GetValidPresetRotations(presetIndex, origin, room) : GetValidPresets(origin, room);
+
+            // Check if there are no presets to choose from
+            if (validPresets == null || validPresets.Count == 0)
+            {
+                Vector3 nextNeighbor = BacktrackRoom(ref path, room);
+                if (nextNeighbor != NULL_VECTOR)
+                {
+                    path.RemoveAt(path.Count - 1);
+                    return GetPreset(presetIndex, nextNeighbor, path, room);
+                }
+                else
+                    return null;
+            }
+
+            // Return a random rotation of this preset
+            return validPresets[UnityEngine.Random.Range(0, validPresets.Count)];
+        }
+        PresetData GetPresetFrom(List<int> presetIndex, Vector3 origin, List<Vector3> path, Room room)
+        {
+            // Initialize a list to contain all valid presets
+            List<PresetData> validPresets = new List<PresetData>();
+
+            // Run through all preset indices within the given list
+            for (int i = 0; i < presetIndex.Count; i++)
+            {
+                // Get the valid preset orientations
+                List<PresetData> p = GetValidPresetRotations(presetIndex[i], origin, room);
+
+                // Check if there are any valid presets at the given tile
+                if (p != null)
+                    validPresets.AddRange(p);
+            }
+
+            // Check if there are presets to choose from
+            if (validPresets.Count == 0)
+            {
+                Vector3 nextNeighbor = BacktrackRoom(ref path, room);
+                if (nextNeighbor != NULL_VECTOR)
+                {
+                    path.RemoveAt(path.Count - 1);
+                    return GetPresetFrom(presetIndex, nextNeighbor, path, room);
+                }
+                else
+                    return null;
+            }
+
+            // Return a random rotation of this preset
+            return validPresets[UnityEngine.Random.Range(0, validPresets.Count)];
+        }
+        List<PresetData> GetValidPresets(Vector3 presetStart, Room room)
+        {
+            // Make a copy of the preset list for use in this function
+            List<MapPreset> presets = new List<MapPreset>(roomPresets);
+
+            // Loop until either preset is found or the list is empty
+            while (presets.Count > 0)
+            {
+                // Get a random preset index and remove it from the list
+                int index = UnityEngine.Random.Range(0, presets.Count);
+                presets.RemoveAt(index);
+
+                // Get the valid rotations of this preset at the position
+                List<PresetData> validPresets = GetValidPresetRotations(index, presetStart, room);
+
+                // Check to see if this preset has any valid rotations
+                if (validPresets.Count > 0)
+                {
+                    // Return a preset data with the random rotation
+                    return validPresets;
+                }
+            }
+
+            return null;
+        }
+        List<PresetData> GetValidPresetRotations(int presetIndex, Vector3 origin, Room room)
+        {
+            MapPreset preset = roomPresets[presetIndex];
+            List<Preset_Tile> tiles = preset.GetFootprint();
+            List<PresetData> validPresets = new List<PresetData>();
+
+            // Check every entry point
+            foreach (Vector3 entryTilePosition in preset.entryPoints)
+            {
+                // Check every rotation of the room in respect to the entrypoint
+                for (int i = 0; i < 6; i++)
+                {
+                    // Create an array to store all the tile gridPositions
+                    Dictionary<Tile, Vector3> presetTiles = new Dictionary<Tile, Vector3>();
+                    List<Vector3> globalExitPositions = new List<Vector3>();
+
+                    // Loop through each tile in the preset for the given rotation
+                    for (int j = 0; j < tiles.Count; j++)
+                    {
+                        // Get the local position of the tile rotated around the origin
+                        Vector3 rotPosition = CubeCoord.GetRotatedPosition(tiles[j].gridPosition - entryTilePosition, Vector3.zero, i * 60);
+
+                        // Check if the global position of this tile is open and add it if it is
+                        if (PositionOpen(rotPosition + origin, room))
+                        {
+                            // Create the new tile
+                            Tile newTile = new Tile(rotPosition + origin, room);
+
+                            // Denote this space as a potential exit point for the preset so that the generation can continue through it
+                            if (preset.entryPoints.Contains(tiles[j].gridPosition) && tiles[j].gridPosition != entryTilePosition)
+                                globalExitPositions.Add(rotPosition + origin);
+
+                            // Check if this tile is not an exit/entry tile, if so lock it since it is within a prefab
+                            if (tiles[j].gridPosition != entryTilePosition && !preset.entryPoints.Contains(tiles[j].gridPosition))
+                                newTile.modificationLocked = true;
+                            newTile.presetContained = preset.isContained;
+
+                            // Need a way to send transform of tile to the builder, maybe through coordinates
+                            if (tiles[j].isEmpty)
+                                newTile.SetType(TileType.EMPTY);
+                            else if (tiles[j].tileObject == null)
+                                newTile.SetType(TileType.NORMAL);
+                            else
+                                newTile.SetType(TileType.CUSTOM);
+
+                            presetTiles.Add(newTile, tiles[j].gridPosition);
+                        }
+                        else
+                            // If this position is not open, break the loop since this preset can't be used
+                            break;
+                    }
+
+                    // Check to see if all tiles cleared, if so, add this to the list of valid presets
+                    if (presetTiles.Count == tiles.Count)
+                    {
+                        validPresets.Add(new PresetData(entryTilePosition, origin, i * 60, presetIndex, presetTiles, globalExitPositions, preset));
+                    }
+                }
+            }
+
+            return validPresets;
+        }
+
+        // These functions are made to run after the map footprint is fully generated to give it other features
+        // Would it be more effecient to do this during generation, probably, does this allow it to have a more wholistic view of the map, yes, so shut up
+        void SetRoomCeilings(Room room)
+        {
+            List<Tile> tiles = room.GetTiles();
+            foreach (Tile tile in tiles)
+            {
+                // Get the potential tile directly above this tile
+                Tile aboveTile = genMap.GetTileAtLocation(tile.gridPosition + Vector3.up);
+
+                // Check to make sure that the tile above is not just empty (in which case there should not be a ceiling)
+                if (aboveTile == null || aboveTile.type != TileType.EMPTY)
+                {
+                    // Create the ceiling and assign it to the tile
+                    Ceiling ceil = new Ceiling();
+                    ceil.SetMaterialIndex(roomThemes[room.themeIndex].GetRandomCeilingMaterial());
+                    ceil.SetHasCollider(aboveTile == null);
+                    tile.SetCeiling(ceil);
+                }
+            }
+        }
+        void SetRoomWalls(Room room)
+        {
+            // Run through all tiles and place the necessary walls
+            // This works since this is the minimum walls a preset could have as well
+            List<Tile> roomTiles = room.GetTiles();
+
+            // This is for normal tiles
+            foreach (Tile tile in room.GetTiles())
+            {
+                // Don't evaluate this tile if it is in a contained preset
+                if (tile.presetContained)
+                    continue;
+
+                Vector3 tilePosition = tile.gridPosition;
+                Vector3[] nList = genMap.neighbors;
+
+                for (int i = 0; i < nList.Length; i++)
+                {
+                    // Global neighbor shows tiles placed on the global map while local Neighbor
+                    Tile neighbor = genMap.GetTileAtLocation(tilePosition + nList[i]);
+
+                    // Check if there is a tile and if it is in another room
+                    if (neighbor != null && neighbor.room != room)
+                    {
+                        // These walls should be stored as candidates for doors between rooms
+                        Wall neighborWall = neighbor.walls[(i + 3) % 6];
+
+                        // Create a pair of rooms and add it to the potential doors array if not already present
+                        // Order the rooms so that the room with the lowest index is always first. This allows hashcode and equals to work
+                        RoomPair connectedRooms;
+                        if (room.index < neighbor.room.index)
+                            connectedRooms = new RoomPair(room, neighbor.room);
+                        else
+                            connectedRooms = new RoomPair(neighbor.room, room);
+
+                        // Add the new room pair if it is not already present
+                        if (!potentialDoors.ContainsKey(connectedRooms))
+                            potentialDoors.Add(connectedRooms, new List<Wall>());
+
+                        if (neighborWall == null)
+                        {
+                            // If there is currently no wall between this tile and the neighbor, create on
+                            Wall newWall = new Wall(WallType.NORMAL, tile);
+                            tile.AddWall(i, newWall);
+                            neighbor.AddWall((i + 3) % 6, newWall);
+
+                            // Assign a random material from the list to the wall
+                            newWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
+                            newWall.SetMaterialIndex(neighbor, roomThemes[neighbor.room.themeIndex].GetRandomWallMaterial());
+
+                            // Add this wall to the list of potential doors
+                            if (!tile.modificationLocked && !neighbor.modificationLocked && !neighbor.presetContained)
+                                potentialDoors[connectedRooms].Add(newWall);
+                        }
+                        else
+                        {
+                            // If the neighbor already has a wall in this position, add it to this tile as well and connected them
+                            tile.AddWall(i, neighborWall);
+
+                            // Assign the wall a random material index
+                            neighborWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
+
+                            // Add this wall to the list of potential doors
+                            if (!tile.modificationLocked && !neighbor.modificationLocked && !neighbor.presetContained)
+                                potentialDoors[connectedRooms].Add(neighborWall);
+                        }
+                    }
+                    else if (neighbor == null)
+                    {
+                        Wall newWall = new Wall(WallType.NORMAL, tile);
+                        tile.AddWall(i, newWall);
+
+                        // Assign a random material from the list to the wall
+                        newWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
+                    }
+                }
+            }
+
+            // Go through all presets within the room
+            foreach (PresetData pData in room.presets)
+            {
+                // If the room should be contained, add new walls
+                if (roomPresets[pData.index].isContained)
+                {
+                    // Apply walls to each of the tiles within this preset
+                    foreach (Tile tile in pData.tiles.Keys)
+                    {
+                        Vector3 tilePosition = tile.gridPosition;
+                        Vector3[] nList = genMap.neighbors;
+
+                        // Go through each neighbor
+                        for (int i = 0; i < nList.Length; i++)
+                        {
+                            // Global neighbor shows tiles placed on the global map while local Neighbor
+                            Tile neighbor = genMap.GetTileAtLocation(tilePosition + nList[i]);
+
+                            // Check if there is a neighbor and whether it is within this prefab or not
+                            if (neighbor != null && !pData.tiles.Keys.ToList().Contains(neighbor))
+                            {
+                                Room neighborRoom = neighbor.room;
+
+                                // These walls should be stored as candidates for doors between rooms
+                                Wall neighborWall = neighbor.walls[(i + 3) % 6];
+
+                                if (neighborWall == null)
+                                {
+                                    // If there is currently no wall between this tile and the neighbor, create on
+                                    Wall newWall = new Wall(WallType.NORMAL, tile);
+                                    tile.AddWall(i, newWall);
+                                    neighbor.AddWall((i + 3) % 6, newWall);
+
+                                    // Assign a random material from the list to the wall
+                                    newWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
+                                    newWall.SetMaterialIndex(neighbor, roomThemes[neighbor.room.themeIndex].GetRandomWallMaterial());
+
+                                    // Check for several conditions
+                                    // Is the tile NOT contained within a preset
+                                    // Is the tile either the entry point OR a potential exit point
+                                    if (!neighbor.presetContained && (pData.globalOrigin == tile.gridPosition || pData.exitPositions.Contains(tile.gridPosition)))
+                                    {
+                                        // Add the entry to the dictionary if it doesn't already exist
+                                        if (!containedPresetWalls.ContainsKey(tile))
+                                            containedPresetWalls.Add(tile, new List<Wall>());
+
+                                        // Add this tile as a door candidate
+                                        containedPresetWalls[tile].Add(newWall);
+                                    }
+                                }
+                            }
+                            else if (neighbor == null)
+                            {
+                                // If there is no neighbor on the map, place a wall
+                                Wall newWall = new Wall(WallType.NORMAL, tile);
+                                tile.AddWall(i, newWall);
+
+                                // Assign a random material from the list to the wall
+                                newWall.SetMaterialIndex(tile, roomThemes[room.themeIndex].GetRandomWallMaterial());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        void SetDoors()
+        {
+            // Run through all the potential doors to choose random ones
+            foreach (List<Wall> doorSpots in potentialDoors.Values)
+            {
+                // Door spots can sometimes yield no doors
+                if (doorSpots.Count > 0)
+                {
+                    Wall newDoor = doorSpots[UnityEngine.Random.Range(0, doorSpots.Count)];
+                    newDoor.SetType(WallType.DOOR);
+
+                    foreach (Tile t in newDoor.GetConnectedTiles())
+                    {
+                        newDoor.SetMaterialIndex(t, roomThemes[t.room.themeIndex].GetRandomDoorMaterial());
+                    }
+                }
+            }
+
+            // Go through all preset exits and add doors
+            foreach (List<Wall> walls in containedPresetWalls.Values)
+            {
+                Wall newDoor = walls[UnityEngine.Random.Range(0, walls.Count)];
+                newDoor.SetType(WallType.DOOR);
+
+                foreach (Tile t in newDoor.GetConnectedTiles())
+                {
+                    newDoor.SetMaterialIndex(t, roomThemes[t.room.themeIndex].GetRandomDoorMaterial());
+                }
+            }
+        }
+        void SetTileElements()
+        {
+            // Go through each room to determine where to put the tile elements
+            foreach(Room r in genMap.GetRooms())
+            {
+                // All of this is temporary
+                foreach(Tile t in r.GetTiles())
+                {
+                    Wall[] walls = t.GetWalls();
+                    for (int i = 0; i < walls.Length; i++)
+                    {
+                        if (walls[i] != null && t.elements[i] == null)
+                        {
+                            t.elements[i] = tElementReference[1];
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // These functions just help with a bunch of stuff for tile checking
+        bool PositionOpen(Vector3 pos, Room room = null)
+        {
+            /*
+             * Check for 3 conditions
+             * - Is this position within the bounds of the map
+             * - Is this position occupied on the current version map
+             * - (Optional) Is this position occupied in the currently generating room
+            */
+
+            if (room == null)
+                return VectorInMap(pos) && genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] == null;
+            return VectorInMap(pos) && genMap.tiles[(int)pos.x, (int)pos.y, (int)pos.z] == null && room.GetTileAtLocation(pos) == null;
+        }
+        bool VectorInMap(Vector3 pos)
+        {
+            return
+            (
+                pos.x >= 0 && pos.x < genMap.mapBounds.x &&
+                pos.y >= 0 && pos.y < genMap.mapBounds.y &&
+                pos.z >= 0 && pos.z < genMap.mapBounds.z
+            );
+        }
+    }
+    private struct RoomPair
+    {
+        private Room room1;
+        private Room room2;
+
+        public RoomPair(Room room1, Room room2)
+        {
+            this.room1 = room1;
+            this.room2 = room2;
+        }
+
+        public override bool Equals(object obj)
+        {
+            RoomPair other = (RoomPair)obj;
+            return (room1.index == other.room2.index && room2.index == other.room1.index) || (room1.index == other.room1.index && room2.index == other.room2.index);
+        }
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(room1, room2);
+        }
+    }
+
     public void BuildMap(Map map)
     {
         // Get some of the properties of this map for use later
@@ -98,7 +818,7 @@ public class MapBuilder : MonoBehaviour
             {
                 // Instantiate the prefab that needs to be created
                 PresetData data = rooms[i].presets[j];
-                GameObject presetParent = Instantiate(presets[data.index].obj, roomParent.transform);
+                GameObject presetParent = Instantiate(roomPresets[data.index].obj, roomParent.transform);
                 MapPreset preset = presetParent.GetComponent<MapPreset>();
                 preset.CreateTileLinks();
                 presetParent.name = "Preset " + j;
@@ -133,6 +853,7 @@ public class MapBuilder : MonoBehaviour
             {
                 BuildTile(tiles[j], roomParent);
                 BuildWalls(tiles[j]);
+                BuildTileElements(tiles[j]);
             }
 
             // Generate the wall and tile mesh for this room
@@ -325,6 +1046,30 @@ public class MapBuilder : MonoBehaviour
                             placedWalls.Add(wall);
                         }
                     }
+                }
+            }
+        }
+        void BuildTileElements(Tile tile)
+        {
+            TileElement[] elements = tile.elements;
+            for (int k = 0;k < elements.Length; k++)
+            {
+                if (elements[k] != null)
+                {
+                    GameObject eObj = Instantiate(elements[k].prefab, tile.obj.transform);
+
+                    // This size mod will adjust the size of the walls on the preset to account for the change in size of the preset
+                    float sizeMod = tile.type == TileType.CUSTOM ? Map.TILE_RADIUS : 1;
+
+                    // Set the transform of the wall
+                    //eObj.transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS) / sizeMod;
+                    eObj.transform.position = new Vector3
+                    (
+                        map.hexagonExteriorSidePositions[k].x + (tile.obj.transform.position.x - Map.WALL_THICKNESS),
+                        tile.obj.transform.position.y + Map.FLOOR_THICKNESS,
+                        map.hexagonExteriorSidePositions[k].y + (tile.obj.transform.position.z - Map.WALL_THICKNESS)
+                    );
+                    eObj.transform.rotation = Quaternion.Euler(new Vector3(0, (k + 3) * 60, 0));
                 }
             }
         }
@@ -561,125 +1306,6 @@ public class MapBuilder : MonoBehaviour
     }
 }
 
-[Serializable]
-public class RoomTheme
-{
-    [SerializeField]
-    private List<MaterialInfo> floorMaterials = new List<MaterialInfo>();
-    [SerializeField]
-    private List<MaterialInfo> wallMaterials = new List<MaterialInfo>();
-    [SerializeField]
-    private List<MaterialInfo> ceilingMaterials = new List<MaterialInfo>();
-    [SerializeField]
-    private List<MaterialInfo> doorMaterials = new List<MaterialInfo>();
 
-    private int floorTotal = 0;
-    private int wallTotal = 0;
-    private int ceilingTotal = 0;
-    private int doorTotal = 0;
 
-    /// <summary>
-    /// Get a random floor material from this room theme
-    /// </summary>
-    /// <returns>A random floor material index</returns>
-    public int GetRandomFloorMaterial()
-    {
-        return GetRandomMaterial(floorMaterials, floorTotal);
-    }
-    /// <summary>
-    /// Get a random wall material from this room theme
-    /// </summary>
-    /// <returns>A random wall material index</returns>
-    public int GetRandomWallMaterial()
-    {
-        return GetRandomMaterial(wallMaterials, wallTotal);
-    }
-    /// <summary>
-    /// Get a random ceiling material from this room theme
-    /// </summary>
-    /// <returns>A random ceiling material index</returns>
-    public int GetRandomCeilingMaterial()
-    {
-        return GetRandomMaterial(ceilingMaterials, ceilingTotal);
-    }
-    /// <summary>
-    /// Get a random door material from this room theme
-    /// </summary>
-    /// <returns>A random door material index</returns>
-    public int GetRandomDoorMaterial()
-    {
-        return GetRandomMaterial(doorMaterials, doorTotal);
-    }
-    private int GetRandomMaterial(List<MaterialInfo> list, int total)
-    {
-        // Generate a random number for deciding which material to choose
-        int rand = UnityEngine.Random.Range(0, total);
-        int currentTotal = 0;
 
-        // Run through list until desired material is chosen
-        for(int i = 0; i < list.Count; i++)
-        {
-            if (rand < list[i].weight + currentTotal)
-                return i;
-            currentTotal += list[i].weight;
-        }
-
-        return -1;
-    }
-
-    public Material[] GetFloorMaterialArray()
-    {
-        return GetMaterialArray(floorMaterials);
-    }
-    public Material[] GetWallMaterialArray()
-    {
-        return GetMaterialArray(wallMaterials);
-    }
-    public Material[] GetCeilingMaterialArray()
-    {
-        return GetMaterialArray(ceilingMaterials);
-    }
-    public Material[] GetDoorMaterialArray()
-    {
-        return GetMaterialArray(doorMaterials);
-    }
-    private Material[] GetMaterialArray(List<MaterialInfo> list)
-    {
-        Material[] result = new Material[list.Count];
-        for(int i = 0; i < list.Count; i++)
-        {
-            result[i] = list[i].material;
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Go through Floor, Wall and Ceiling materials and calculate the total weights that they need to be drawn from
-    /// </summary>
-    public void CalculateMaterialWeightTotals()
-    {
-        floorTotal = 0;
-        wallTotal = 0;
-        ceilingTotal = 0;
-
-        for(int i = 0; i < floorMaterials.Count; i++)
-        {
-            floorTotal += floorMaterials[i].weight;
-        }
-        for (int i = 0; i < wallMaterials.Count; i++)
-        {
-            wallTotal += wallMaterials[i].weight;
-        }
-        for (int i = 0; i < ceilingMaterials.Count; i++)
-        {
-            ceilingTotal += ceilingMaterials[i].weight;
-        }
-    }
-
-    [Serializable]
-    public class MaterialInfo
-    {
-        public Material material;
-        public int weight;
-    }
-}
