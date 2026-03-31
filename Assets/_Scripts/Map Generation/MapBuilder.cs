@@ -20,9 +20,8 @@ public class MapBuilder : MonoBehaviour
     public GameObject doorPrefab;
 
     [Header("Accessory Prefabs")]
-    public GameObject spawnerPrefab;
-    [SerializeField]
-    private List<TileElement> tElements = new List<TileElement>();
+    private int spawnerElementId;
+    [SerializeField] private List<TileElement> tElements = new List<TileElement>();
     private Dictionary<int, TileElement> tElementReference = new Dictionary<int, TileElement>();
 
     [Header("Meshes")]
@@ -228,11 +227,6 @@ public class MapBuilder : MonoBehaviour
                         // create a new tile at this location
                         Tile newTile = new Tile(currentLocation, newRoom);
 
-                        // Decide if this tile should have a spawner or not
-                        // This is very basic for now, but should work
-                        if (UnityEngine.Random.Range(0, 1f) < 0.1f)
-                            newTile.hasSpawner = true;
-
                         newRoom.AddTile(newTile);
                     }
                 }
@@ -243,11 +237,6 @@ public class MapBuilder : MonoBehaviour
 
                     // create a new tile at this location
                     Tile newTile = new Tile(currentLocation, newRoom);
-
-                    // Decide if this tile should have a spawner or not
-                    // This is very basic for now, but should work
-                    if (UnityEngine.Random.Range(0, 1f) < 0.1f)
-                        newTile.hasSpawner = true;
 
                     newRoom.AddTile(newTile);
                 }
@@ -905,17 +894,6 @@ public class MapBuilder : MonoBehaviour
                 tileObject.name = "Tile " + tileGridPosition.ToString();
 
                 tile.obj = tileObject;
-
-                // Place the spawner prefab onto the tile
-                if(tile.hasSpawner)
-                {
-                    GameObject spawner = Instantiate(spawnerPrefab);
-                    spawner.transform.parent = tileObject.transform;
-                    spawner.transform.localPosition = Vector3.one;
-
-                    // Add this to the list of spawners to be initialized
-                    spawners.Add(spawner.GetComponent<EnemySpawner>());
-                }
             }
             else if(tile.type == TileType.EMPTY)
             {
@@ -1051,25 +1029,49 @@ public class MapBuilder : MonoBehaviour
         }
         void BuildTileElements(Tile tile)
         {
+            // Find the elements that are present on the given tile
             TileElement[] elements = tile.elements;
+
+            // Run through each potential tile element to determine if any are present
             for (int k = 0;k < elements.Length; k++)
             {
                 if (elements[k] != null)
                 {
-                    GameObject eObj = Instantiate(elements[k].prefab, tile.obj.transform);
+                    GameObject eObj = null;
 
-                    // This size mod will adjust the size of the walls on the preset to account for the change in size of the preset
-                    float sizeMod = tile.type == TileType.CUSTOM ? Map.TILE_RADIUS : 1;
+                    // Inidicates that it is on a wall
+                    switch (k)
+                    {
+                        // Any of the walls
+                        case <= 5:
+                            eObj = Instantiate(elements[k].prefab, tile.obj.transform);
 
-                    // Set the transform of the wall
-                    //eObj.transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS) / sizeMod;
-                    eObj.transform.position = new Vector3
-                    (
-                        map.hexagonExteriorSidePositions[k].x + (tile.obj.transform.position.x - Map.WALL_THICKNESS),
-                        tile.obj.transform.position.y + Map.FLOOR_THICKNESS,
-                        map.hexagonExteriorSidePositions[k].y + (tile.obj.transform.position.z - Map.WALL_THICKNESS)
-                    );
-                    eObj.transform.rotation = Quaternion.Euler(new Vector3(0, (k + 3) * 60, 0));
+                            // This size mod will adjust the size of the walls on the preset to account for the change in size of the preset
+                            float sizeMod = tile.type == TileType.CUSTOM ? Map.TILE_RADIUS : 1;
+
+                            // Set the transform of the wall
+                            //eObj.transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS) / sizeMod;
+                            eObj.transform.position = new Vector3
+                            (
+                                map.hexagonExteriorSidePositions[k].x + (tile.obj.transform.position.x - Map.WALL_THICKNESS),
+                                tile.obj.transform.position.y + Map.FLOOR_THICKNESS,
+                                map.hexagonExteriorSidePositions[k].y + (tile.obj.transform.position.z - Map.WALL_THICKNESS)
+                            );
+                            eObj.transform.rotation = Quaternion.Euler(new Vector3(0, (k + 3) * 60, 0));
+                            break;
+                        // Floor
+                        case 6:
+                            eObj = Instantiate(elements[k].prefab, tile.obj.transform);
+                            eObj.transform.localPosition = Vector3.one;
+                            break;
+                        // Ceiling
+                        case 7:
+                            break;
+                    }
+
+                    // Extra functionality that may be required for some Tile Elements (spawners etc
+                    // Add this to the list of spawners to be initialized
+                    //spawners.Add(spawner.GetComponent<EnemySpawner>());
                 }
             }
         }

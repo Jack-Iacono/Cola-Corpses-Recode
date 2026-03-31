@@ -9,10 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: TestTileElement
-  m_EditorClassIdentifier: Assembly-CSharp:MapUtil:TileElement
-  prefab: {fileID: 3629872420659821893, guid: 4ffbd4d1fa9fd594093c4399a1afaf8c, type: 3}
+  m_Script: {fileID: 11500000, guid: 696331c491023cf45bcd9a8a32f251a5, type: 3}
+  m_Name: te_EnemySpawner
+  m_EditorClassIdentifier: Assembly-CSharp::TileElement
+  prefab: {fileID: 8449376765102633652, guid: 1ad8bb49153e11542a6d70695fdec900, type: 3}
   id: 1
   needWall: 1
   needCeiling: 1
+  bigObject: 0

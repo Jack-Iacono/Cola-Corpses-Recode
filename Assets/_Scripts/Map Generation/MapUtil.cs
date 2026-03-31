@@ -167,10 +167,8 @@ namespace MapUtil
         public Wall[] walls = new Wall[6];
         public Ceiling ceiling = null;
 
-        // This has 7, one for each wall plus one for the center
-        public TileElement[] elements = new TileElement[7];
-
-        public bool hasSpawner = false;
+        // This has 8, one for each wall plus one for the middle ground and ceiling
+        public TileElement[] elements = new TileElement[8];
 
         public GameObject obj = null;
 
@@ -357,21 +355,6 @@ namespace MapUtil
         }
     }
 
-    [Serializable]
-    [CreateAssetMenu(fileName = "TileElement", menuName = "ScriptableObjects/TileElement", order = 1)]
-    public class TileElement : ScriptableObject
-    {
-        public static Dictionary<int, TileElement> elementReference = new Dictionary<int, TileElement>();
-
-        [SerializeField]
-        public GameObject prefab;
-        [SerializeField]
-        public int id;
-        [SerializeField]
-        public bool needWall = true;
-        [SerializeField]
-        public bool needCeiling = true;
-    }
     [Serializable]
     public class RoomTheme
     {
