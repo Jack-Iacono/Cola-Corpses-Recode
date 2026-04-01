@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6459203183202938654}
   - component: {fileID: 7818342876550810635}
-  - component: {fileID: 6003497643460884078}
   m_Layer: 0
   m_Name: Map Builder
   m_TagString: Untagged
@@ -49,7 +48,11 @@ MonoBehaviour:
   wallPrefabNormal: {fileID: 2278421077726955728, guid: 735eef81471f57b4e8d84c0a41b3f555, type: 3}
   ceilingPrefab: {fileID: 4686199875529075276, guid: 4e941fb59268ee246ae4b96b2eec37b7, type: 3}
   doorPrefab: {fileID: 1372991828674008161, guid: 666949ec41e482b4289fa4305c3273b7, type: 3}
-  tElements: []
+  spawner:
+    prefab: {fileID: 8449376765102633652, guid: 1ad8bb49153e11542a6d70695fdec900, type: 3}
+    placeType: 0
+    bigObject: 0
+  decoElements: []
   hexMesh: {fileID: 7549645591732606959, guid: 8dd96bfb6eb834348920b551ec98f957, type: 3}
   wallMesh: {fileID: 5295183640014958613, guid: 45f5ebdba84924c459d8e88304db75d4, type: 3}
   roomThemes:
@@ -98,20 +101,3 @@ MonoBehaviour:
     - material: {fileID: 2100000, guid: 5c864d2f8cb41af4eb8f541b5649660c, type: 2}
       weight: 10
   roomPresets: []
---- !u!114 &6003497643460884078
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1421909242713206090}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 57182b5a4e030fd49bf6703415d810cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TileElementManager
-  tileElements:
-  - prefab: {fileID: 0}
-    id: 0
-    placeType: 0
-    bigObject: 0

@@ -20,9 +20,14 @@ public class MapBuilder : MonoBehaviour
     public GameObject doorPrefab;
 
     [Header("Accessory Prefabs")]
-    private int spawnerElementId;
-    [SerializeField] private List<TileElement> tElements = new List<TileElement>();
-    private Dictionary<int, TileElement> tElementReference = new Dictionary<int, TileElement>();
+    // Store important elements in variables for more concrete reference
+    public TileElement spawner;
+
+    // Store decorations in a more generic list for reference later
+    public TileElement[] decoElements;
+
+    // Use this to store all references for every tile element for building purposes
+    private Dictionary<int, TileElement> tileElementReference = new Dictionary<int, TileElement>();
 
     [Header("Meshes")]
     public Mesh hexMesh;
@@ -52,10 +57,17 @@ public class MapBuilder : MonoBehaviour
         {
             Instance = this;
 
-            // Initialize all tile elements for use/reference later
-            for(int i = 0; i < tElements.Count; i++)
+            int currentID = 1;
+
+            // Imporant Tile Elements
+            spawner.id = currentID++;
+            tileElementReference.Add(spawner.id, spawner);
+
+            // Initialize the id values for each of the tile elements
+            foreach (TileElement decoElement in decoElements)
             {
-                tElementReference[tElements[i].id] = tElements[i];
+                decoElement.id = currentID++;
+                tileElementReference[decoElement.id] = decoElement;
             }
 
             // This is used for debugging purposes
@@ -138,6 +150,7 @@ public class MapBuilder : MonoBehaviour
             SetRoomWalls(room);
             SetRoomCeilings(room);
         }
+
         // Place all the doors on the map
         SetDoors();
         SetTileElements();
@@ -293,7 +306,6 @@ public class MapBuilder : MonoBehaviour
                 if (roomGenPath.Count < 1)
                     return NULL_VECTOR;
 
-                print("Backtrack at " + current);
                 roomGenPath.RemoveAt(roomGenPath.Count - 1);
                 return BacktrackRoom(ref roomGenPath, room);
             }
@@ -336,10 +348,7 @@ public class MapBuilder : MonoBehaviour
                 // Evaluate the position for neighbors and return if a neighbor with open spaces is found
                 Vector3 neighborCheck = GetRandomValidNeighbor(roomGenPath[i], room);
                 if (neighborCheck != NULL_VECTOR)
-                {
-                    print("Neighbor Found at " + neighborCheck);
                     return neighborCheck;
-                }
                 else
                     roomGenPath.RemoveAt(i);
             }
@@ -708,19 +717,7 @@ public class MapBuilder : MonoBehaviour
             // Go through each room to determine where to put the tile elements
             foreach(Room r in genMap.GetRooms())
             {
-                // All of this is temporary
-                foreach(Tile t in r.GetTiles())
-                {
-                    Wall[] walls = t.GetWalls();
-                    for (int i = 0; i < walls.Length; i++)
-                    {
-                        if (walls[i] != null && t.elements[i] == null)
-                        {
-                            t.elements[i] = tElementReference[1];
-                            break;
-                        }
-                    }
-                }
+                
             }
         }
 
@@ -1062,16 +1059,31 @@ public class MapBuilder : MonoBehaviour
                         // Floor
                         case 6:
                             eObj = Instantiate(elements[k].prefab, tile.obj.transform);
-                            eObj.transform.localPosition = Vector3.one;
+                            eObj.transform.position = new Vector3
+                            (
+                                0,
+                                tile.obj.transform.position.y + Map.FLOOR_THICKNESS,
+                                0
+                            );
                             break;
                         // Ceiling
                         case 7:
+                            eObj = Instantiate(elements[k].prefab, tile.obj.transform);
+                            eObj.transform.position = new Vector3
+                            (
+                                0,
+                                tile.obj.transform.position.y + Map.FLOOR_HEIGHT,
+                                0
+                            );
                             break;
                     }
 
                     // Extra functionality that may be required for some Tile Elements (spawners etc
-                    // Add this to the list of spawners to be initialized
-                    //spawners.Add(spawner.GetComponent<EnemySpawner>());
+                    if (elements[k].id == spawner.id)
+                    {
+                        // Add this to the list of spawners to be initialized
+                        spawners.Add(eObj.GetComponent<EnemySpawner>());
+                    }
                 }
             }
         }
