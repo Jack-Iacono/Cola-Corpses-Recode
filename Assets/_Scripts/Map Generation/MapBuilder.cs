@@ -717,7 +717,82 @@ public class MapBuilder : MonoBehaviour
             // Go through each room to determine where to put the tile elements
             foreach(Room r in genMap.GetRooms())
             {
-                
+                // Initialize lists/dictionaries to hold valid placements for each element placement type
+                List<Tile> groundTiles = new List<Tile>();
+                List<Tile> ceilingTiles = new List<Tile>();
+                Dictionary<Tile, List<int>> wallTiles = new Dictionary<Tile, List<int>>();
+
+                // Run through all tiles in the room and add to their respective lists
+                foreach(Tile t in r.GetTiles())
+                {
+                    // Skip tiles that are modification locked as they cannot be changed
+                    if (t.modificationLocked)
+                        continue;
+
+                    // Ground tiles need to be on a tile with a floor
+                    if(t.type != TileType.EMPTY)
+                        groundTiles.Add(t);
+                    
+                    // Ceiling tiles can almost exist on anything, but obviously need a ceiling
+                    if (t.ceiling != null)
+                        ceilingTiles.Add(t);
+
+                    // The wall list will have references by tile, but also contain each wall within that tile
+                    wallTiles[t] = new List<int>();
+                    for(int i = 0; i < t.walls.Length; i++)
+                    {
+                        // If there is a wall on the index, add it to the list
+                        if (t.walls[i] != null)
+                        {
+                            wallTiles[t].Add(i);
+                        }
+                    }
+                }
+
+                // Choose what elements to place
+                for(int i = 0;i < 5; i++)
+                {
+                    ValidateElementPlacement(spawner);
+                }
+
+                // Used due to frequent reference above
+                void ValidateElementPlacement(TileElement tElement)
+                {
+                    Tile t = null;
+
+                    // Use different logic based on the type of element
+                    switch (tElement.placeType)
+                    {
+                        case TileElement.PlacementType.GROUND:
+                            t = groundTiles[UnityEngine.Random.Range(0, groundTiles.Count)];
+                            t.elements[6] = tElement;
+                            groundTiles.Remove(t);
+                            break;
+                        case TileElement.PlacementType.WALL:
+                            Tile[] tKeys = wallTiles.Keys.ToArray();
+                            t = tKeys[UnityEngine.Random.Range(0, wallTiles.Keys.Count)];
+
+                            // Get a random wall on tile
+                            List<int> walls = wallTiles[t];
+                            int randWall = UnityEngine.Random.Range(0, walls.Count);
+
+                            // Set the corresponding variables and remove this wall from eligibility
+                            t.elements[randWall] = tElement;
+                            wallTiles[t].Remove(randWall);
+
+                            // Remove the tile if it has no more walls to place on
+                            if(wallTiles[t].Count == 0)
+                            {
+                                wallTiles.Remove(t);
+                            }
+                            break;
+                        case TileElement.PlacementType.CEILING:
+                            t = ceilingTiles[UnityEngine.Random.Range(0, ceilingTiles.Count)];
+                            t.elements[7] = tElement;
+                            ceilingTiles.Remove(t);
+                            break;
+                    }
+                }
             }
         }
 
@@ -1061,9 +1136,9 @@ public class MapBuilder : MonoBehaviour
                             eObj = Instantiate(elements[k].prefab, tile.obj.transform);
                             eObj.transform.position = new Vector3
                             (
-                                0,
+                                tile.obj.transform.position.x,
                                 tile.obj.transform.position.y + Map.FLOOR_THICKNESS,
-                                0
+                                tile.obj.transform.position.z
                             );
                             break;
                         // Ceiling
@@ -1071,9 +1146,9 @@ public class MapBuilder : MonoBehaviour
                             eObj = Instantiate(elements[k].prefab, tile.obj.transform);
                             eObj.transform.position = new Vector3
                             (
-                                0,
+                                tile.obj.transform.position.x,
                                 tile.obj.transform.position.y + Map.FLOOR_HEIGHT,
-                                0
+                                tile.obj.transform.position.z
                             );
                             break;
                     }

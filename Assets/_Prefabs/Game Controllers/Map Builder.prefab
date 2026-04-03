@@ -50,7 +50,7 @@ MonoBehaviour:
   doorPrefab: {fileID: 1372991828674008161, guid: 666949ec41e482b4289fa4305c3273b7, type: 3}
   spawner:
     prefab: {fileID: 8449376765102633652, guid: 1ad8bb49153e11542a6d70695fdec900, type: 3}
-    placeType: 0
+    placeType: 1
     bigObject: 0
   decoElements: []
   hexMesh: {fileID: 7549645591732606959, guid: 8dd96bfb6eb834348920b551ec98f957, type: 3}
