@@ -485,7 +485,6 @@ namespace MapUtil
         [SerializeField] public GameObject prefab;
         [NonSerialized] public int id = -1;
         [SerializeField] public PlacementType placeType = PlacementType.GROUND;
-        [SerializeField] public bool bigObject = false;
     }
 
     public class CubeCoord

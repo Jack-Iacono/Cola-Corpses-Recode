@@ -71,9 +71,9 @@ public class MapBuilder : MonoBehaviour
             }
 
             // This is used for debugging purposes
-            int seed = UnityEngine.Random.Range(0, 9999);
-            Debug.Log(seed);
-            UnityEngine.Random.InitState(seed);
+            //int seed = UnityEngine.Random.Range(0, 9999);
+            //Debug.Log(seed);
+            UnityEngine.Random.InitState(7762);
         }
         else
             Destroy(this);
@@ -233,7 +233,7 @@ public class MapBuilder : MonoBehaviour
                     else
                     {
                         // Place a normal tile here since the preset placement was failed, and otherwise no tile will be placed here
-
+                        
                         // Add this tile to the path of generated tiles
                         genPath.Add(currentLocation);
 
@@ -274,7 +274,9 @@ public class MapBuilder : MonoBehaviour
 
                 // If this triggers, all possible neighbors are invalid and the map is basically filled
                 if (roomIndex - 1 < 0)
+                {
                     return null;
+                }
 
                 // Loop through the whole map to find a new starting location
                 Vector3 nextLocation = BacktrackMap();
@@ -347,6 +349,7 @@ public class MapBuilder : MonoBehaviour
             {
                 // Evaluate the position for neighbors and return if a neighbor with open spaces is found
                 Vector3 neighborCheck = GetRandomValidNeighbor(roomGenPath[i], room);
+                
                 if (neighborCheck != NULL_VECTOR)
                     return neighborCheck;
                 else
@@ -385,14 +388,17 @@ public class MapBuilder : MonoBehaviour
             // Check if there are no presets to choose from
             if (validPresets == null || validPresets.Count == 0)
             {
-                Vector3 nextNeighbor = BacktrackRoom(ref path, room);
-                if (nextNeighbor != NULL_VECTOR)
-                {
-                    path.RemoveAt(path.Count - 1);
-                    return GetPreset(presetIndex, nextNeighbor, path, room);
-                }
-                else
-                    return null;
+                // This code could occasionally cause the entire room to be backtracked
+                // the intention was to help a prefab spawn in order to maintain the desired amount, but may require a backtracking rework
+                //Vector3 nextNeighbor = BacktrackRoom(ref path, room);
+                //if (nextNeighbor != NULL_VECTOR)
+                //{
+                //    path.RemoveAt(path.Count - 1);
+                //    return GetPreset(presetIndex, nextNeighbor, path, room);
+                //}
+                //else
+                //    return null;
+                return null;
             }
 
             // Return a random rotation of this preset
@@ -738,25 +744,28 @@ public class MapBuilder : MonoBehaviour
                         ceilingTiles.Add(t);
 
                     // The wall list will have references by tile, but also contain each wall within that tile
-                    wallTiles[t] = new List<int>();
+                    List<int> wallCheck = new List<int>();
                     for(int i = 0; i < t.walls.Length; i++)
                     {
                         // If there is a wall on the index, add it to the list
                         if (t.walls[i] != null)
                         {
-                            wallTiles[t].Add(i);
+                            wallCheck.Add(i);
                         }
                     }
+                    if (wallCheck.Count > 0)
+                        wallTiles[t] = wallCheck;
                 }
 
                 // Choose what elements to place
                 for(int i = 0;i < 5; i++)
                 {
-                    ValidateElementPlacement(spawner);
+                    PlaceTileElement(spawner);
+                    PlaceTileElement(decoElements[0]);
                 }
 
                 // Used due to frequent reference above
-                void ValidateElementPlacement(TileElement tElement)
+                void PlaceTileElement(TileElement tElement)
                 {
                     Tile t = null;
 
@@ -769,12 +778,13 @@ public class MapBuilder : MonoBehaviour
                             groundTiles.Remove(t);
                             break;
                         case TileElement.PlacementType.WALL:
+                            // Get a random tile that will have a wall taken from it
                             Tile[] tKeys = wallTiles.Keys.ToArray();
                             t = tKeys[UnityEngine.Random.Range(0, wallTiles.Keys.Count)];
 
                             // Get a random wall on tile
                             List<int> walls = wallTiles[t];
-                            int randWall = UnityEngine.Random.Range(0, walls.Count);
+                            int randWall = walls[UnityEngine.Random.Range(0, walls.Count)];
 
                             // Set the corresponding variables and remove this wall from eligibility
                             t.elements[randWall] = tElement;
@@ -1125,9 +1135,9 @@ public class MapBuilder : MonoBehaviour
                             //eObj.transform.localScale = new Vector3(Map.TILE_RADIUS + wallWidthOffset * Map.TILE_RADIUS, Map.FLOOR_HEIGHT, Map.WALL_THICKNESS * Map.TILE_RADIUS) / sizeMod;
                             eObj.transform.position = new Vector3
                             (
-                                map.hexagonExteriorSidePositions[k].x + (tile.obj.transform.position.x - Map.WALL_THICKNESS),
+                                tile.obj.transform.position.x + map.hexagonExteriorSidePositions[k].x - (map.hexagonExteriorSidePositions[k].x * Map.WALL_THICKNESS),
                                 tile.obj.transform.position.y + Map.FLOOR_THICKNESS,
-                                map.hexagonExteriorSidePositions[k].y + (tile.obj.transform.position.z - Map.WALL_THICKNESS)
+                                tile.obj.transform.position.z + map.hexagonExteriorSidePositions[k].y - (map.hexagonExteriorSidePositions[k].y * Map.WALL_THICKNESS)
                             );
                             eObj.transform.rotation = Quaternion.Euler(new Vector3(0, (k + 3) * 60, 0));
                             break;
@@ -1140,6 +1150,7 @@ public class MapBuilder : MonoBehaviour
                                 tile.obj.transform.position.y + Map.FLOOR_THICKNESS,
                                 tile.obj.transform.position.z
                             );
+                            eObj.transform.rotation = Quaternion.Euler(new Vector3(0, UnityEngine.Random.Range(0, 359), 0));
                             break;
                         // Ceiling
                         case 7:
@@ -1150,6 +1161,7 @@ public class MapBuilder : MonoBehaviour
                                 tile.obj.transform.position.y + Map.FLOOR_HEIGHT,
                                 tile.obj.transform.position.z
                             );
+                            eObj.transform.rotation = Quaternion.Euler(new Vector3(0, UnityEngine.Random.Range(0, 359), 0));
                             break;
                     }
 
