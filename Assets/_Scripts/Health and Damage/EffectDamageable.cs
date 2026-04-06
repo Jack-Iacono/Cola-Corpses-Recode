@@ -72,7 +72,7 @@ public abstract class EffectDamageable : HealthSystem, IDamageable
     public void ApplyDamage(float damage, DamageType type = DamageType.NEUTRAL)
     {
         if (!invincible)
-            ChangeHealth(-damage);
+            ChangeHealth(DamageHealthChangeMethod);
 
         switch (type)
         {
@@ -83,7 +83,12 @@ public abstract class EffectDamageable : HealthSystem, IDamageable
                 CreatePopup(damage.ToString(), Color.white);
                 break;
         }
-        
+
+        // Used to alter the health in a specific manner
+        float DamageHealthChangeMethod(float old)
+        {
+            return old - damage;
+        }
     }
 
     protected override void HealthEmpty()

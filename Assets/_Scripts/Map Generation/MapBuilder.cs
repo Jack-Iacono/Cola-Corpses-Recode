@@ -71,9 +71,9 @@ public class MapBuilder : MonoBehaviour
             }
 
             // This is used for debugging purposes
-            //int seed = UnityEngine.Random.Range(0, 9999);
-            //Debug.Log(seed);
-            UnityEngine.Random.InitState(7762);
+            int seed = UnityEngine.Random.Range(0, 9999);
+            Debug.Log(seed);
+            UnityEngine.Random.InitState(seed);
         }
         else
             Destroy(this);
@@ -551,6 +551,9 @@ public class MapBuilder : MonoBehaviour
             // This works since this is the minimum walls a preset could have as well
             List<Tile> roomTiles = room.GetTiles();
 
+            // Used to determine what other rooms this room borders to determine it's distance
+            int minDistance = int.MaxValue;
+
             // This is for normal tiles
             foreach (Tile tile in room.GetTiles())
             {
@@ -569,6 +572,12 @@ public class MapBuilder : MonoBehaviour
                     // Check if there is a tile and if it is in another room
                     if (neighbor != null && neighbor.room != room)
                     {
+                        // Document this room if it has a shorter distance than the current, and if so, use it
+                        if (room.index == 0)
+                            minDistance = -1;
+                        else if (neighbor.room.roomDistance < minDistance)
+                            minDistance = neighbor.room.roomDistance;
+
                         // These walls should be stored as candidates for doors between rooms
                         Wall neighborWall = neighbor.walls[(i + 3) % 6];
 
@@ -687,6 +696,9 @@ public class MapBuilder : MonoBehaviour
                     }
                 }
             }
+
+            // Set this room's distance to 1 away from the minDistance
+            room.roomDistance = minDistance + 1;
         }
         void SetDoors()
         {
@@ -1098,6 +1110,8 @@ public class MapBuilder : MonoBehaviour
 
                             // Set the Door's materials
                             doorCont.SetMaterials(mats[0], mats[1]);
+                            // Send over the room with the lowest distance
+                            doorCont.Initialize(Mathf.Min(wall.connectedTiles[0].room.roomDistance, wall.connectedTiles[1].room.roomDistance));
 
                             // Assign this object to the wall data type
                             tile.walls[k].obj = doorObject;

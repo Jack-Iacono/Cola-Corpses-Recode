@@ -8,19 +8,23 @@ public abstract class HealthSystem : MonoBehaviour
     // Should this EffectDamageable take damage?
     protected bool invincible = false;
 
-    public delegate void OnHealthEmptyDelegate();
-    public event OnHealthEmptyDelegate OnHealthEmpty;
+    public delegate void d_OnHealthEmpty();
+    public event d_OnHealthEmpty OnHealthEmpty;
 
-    public delegate void OnHealthChangeDelegate(float newHealth);
-    public event OnHealthChangeDelegate OnHealthChange;
+    public delegate void d_OnHealthChange(float newHealth);
+    public event d_OnHealthChange OnHealthChange;
+
+    public delegate float d_ChangeHealth(float oldHealth);
 
     public virtual void ResetHealth()
     {
         SetHealth(maxHealth);
     }
-    public virtual void ChangeHealth(float change)
+
+    // I'm using a delegate here in case any damage methods want to use some more complex functions later on such as draining a percentage of health
+    public virtual void ChangeHealth(d_ChangeHealth change)
     {
-        SetHealth(health + change);
+        SetHealth(change(health));
     }
     public virtual void SetHealth(float health)
     {

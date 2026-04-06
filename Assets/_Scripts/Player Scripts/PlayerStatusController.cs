@@ -133,10 +133,12 @@ public class PlayerStatusController : HealthSystem
         return flavorTimers;
     }
 
-    public override void ChangeHealth(float change)
+    public override void ChangeHealth(d_ChangeHealth change)
     {
+        float oldHealth = health;
         base.ChangeHealth(change);
-        if(change < 0)
+
+        if(health < oldHealth)
         {
             // Play the hurt sound
             AudioManager.Play(AudioManager.SoundType.p_Hurt, gameObject);

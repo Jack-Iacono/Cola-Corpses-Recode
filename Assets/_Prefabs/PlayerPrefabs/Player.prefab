@@ -61,6 +61,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -82,9 +84,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &3044925299436220087
 GameObject:
@@ -246,6 +250,7 @@ GameObject:
   - component: {fileID: 3932640542070400760}
   - component: {fileID: 8463221543098482365}
   - component: {fileID: 8203960654290897346}
+  - component: {fileID: 591942427492892645}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -356,6 +361,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 525b48dd83939b6428ad9ee8fe3bfc3d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &591942427492892645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3599515446909434380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcbcd34050ede4c4493e5ae1f58c6416, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInventoryController
 --- !u!1 &7592096118962791930
 GameObject:
   m_ObjectHideFlags: 0

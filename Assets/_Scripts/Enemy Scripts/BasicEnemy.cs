@@ -85,8 +85,13 @@ public class BasicEnemy : EffectDamageable
     protected void AttackPlayer()
     {
         attackReady = false;
-        PlayerController.Instance.statusController.ChangeHealth(-damage);
+        PlayerController.Instance.statusController.ChangeHealth(HurtPlayerMethod);
         attackTimer.Restart();
+
+        float HurtPlayerMethod(float oldHealth)
+        {
+            return oldHealth - damage;
+        }
     }
     protected void OnAttackReady()
     {

@@ -14,6 +14,11 @@ public class DoorController : BasicInteractable
     private int cost;
     private bool open = false;
 
+    public void Initialize(int distance)
+    {
+        open = false;
+        cost = (distance + 1) * 10;
+    }
     public void SetMaterials(Material front, Material back)
     {
         frontMaterial = front;
@@ -25,6 +30,7 @@ public class DoorController : BasicInteractable
 
     public void Open()
     {
+        // Add cost checking here
         obstacle.enabled = false;
         gameObject.SetActive(false);
         open = true;

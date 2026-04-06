@@ -118,14 +118,27 @@ namespace MapUtil
 
     public class Room
     {
+        // Store the tiles that are present within this room
         private Dictionary<Vector3, Tile> tiles = new Dictionary<Vector3, Tile>();
+        // Store the doors that lead into/out of this room
         private Dictionary<Tile, Room> doors = new Dictionary<Tile, Room>();
 
+        // The gameobject that will represent the room once it is built
         public GameObject obj;
 
+        // The distance that this room is from the starting room
+        public int roomDistance = 0;
+
+        // Has this room been opened
+        public bool isOpen = false;
+
+        // The index representing the theme of the room
         public int themeIndex = 0;
+
+        // The index showing when the room was generated
         public int index = -1;
 
+        // A list of the preset rooms that exist within this room
         public List<PresetData> presets = new List<PresetData>();
 
         public Room()
