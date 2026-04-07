@@ -15,7 +15,9 @@ public class AudioManager : MonoBehaviour
         p_Hurt,
         w_CanThrow,
         w_CanExplode,
-        w_Drink
+        w_Drink,
+        i_CoinCollect,
+        i_CoinDrop
     }
 
     // Sounds that will be used

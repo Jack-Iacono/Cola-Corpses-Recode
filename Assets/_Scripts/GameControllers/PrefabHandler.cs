@@ -16,6 +16,9 @@ public class PrefabHandler : MonoBehaviour
     [Header("Projectiles")]
     public GameObject thrownCan;
 
+    [Header("Items")]
+    public GameObject coin;
+
     [Header("UI Elements")]
     public GameObject damagePopup;
 
@@ -28,6 +31,7 @@ public class PrefabHandler : MonoBehaviour
         
         // Initialize the prefabs that willbe used across many scenes
         ObjectPool.PoolObject(damagePopup, 10);
+        ObjectPool.PoolObject(coin, 10);
     }
 
     private void OnDestroy()

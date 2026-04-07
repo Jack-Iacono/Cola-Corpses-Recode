@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     public PlayerStatusController statusController { get; private set; }
     public PlayerCameraController cameraController { get; private set; }
     public PlayerInteractionController interactionController { get; private set; }
+    public PlayerInventoryController inventoryController { get; private set; }
 
     private void Awake()
     {
@@ -26,6 +27,7 @@ public class PlayerController : MonoBehaviour
             weaponController = currentPlayer.GetComponent<PlayerWeaponController>();
             statusController = currentPlayer.GetComponent<PlayerStatusController>();
             interactionController = currentPlayer.GetComponent<PlayerInteractionController>();
+            inventoryController = currentPlayer.GetComponent<PlayerInventoryController>();
             cameraController = movementController.camCont;
         }
         else

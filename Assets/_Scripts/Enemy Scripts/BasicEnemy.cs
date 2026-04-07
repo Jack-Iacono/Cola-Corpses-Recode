@@ -9,6 +9,8 @@ public class BasicEnemy : EffectDamageable
 {
     public static Dictionary<GameObject, BasicEnemy> Instances = new Dictionary<GameObject, BasicEnemy>();
 
+    private PrefabHandler prefabHandler;
+
     private NavMeshAgent agent;
     private NavMeshObstacle obstacle;
 
@@ -28,6 +30,8 @@ public class BasicEnemy : EffectDamageable
     protected override void Awake()
     {
         base.Awake();
+
+        prefabHandler = PrefabHandler.Instance;
 
         obstacle = GetComponent<NavMeshObstacle>();
         agent = GetComponent<NavMeshAgent>();
@@ -78,6 +82,12 @@ public class BasicEnemy : EffectDamageable
         ResetHealth();
         SetAgentActive(false);
         ResetTraitTimers();
+
+        GameObject coin = ObjectPool.GetObject(PrefabHandler.Instance.coin);
+        CoinController cont = coin.GetComponent<CoinController>();
+
+        coin.transform.position = transform.position;
+        cont.Activate();
 
         base.HealthEmpty();
     }
