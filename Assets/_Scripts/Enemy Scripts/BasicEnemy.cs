@@ -83,11 +83,14 @@ public class BasicEnemy : EffectDamageable
         SetAgentActive(false);
         ResetTraitTimers();
 
-        GameObject coin = ObjectPool.GetObject(PrefabHandler.Instance.coin);
-        CoinController cont = coin.GetComponent<CoinController>();
+        if (UnityEngine.Random.Range(0f,1f) > 0.75f)
+        {
+            GameObject coin = ObjectPool.GetObject(PrefabHandler.Instance.coin);
+            CoinController cont = coin.GetComponent<CoinController>();
 
-        coin.transform.position = transform.position;
-        cont.Activate();
+            coin.transform.position = transform.position;
+            cont.Activate();
+        }
 
         base.HealthEmpty();
     }

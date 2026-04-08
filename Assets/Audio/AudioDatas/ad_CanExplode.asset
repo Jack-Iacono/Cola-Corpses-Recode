@@ -16,7 +16,7 @@ MonoBehaviour:
   playOnAwake: 0
   loop: 0
   priority: 128
-  volume: 1
+  volume: 0.5
   pitch: 1
   stereoPan: 0
   spatialBlend: 1
@@ -32,3 +32,5 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  pitchVariance: 0
+  volumeVariance: 0

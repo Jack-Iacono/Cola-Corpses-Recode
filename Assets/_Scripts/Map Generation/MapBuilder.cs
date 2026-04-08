@@ -43,7 +43,7 @@ public class MapBuilder : MonoBehaviour
     // Double the Z that you want, the way hex grids works takes out half of the Z positions
     // Yes, I know what I'm doing, don't question me
     private readonly Vector3 mapDim = new Vector3(100, 5, 200);
-    private Vector2 roomTileRange = new Vector2(100, 100);
+    private Vector2 roomTileRange = new Vector2(40, 40);
     private int roomCount = 3;
     private float prefabPlaceChance = 0.01f;
 
@@ -956,6 +956,9 @@ public class MapBuilder : MonoBehaviour
             s.Initialize();
         }
 
+        // Open the first room
+        map.rooms[0].SetOpenStatus(true);
+
         void BuildTile(Tile tile, GameObject roomParent)
         {
             // Check the type of the given tile
@@ -1111,7 +1114,7 @@ public class MapBuilder : MonoBehaviour
                             // Set the Door's materials
                             doorCont.SetMaterials(mats[0], mats[1]);
                             // Send over the room with the lowest distance
-                            doorCont.Initialize(Mathf.Min(wall.connectedTiles[0].room.roomDistance, wall.connectedTiles[1].room.roomDistance));
+                            doorCont.Initialize(Mathf.Min(wall.connectedTiles[0].room.roomDistance, wall.connectedTiles[1].room.roomDistance), wall);
 
                             // Assign this object to the wall data type
                             tile.walls[k].obj = doorObject;
@@ -1184,6 +1187,7 @@ public class MapBuilder : MonoBehaviour
                     {
                         // Add this to the list of spawners to be initialized
                         spawners.Add(eObj.GetComponent<EnemySpawner>());
+                        tile.room.AddSpawner(eObj.GetComponent<EnemySpawner>());
                     }
                 }
             }

@@ -6,8 +6,10 @@ public class PlayerInventoryController : MonoBehaviour
 
     public int coins { get; private set; } = 0;
     private Vector2 coinLimits = new Vector2(0, 20);
-
     public delegate int d_CoinChange(int oldValue);
+
+    public delegate void d_OnCoinCountChanged(int oldValue, int newValue);
+    public event d_OnCoinCountChanged OnCoinCountChanged;
 
     private void Awake()
     {
@@ -34,7 +36,10 @@ public class PlayerInventoryController : MonoBehaviour
         if (coins == old)
             return false;
         else
+        {
+            OnCoinCountChanged?.Invoke(old, coins);
             return true;
+        }
     }
 
     private void OnDestroy()

@@ -14,6 +14,7 @@ public class EnemySpawner : MonoBehaviour
     private bool autoInitialize = false;
 
     private bool initialized = false;
+    private bool open = false;
 
     private void Awake()
     {
@@ -29,16 +30,29 @@ public class EnemySpawner : MonoBehaviour
         NavMesh.SamplePosition(transform.position, out hit, 2, areaMask);
         spawnLocation = hit.position;
 
-        spawnTimer = new Timer(null, SpawnEnemy, null);
-        spawnTimer.Start(spawnTime, -1);
-
         initialized = true;
+
+        open = false;
+    }
+    public void SetOpen(bool open)
+    {
+        if (open)
+        {
+            spawnTimer = new Timer(null, SpawnEnemy, null);
+            spawnTimer.Start(spawnTime, -1);
+        }
+        else
+        {
+            spawnTimer = null;
+        }
+
+        this.open = open;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(initialized)
+        if(initialized && open)
             spawnTimer.Update(Time.deltaTime);
     }
 

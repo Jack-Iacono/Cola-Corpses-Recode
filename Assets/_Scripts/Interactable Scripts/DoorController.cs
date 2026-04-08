@@ -1,3 +1,4 @@
+using MapUtil;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -8,16 +9,23 @@ public class DoorController : BasicInteractable
 
     [SerializeField] private NavMeshObstacle obstacle;
 
+    private Wall wall;
+
     private Material frontMaterial;
     private Material backMaterial;
 
     private int cost;
     private bool open = false;
 
-    public void Initialize(int distance)
+    private PlayerInventoryController invCont;
+
+    public void Initialize(int distance, Wall wall)
     {
         open = false;
-        cost = (distance + 1) * 10;
+        cost = (distance + 1) * 1;
+        this.wall = wall;
+
+        invCont = PlayerController.Instance.inventoryController;
     }
     public void SetMaterials(Material front, Material back)
     {
@@ -30,9 +38,20 @@ public class DoorController : BasicInteractable
 
     public void Open()
     {
-        // Add cost checking here
-        obstacle.enabled = false;
-        gameObject.SetActive(false);
-        open = true;
+        if(invCont.coins >= cost)
+        {
+            obstacle.enabled = false;
+            gameObject.SetActive(false);
+            open = true;
+
+            wall.OpenDoor();
+
+            invCont.ChangeCoins(SubtractPrice);
+        }
+
+        int SubtractPrice(int old)
+        {
+            return old - cost;
+        }
     }
 }

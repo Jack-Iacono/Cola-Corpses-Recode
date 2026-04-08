@@ -10,7 +10,7 @@ public class CoinController : MonoBehaviour
     private void Awake()
     {
         col = GetComponent<BoxCollider>();
-        Activate();
+        AudioManager.AddAudioSources(AudioManager.SoundType.i_CoinDrop, 1, gameObject);
     }
 
     private void Start()
@@ -29,6 +29,7 @@ public class CoinController : MonoBehaviour
         }
 
         gameObject.SetActive(true);
+        AudioManager.Play(AudioManager.SoundType.i_CoinDrop, gameObject);
     }
     public void Deactivate()
     {

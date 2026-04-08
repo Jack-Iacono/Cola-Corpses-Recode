@@ -123,6 +123,9 @@ namespace MapUtil
         // Store the doors that lead into/out of this room
         private Dictionary<Tile, Room> doors = new Dictionary<Tile, Room>();
 
+        // Stores the spawners in this room
+        private List<EnemySpawner> spawners = new List<EnemySpawner>();
+
         // The gameobject that will represent the room once it is built
         public GameObject obj;
 
@@ -130,7 +133,7 @@ namespace MapUtil
         public int roomDistance = 0;
 
         // Has this room been opened
-        public bool isOpen = false;
+        public bool isOpen { get; private set; } = false;
 
         // The index representing the theme of the room
         public int themeIndex = 0;
@@ -170,6 +173,22 @@ namespace MapUtil
         public void AddDoor(Tile tile, Room room)
         {
             doors.Add(tile, room);
+        }
+
+        public void AddSpawner(EnemySpawner spawner)
+        {
+            spawners.Add(spawner);
+        }
+        public void SetOpenStatus(bool open)
+        {
+            if (!isOpen)
+            {
+                isOpen = open;
+                foreach(EnemySpawner s in spawners)
+                {
+                    s.SetOpen(open);
+                }
+            }
         }
     }
 
@@ -287,6 +306,16 @@ namespace MapUtil
         public void SetType(WallType type)
         {
             this.type = type;
+        }
+
+        // this is called by a door controller when it is opened to notify the map data that a room is no accessible
+        public void OpenDoor()
+        {
+            // Notify both connecting tiles just for good measure, even though one will already be open
+            foreach(Tile tile in connectedTiles)
+            {
+                tile.room.SetOpenStatus(true);
+            }
         }
 
         public List<Tile> GetConnectedTiles()
