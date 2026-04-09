@@ -13,9 +13,11 @@ public class PlayerUIController : MonoBehaviour
     private void Start()
     {
         PlayerController.Instance.statusController.OnHealthChange += OnPlayerHealthChange;
-        //PlayerController.Instance.statusController.OnFlavorStatusChanged += OnPlayerFlavorStatusChanged;
+        PlayerController.Instance.statusController.OnFlavorStatusChanged += OnPlayerFlavorStatusChanged;
         PlayerController.Instance.inventoryController.OnCoinCountChanged += OnCoinCountChanged;
+
         SetHealthText(PlayerController.Instance.statusController.GetHealth());
+        SetCoinText(PlayerController.Instance.inventoryController.coins);
     }
 
     private void OnPlayerFlavorStatusChanged()

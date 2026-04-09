@@ -7,7 +7,7 @@ using static IDamageable;
 using static ModifierUtil;
 using static UnityEngine.ParticleSystem;
 
-public abstract class EffectDamageable : HealthSystem, IDamageable
+public abstract class EffectDamageable : StatusSystem, IDamageable
 {
     // The damage that this EffectDamagable can do
     protected float damage = 10;
@@ -23,8 +23,11 @@ public abstract class EffectDamageable : HealthSystem, IDamageable
     protected Dictionary<Trait, Timer> traitTimers = new Dictionary<Trait, Timer>();
     protected Dictionary<Trait, TraitStats> currentTraitStats = new Dictionary<Trait, TraitStats>();
 
-    protected virtual void Awake()
+    protected override void Awake()
     {
+        // Initialize the status system
+        base.Awake();
+
         // Register to be allowed to be damaged
         IDamageable.Register(gameObject, this);
 
@@ -101,7 +104,7 @@ public abstract class EffectDamageable : HealthSystem, IDamageable
 
     #region Trait Methods
 
-    protected void TraitCheck(Dictionary<Trait, int> traits)
+    protected virtual void TraitCheck(Dictionary<Trait, int> traits)
     {
         foreach(Trait t in traits.Keys)
         {

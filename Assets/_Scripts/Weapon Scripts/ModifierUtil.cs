@@ -45,7 +45,7 @@ public static class ModifierUtil
         },
         { Flavor.CREAM, new FlavorStats[]
             {
-                new FlavorStats(10,1,4)
+                new FlavorStats(2,5,2)
             }
         },
         { Flavor.BANANA, new FlavorStats[]
@@ -63,32 +63,32 @@ public static class ModifierUtil
     {
         { Trait.SOUR, new TraitStats[]
             {
-                new TraitStats(0.3f,10,0.5f, 0.5f)
+                new TraitStats(0.3f,10,0.5f, 0.25f)
             }
         },
         { Trait.SWEET, new TraitStats[]
             {
-                new TraitStats(10,10,0.5f, 0.5f)
+                new TraitStats(10,10,0.5f, 0.25f)
             }
         },
         { Trait.SPICY, new TraitStats[]
             {
-                new TraitStats(0.1f,15,0.3f, 0.5f)
+                new TraitStats(0.1f,15,0.3f, 0.25f)
             }
         },
         { Trait.SALTY, new TraitStats[]
             {
-                new TraitStats(10,1,10, 0.5f)
+                new TraitStats(10,1,10, 0.25f)
             }
         },
         { Trait.BITTER, new TraitStats[]
             {
-                new TraitStats(10,1,15, 0.5f)
+                new TraitStats(10,1,15, 0.25f)
             }
         },
         { Trait.UMAMI, new TraitStats[]
             {
-                new TraitStats(10,1, 20, 0.5f)
+                new TraitStats(10,1, 20, 0.25f)
             }
         }
     };
