@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
-using static ModifierUtil;
-using static UnityEngine.ParticleSystem;
 
 public class PlayerStatusController : StatusSystem
 {
-
     protected override void Awake()
     {
         // Initialize the status and health systems
@@ -20,8 +15,6 @@ public class PlayerStatusController : StatusSystem
     {
         float oldHealth = health;
         base.ChangeHealth(change);
-
-        health = Mathf.Clamp(health, 0, maxHealth);
 
         if(health < oldHealth)
         {

@@ -59,9 +59,8 @@ public class EnemySpawner : MonoBehaviour
     public void SpawnEnemy()
     {
         GameObject enemy = ObjectPool.GetObject(PrefabHandler.Instance.enemy);
-        BasicEnemy cont = BasicEnemy.Instances[enemy];
+        EnemyController cont = EnemyController.Instances[enemy];
 
         cont.Spawn(spawnLocation);
-        enemy.SetActive(true);
     }
 }

@@ -1,36 +1,37 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 using static IDamageable;
 using static ModifierUtil;
-using static UnityEngine.ParticleSystem;
 
-public abstract class EffectDamageable : StatusSystem, IDamageable
+public abstract class StatusSystem : HealthSystem
 {
-    // The damage that this EffectDamagable can do
-    protected float damage = 10;
-
-    [SerializeField]
-    protected float saltyWeakenModifier = 1;
-    [SerializeField]
-    protected float bitterWeakenModifier = 1;
-    [SerializeField]
-    protected float umamiProcMultiplier = 1;
+    // Holds stats nad timers for buffs
+    protected Dictionary<Flavor, Timer> flavorTimers = new Dictionary<Flavor, Timer>();
+    protected Dictionary<Flavor, FlavorStats> currentFlavorStats = new Dictionary<Flavor, FlavorStats>();
 
     // Holds info for debuffs
     protected Dictionary<Trait, Timer> traitTimers = new Dictionary<Trait, Timer>();
     protected Dictionary<Trait, TraitStats> currentTraitStats = new Dictionary<Trait, TraitStats>();
 
-    protected override void Awake()
-    {
-        // Initialize the status system
-        base.Awake();
+    public delegate void OnFlavorStatusChangedDelegate();
+    public event OnFlavorStatusChangedDelegate OnFlavorStatusChanged;
 
+    // Modifier Stuff, will change later
+    protected float saltyWeakenModifier = 1;
+    protected float bitterWeakenModifier = 1;
+    protected float umamiProcMultiplier = 1;
+
+    protected virtual void Awake()
+    {
         // Register to be allowed to be damaged
         IDamageable.Register(gameObject, this);
 
+        // Set up the stats for each flavor for when they need to be used
+        foreach (Flavor flavor in Enum.GetValues(typeof(Flavor)))
+        {
+            currentFlavorStats.Add(flavor, ModifierUtil.GetFlavorStat(flavor, 1));
+        }
         // Initialize each trait damage store with the lowest trait effect for each
         foreach (Trait trait in Enum.GetValues(typeof(Trait)))
         {
@@ -44,12 +45,28 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
         traitTimers.Add(Trait.SALTY, new Timer(SaltyApply, null, SaltyRemove));
         traitTimers.Add(Trait.BITTER, new Timer(BitterApply, null, BitterRemove));
         traitTimers.Add(Trait.UMAMI, new Timer(UmamiApply, null, UmamiRemove));
+
+        flavorTimers.Add(Flavor.COLA, new Timer(ApplyCola, null, RemoveCola));
+        flavorTimers.Add(Flavor.ORANGE, new Timer(ApplyOrange, null, RemoveOrange));
+        flavorTimers.Add(Flavor.CHERRY, new Timer(ApplyCherry, null, RemoveCherry));
+        flavorTimers.Add(Flavor.GRAPE, new Timer(ApplyGrape, null, RemoveGrape));
+        flavorTimers.Add(Flavor.BANANA, new Timer(ApplyBanana, null, RemoveBanana));
+        flavorTimers.Add(Flavor.RASPBERRY, new Timer(ApplyRaspberry, null, RemoveRaspberry));
+        flavorTimers.Add(Flavor.ROOTBEER, new Timer(null, TickRootbeer, null));
+        flavorTimers.Add(Flavor.CREAM, new Timer(null, TickCream, null));
     }
 
     protected virtual void Update()
     {
         // Increment each of the trait timers
-        foreach(Trait t in traitTimers.Keys)
+        foreach (Flavor f in flavorTimers.Keys)
+        {
+            flavorTimers[f].Update(Time.deltaTime);
+        }
+        OnFlavorStatusChanged?.Invoke();
+
+        // Increment each of the trait timers
+        foreach (Trait t in traitTimers.Keys)
         {
             traitTimers[t].Update(Time.deltaTime);
         }
@@ -58,16 +75,16 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
     #region Damage Methods
 
     // Methods to react to damage from different sources
-    public void DamageSplash(float damage, Dictionary<ModifierUtil.Trait, int> traits = null)
+    public override void DamageSplash(float damage, Dictionary<ModifierUtil.Trait, int> traits = null)
     {
         ApplyDamage(damage, DamageType.SPLASH);
-        if(traits != null)
+        if (traits != null)
             TraitCheck(traits);
     }
-    public void DamageContact(float damage, Dictionary<ModifierUtil.Trait, int> traits = null)
+    public override void DamageContact(float damage, Dictionary<ModifierUtil.Trait, int> traits = null)
     {
         ApplyDamage(damage, DamageType.CONTACT);
-        if(traits != null)
+        if (traits != null)
             TraitCheck(traits);
     }
 
@@ -94,10 +111,96 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
         }
     }
 
-    protected override void HealthEmpty()
+    #endregion
+
+    #region Flavor Methods
+
+    public void ApplyBuffs(Dictionary<Flavor, int> flavors)
     {
-        if(!invincible)
-            gameObject.SetActive(false);
+        foreach (Flavor f in flavors.Keys)
+        {
+            int level = flavors[f];
+            // Check if this trait has any levels i.e. if it should be used
+            if (level > 0)
+            {
+                FlavorStats stats = ModifierUtil.GetFlavorStat(f, level);
+
+                flavorTimers[f].Start(stats.tickSpeed, stats.tickCount - 1, ModifierUtil.flavorTimerOverrideReference[f]);
+                currentFlavorStats[f] = stats;
+            }
+        }
+    }
+    public Dictionary<Flavor, Timer> GetFlavorTimers()
+    {
+        return flavorTimers;
+    }
+
+    private void ApplyCherry()
+    {
+
+    }
+    private void RemoveCherry()
+    {
+
+    }
+
+    private void ApplyGrape()
+    {
+
+    }
+    private void RemoveGrape()
+    {
+
+    }
+
+    private void ApplyOrange()
+    {
+
+    }
+    private void RemoveOrange()
+    {
+
+    }
+
+    private void ApplyBanana()
+    {
+
+    }
+    private void RemoveBanana()
+    {
+
+    }
+
+    private void ApplyCola()
+    {
+        Debug.Log("Apply Cola");
+    }
+    private void RemoveCola()
+    {
+        Debug.Log("Remove Cola");
+    }
+
+    private void ApplyRaspberry()
+    {
+
+    }
+    private void RemoveRaspberry()
+    {
+
+    }
+
+    private void TickRootbeer()
+    {
+
+    }
+    private void TickCream()
+    {
+        ChangeHealth(IncreaseHealth);
+
+        float IncreaseHealth(float old)
+        {
+            return old + currentFlavorStats[ModifierUtil.Flavor.CREAM].potency;
+        }
     }
 
     #endregion
@@ -106,12 +209,12 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
 
     protected virtual void TraitCheck(Dictionary<Trait, int> traits)
     {
-        foreach(Trait t in traits.Keys)
+        foreach (Trait t in traits.Keys)
         {
             int level = traits[t];
 
             // Check if this trait has any levels i.e. if it should be used
-            if(level > 0)
+            if (level > 0)
             {
                 TraitStats stats = ModifierUtil.GetTraitStats(t, level);
 
@@ -121,7 +224,7 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
                     // The - 1 for tick count due to the first tick already happening in the timer, without this would go tickCount + 1 times
                     traitTimers[t].Start(stats.tickSpeed, stats.tickCount - 1, ModifierUtil.traitTimerOverrideReference[t]);
                     currentTraitStats[t] = stats;
-                } 
+                }
             }
         }
     }
@@ -129,7 +232,7 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
     protected void ResetTraitTimers()
     {
         // Run through each timer in the trait timers dictionary and stop them
-        foreach(Timer timer in traitTimers.Values)
+        foreach (Timer timer in traitTimers.Values)
         {
             timer.Stop();
         }
@@ -145,7 +248,7 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
     protected void SpicyTick()
     {
         TraitStats stats = currentTraitStats[Trait.SPICY];
-        float d = maxHealth * stats.potency;
+        float d = healthBounds.y * stats.potency;
         CreatePopup(Mathf.FloorToInt(d).ToString(), ModifierUtil.traitColorReference[Trait.SPICY]);
         ApplyDamage(d);
     }
@@ -193,6 +296,16 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
 
     #endregion
 
+    #region Health Methods
+
+    protected override void HealthEmpty()
+    {
+        if (!invincible)
+            gameObject.SetActive(false);
+    }
+
+    #endregion
+
     protected void CreatePopup(string text, Color color)
     {
         GameObject g = ObjectPool.GetObject(PrefabHandler.Instance.damagePopup);
@@ -200,9 +313,5 @@ public abstract class EffectDamageable : StatusSystem, IDamageable
         p.Activate(transform.position + Vector3.up * 1.5f, text, color);
     }
 
-    private void OnDestroy()
-    {
-        // Unregister from the list of damageable objects
-        IDamageable.Unregister(gameObject);
-    }
+    
 }

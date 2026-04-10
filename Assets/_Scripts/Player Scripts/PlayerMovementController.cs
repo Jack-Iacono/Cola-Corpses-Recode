@@ -6,33 +6,11 @@ using UnityEngine;
 using InputUtil;
 using UnityEngine.InputSystem;
 
-public class PlayerMovementController : MonoBehaviour, InputBind.IMovementActions
+public class PlayerMovementController : MovementSystem, InputBind.IMovementActions
 {
     public static LayerMask playerLayerMask;
 
-    private const int playerLayer = 6;
-    private const int ghostLayer = 14;
-
     public PlayerCameraController camCont;
-
-    [Header("Movement Variables")]
-    [SerializeField]
-    private float moveSpeed = 10;
-    [SerializeField]
-    private float jumpHeight = 10;
-    [SerializeField]
-    [Tooltip("Negative values will pull player downward, Positive value will push them up")]
-    private float gravity = -0.98f;
-
-    [Header("Acceleration Variables", order = 2)]
-    [SerializeField]
-    private float groundAcceleration = 1;
-    [SerializeField]
-    private float airAcceleration = 1;
-    [SerializeField]
-    private float groundDeceleration = 1;
-    [SerializeField]
-    private float airDeceleration = 1;
 
     [Header("Interaction Variables")]
     public LayerMask environmentLayers;
