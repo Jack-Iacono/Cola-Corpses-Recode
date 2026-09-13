@@ -31,7 +31,7 @@ public class PlayerWeaponController : MonoBehaviour, InputBind.IAttackActions
     private void Start()
     {
         // Run this here so sinletons have a chance to be created
-        currentWeapon = new Weapon(10, 10, 50, 0.1f);
+        currentWeapon = new Weapon(10, 10, 50, 0.5f);
     }
 
     private void Update()
