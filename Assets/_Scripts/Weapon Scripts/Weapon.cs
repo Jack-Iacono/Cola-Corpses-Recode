@@ -62,6 +62,9 @@ public class Weapon
         traits[Trait.SALTY] = 1;
         traits[Trait.BITTER] = 1;
         traits[Trait.UMAMI] = 1;
+
+        // TEMPORARY !!!
+        WeaponPart part = new WeaponPart();
     }
 
     public void Update(float dt, ActionState primaryState, ActionState secondaryState)

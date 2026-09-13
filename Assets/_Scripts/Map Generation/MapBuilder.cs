@@ -44,7 +44,7 @@ public class MapBuilder : MonoBehaviour
     // Yes, I know what I'm doing, don't question me
     private readonly Vector3 mapDim = new Vector3(100, 5, 200);
     private Vector2 roomTileRange = new Vector2(40, 40);
-    private int roomCount = 3;
+    private int roomCount = 10;
     private float prefabPlaceChance = 0.01f;
 
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
@@ -59,7 +59,7 @@ public class MapBuilder : MonoBehaviour
 
             int currentID = 1;
 
-            // Imporant Tile Elements
+            // Import Tile Elements
             spawner.id = currentID++;
             tileElementReference.Add(spawner.id, spawner);
 
@@ -760,7 +760,7 @@ public class MapBuilder : MonoBehaviour
                     for(int i = 0; i < t.walls.Length; i++)
                     {
                         // If there is a wall on the index, add it to the list
-                        if (t.walls[i] != null)
+                        if (t.walls[i] != null && t.walls[i].type != WallType.DOOR && t.walls[i].type != WallType.CUSTOM)
                         {
                             wallCheck.Add(i);
                         }
@@ -1424,7 +1424,3 @@ public class MapBuilder : MonoBehaviour
         }
     }
 }
-
-
-
-
