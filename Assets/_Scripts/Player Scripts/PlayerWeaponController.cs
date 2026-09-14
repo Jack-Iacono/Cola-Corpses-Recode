@@ -5,6 +5,8 @@ using UnityEngine;
 using InputUtil;
 using UnityEngine.InputSystem;
 
+using WeaponPartUtil;
+
 public class PlayerWeaponController : MonoBehaviour, InputBind.IAttackActions
 {
     [SerializeField]
@@ -31,7 +33,7 @@ public class PlayerWeaponController : MonoBehaviour, InputBind.IAttackActions
     private void Start()
     {
         // Run this here so sinletons have a chance to be created
-        currentWeapon = new Weapon(10, 10, 50, 0.5f);
+        currentWeapon = new Weapon(new WeaponPartPrimary(), new WeaponPartSecondary());
     }
 
     private void Update()

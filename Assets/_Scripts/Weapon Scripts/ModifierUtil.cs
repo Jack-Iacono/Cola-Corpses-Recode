@@ -16,7 +16,7 @@ public static class ModifierUtil
     // Planning to add Fizzy, Flat, Hot and Iced later on
 
     // Dictionary to hold all stats for each flavor level
-    private static  readonly Dictionary<Flavor, FlavorStats[]> flavorStatReference = new Dictionary<Flavor, FlavorStats[]>()
+    public static  readonly Dictionary<Flavor, FlavorStats[]> flavorStatReference = new Dictionary<Flavor, FlavorStats[]>()
     {
         { Flavor.COLA, new FlavorStats[]
             {
@@ -59,7 +59,7 @@ public static class ModifierUtil
             }
         }
     };
-    private static readonly Dictionary<Trait, TraitStats[]> traitStatReference = new Dictionary<Trait, TraitStats[]>()
+    public static readonly Dictionary<Trait, TraitStats[]> traitStatReference = new Dictionary<Trait, TraitStats[]>()
     {
         { Trait.SOUR, new TraitStats[]
             {

@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using WeaponPartUtil;
 using static ModifierUtil;
+using static WeaponUtil;
 
 public enum ActionState { DOWN, UP, HELD, NONE };
 
@@ -26,7 +28,7 @@ public class Weapon
 
     private PlayerMovementController player;
 
-    public Weapon(float damage, float radius, float range, float useTime)
+    public Weapon(WeaponPartPrimary pPart, WeaponPartSecondary sPart, WeaponPart[] extraParts = null)
     {
         // Initialize the flavor dictionary with the correct keys for usage later
         foreach (Flavor flavor in Enum.GetValues(typeof(Flavor)))
@@ -38,33 +40,77 @@ public class Weapon
             traits.Add(trait, 0);
         }
 
-        this.damage = damage;
-        this.range = range;
-        this.radius = radius;
-        this.useTime = useTime;
+        // Set the stats from both parts at the same time
+        damage = pPart.damage + sPart.damage;
+        range = pPart.range + sPart.range;
+        radius = pPart.radius + sPart.radius;
+        useTime = pPart.useTime  + sPart.useTime;
 
-        // TEMPORARY!!! testing purposes only
-        primaryAction = new WeaponAction_CanThrow(this);
-        secondaryAction = new WeaponAction_Drink(this);
+        // Add the flavors/traits from the primary part
+        foreach(Flavor flavor in pPart.flavors.Keys)
+        {
+            flavors[flavor] += pPart.flavors[flavor];
+        }
+        foreach(Trait trait in pPart.traits.Keys)
+        {
+            traits[trait] += pPart.traits[trait];
+        }
 
-        flavors[Flavor.COLA] = 1;
-        flavors[Flavor.GRAPE] = 1;
-        flavors[Flavor.CHERRY] = 1;
-        flavors[Flavor.RASPBERRY] = 1;
-        flavors[Flavor.BANANA] = 1;
-        flavors[Flavor.ORANGE] = 1;
-        flavors[Flavor.CREAM] = 1;
-        flavors[Flavor.ROOTBEER] = 1;
+        // Add the flavors/traits from the secondary part
+        foreach (Flavor flavor in sPart.flavors.Keys)
+        {
+            flavors[flavor] += sPart.flavors[flavor];
+        }
+        foreach (Trait trait in sPart.traits.Keys)
+        {
+            traits[trait] += sPart.traits[trait];
+        }
 
-        traits[Trait.SOUR] = 1;
-        traits[Trait.SPICY] = 1;
-        traits[Trait.SWEET] = 1;
-        traits[Trait.SALTY] = 1;
-        traits[Trait.BITTER] = 1;
-        traits[Trait.UMAMI] = 1;
+        // Check to see if there are extra parts
+        if(extraParts != null)
+        {
+            // Loop through additional parts to add stats from them
+            for (int i = 0; i < extraParts.Length; i++)
+            {
+                damage += extraParts[i].damage;
+                range += extraParts[i].range;
+                radius += extraParts[i].radius;
+                useTime += extraParts[i].useTime;
+
+                // Add the flavors/traits from the part
+                foreach (Flavor flavor in extraParts[i].flavors.Keys)
+                {
+                    flavors[flavor] += extraParts[i].flavors[flavor];
+                }
+                foreach (Trait trait in extraParts[i].traits.Keys)
+                {
+                    traits[trait] += extraParts[i].traits[trait];
+                }
+            }
+        }
+
+        // Constrain the stats to fit within the desired values
+        damage = Mathf.Clamp(damage, DAMAGE_CONSTRAINTS.x, DAMAGE_CONSTRAINTS.y);
+        range = Mathf.Clamp(range, RANGE_CONSTRAINTS.x, RANGE_CONSTRAINTS.y);
+        radius = Mathf.Clamp(radius, RADIUS_CONSTRAINTS.x, RADIUS_CONSTRAINTS.y);
+        useTime = Mathf.Clamp(useTime, USETIME_CONSTRAINTS.x, USETIME_CONSTRAINTS.y);
 
         // TEMPORARY !!!
-        WeaponPart part = new WeaponPart();
+        useTime = 0.5f;
+
+        // Constrain the values for traits and flavors as well
+        foreach(Flavor flavor in Enum.GetValues(typeof(Flavor)))
+        {
+            flavors[flavor] = Mathf.Clamp(flavors[flavor], 0, flavorStatReference[flavor].Length);
+        }
+        foreach (Trait trait in Enum.GetValues(typeof(Trait)))
+        {
+            traits[trait] = Mathf.Clamp(traits[trait], 0, traitStatReference[trait].Length);
+        }
+
+        // Set the primary and secondary actions for this weapon
+        primaryAction = GetPrimaryWeaponAction(pPart.action, this);
+        secondaryAction = GetSecondaryWeaponAction(sPart.action, this);
     }
 
     public void Update(float dt, ActionState primaryState, ActionState secondaryState)

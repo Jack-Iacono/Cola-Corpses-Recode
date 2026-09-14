@@ -21,18 +21,6 @@ public abstract class EnemyAttackSystem : MonoBehaviour
         target = PlayerController.Instance.movementController.transform;
     }
 
-    protected virtual void Update()
-    {
-        // Check if the player is in attack range
-        if (Vector3.SqrMagnitude(target.position - transform.position) < attackRange * attackRange)
-        {
-            if (attackReady)
-                AttackPlayer();
-        }
-
-        attackTimer.Update(Time.deltaTime);
-    }
-
     protected void AttackPlayer()
     {
         attackReady = false;

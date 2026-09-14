@@ -2,15 +2,15 @@ using UnityEngine;
 
 public class BasicEnemyAttackController : EnemyAttackSystem
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    protected void Update()
     {
-        
-    }
+        // Check if the player is in attack range
+        if (Vector3.SqrMagnitude(target.position - transform.position) < attackRange * attackRange)
+        {
+            if (attackReady)
+                AttackPlayer();
+        }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        attackTimer.Update(Time.deltaTime);
     }
 }
