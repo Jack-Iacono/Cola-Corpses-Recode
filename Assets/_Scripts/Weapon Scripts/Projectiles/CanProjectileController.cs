@@ -34,7 +34,12 @@ public class CanProjectileController : ProjectileController
         // Do damage to the collided object when colliding with it
         if (IDamageable.Instances.ContainsKey(collision.collider.gameObject))
         {
-            ImpactCollide(IDamageable.Instances[collision.collider.gameObject]);
+            // Get the thing that was hit
+            IDamageable hit = IDamageable.Instances[collision.collider.gameObject];
+
+            // If this thing was a player, do not hit it
+            if(hit.GetDamageableType() != IDamageable.DamageableType.PLAYER)
+                ImpactCollide(hit);
         }
 
         // Get every object hit by the area explosion
@@ -44,7 +49,12 @@ public class CanProjectileController : ProjectileController
         {
             if (IDamageable.Instances.ContainsKey(col.gameObject))
             {
-                hits.Add(IDamageable.Instances[col.gameObject]);
+                // Get the thing that was hit
+                IDamageable hit = IDamageable.Instances[col.gameObject];
+
+                // If this thing was a player, do not hit it
+                if (hit.GetDamageableType() != IDamageable.DamageableType.PLAYER)
+                    hits.Add(hit);
             }
         }
         SplashCollide(hits.ToArray());

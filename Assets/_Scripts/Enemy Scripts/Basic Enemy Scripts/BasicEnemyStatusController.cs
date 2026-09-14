@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using static IDamageable;
 using static ModifierUtil;
 
 [RequireComponent(typeof(NavMeshAgent))]
@@ -38,5 +39,10 @@ public class BasicEnemyStatusSystem : StatusSystem
 
         // Despawns this enemy
         eCont.Despawn();
+    }
+
+    public override DamageableType GetDamageableType()
+    {
+        return IDamageable.DamageableType.ENEMY;
     }
 }

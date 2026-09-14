@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static IDamageable;
 
 public class TargetDummy : StatusSystem
 {
@@ -8,5 +9,10 @@ public class TargetDummy : StatusSystem
     {
         base.Awake();
         invincible = true;
+    }
+
+    public override DamageableType GetDamageableType()
+    {
+        return IDamageable.DamageableType.ENEMY;
     }
 }

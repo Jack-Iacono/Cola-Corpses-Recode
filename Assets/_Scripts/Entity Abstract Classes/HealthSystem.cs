@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using static IDamageable;
 
 public abstract class HealthSystem : MonoBehaviour, IDamageable
 {
@@ -58,5 +59,5 @@ public abstract class HealthSystem : MonoBehaviour, IDamageable
         OnHealthChange?.Invoke(health);
     }
 
-    
+    public abstract DamageableType GetDamageableType();
 }

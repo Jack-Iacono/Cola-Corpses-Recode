@@ -5,11 +5,14 @@ using UnityEngine;
 public interface IDamageable
 {
     public enum DamageType { NEUTRAL, CONTACT, SPLASH }
+    public enum DamageableType { PLAYER, ENEMY, INTERACTABLE }
 
     public static Dictionary<GameObject, IDamageable> Instances = new Dictionary<GameObject, IDamageable>();
 
     public void DamageContact(float damage, Dictionary<ModifierUtil.Trait, int> traits = null);
     public void DamageSplash(float damage, Dictionary<ModifierUtil.Trait, int> traits = null);
+
+    public DamageableType GetDamageableType();
 
     public static void Register(GameObject obj, IDamageable damageable)
     {

@@ -1,4 +1,5 @@
 using UnityEngine;
+using static IDamageable;
 
 public class PlayerStatusController : StatusSystem
 {
@@ -32,5 +33,10 @@ public class PlayerStatusController : StatusSystem
     {
         Debug.Log("Health Empty");
         InvokeOnHealthEmpty();
+    }
+
+    public override DamageableType GetDamageableType()
+    {
+        return IDamageable.DamageableType.PLAYER;
     }
 }

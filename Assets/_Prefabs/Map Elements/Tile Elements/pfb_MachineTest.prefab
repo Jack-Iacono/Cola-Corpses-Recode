@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3235800996468627968}
   - component: {fileID: 7391499950744093623}
+  - component: {fileID: 6971051768328429808}
   m_Layer: 0
   m_Name: pfb_MachineTest
   m_TagString: Untagged
@@ -54,6 +55,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 4, z: 1}
   m_Center: {x: 0, y: 2, z: 0.5}
+--- !u!114 &6971051768328429808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3484274474330390860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8048b13e6e6af94890176e7b964cd25, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BasicInteractable
+  interactMethod:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &7481534153980693738
 GameObject:
   m_ObjectHideFlags: 0

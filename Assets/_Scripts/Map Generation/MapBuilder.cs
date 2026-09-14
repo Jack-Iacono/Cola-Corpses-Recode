@@ -44,7 +44,7 @@ public class MapBuilder : MonoBehaviour
     // Yes, I know what I'm doing, don't question me
     private readonly Vector3 mapDim = new Vector3(100, 5, 200);
     private Vector2 roomTileRange = new Vector2(40, 40);
-    private int roomCount = 10;
+    private int roomCount = 3;
     private float prefabPlaceChance = 0.01f;
 
     // The scale of the map, mostly added this for fun, but maybe allow users to mess around with it
